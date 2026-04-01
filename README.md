@@ -167,7 +167,7 @@ http://localhost/Protex/
 ## Acknowledgments
 
 - **Esprit School of Engineering** for academic supervision and support
-- Our supervisor **IBN ELFEKIH Oumeima** for guidance throughout the project
+- Our supervisor **** for guidance throughout the project
 - Official documentation for PHP
 - GitHub Education Program
 
