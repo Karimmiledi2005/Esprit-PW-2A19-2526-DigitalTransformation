@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Mes Sinistres — Protex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/client.css">
+    <style>
+        /* ===== TOAST ===== */
+        .toast-notif {
+            position: fixed; bottom: 24px; right: 24px;
+            background: #fff; border: 1px solid rgba(26,58,122,0.15);
+            border-radius: 12px; padding: 14px 20px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 14px; color: #15233C;
+            z-index: 9999; opacity: 0; transform: translateY(10px);
+            transition: all 0.3s ease; box-shadow: 0 8px 24px rgba(26,58,122,0.12);
+        }
+        .toast-notif.show { opacity: 1; transform: translateY(0); }
+        .toast-notif i { font-size: 18px; }
+        .toast-success i { color: #1A3A7A; }
+        .toast-warning i { color: #FF6B1A; }
+        .toast-danger  i { color: var(--danger); }
+
+        /* ===== MONTANT BANNER ===== */
+        .montant-banner {
+            background: linear-gradient(135deg, rgba(26,58,122,0.08), rgba(26,58,122,0.04));
+            border: 1px solid rgba(26,58,122,0.15); border-radius: 12px;
+            padding: 14px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+        }
+        .montant-banner i { font-size: 26px; color: #1A3A7A; }
+        .montant-banner-label { font-size: 11px; color: var(--text-secondary); }
+        .montant-banner-amount { font-size: 22px; font-weight: 700; color: #1A3A7A; }
+
+        /* ===== COMMENTS ===== */
+        .comment-section { margin-top: 14px; }
+        .comment-title { font-size: 13px; font-weight: 500; color: #15233C; margin-bottom: 10px; }
+        .comment-item {
+            background: rgba(26,58,122,0.04); border: 1px solid rgba(26,58,122,0.10);
+            border-radius: 10px; padding: 10px 12px; margin-bottom: 8px;
+        }
+        .comment-meta { font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }
+        .comment-text { font-size: 13px; color: #15233C; }
+        .comment-form { display: flex; gap: 8px; margin-top: 10px; }
+        .comment-input {
+            flex: 1; padding: 10px 12px; border-radius: 10px;
+            background: #f0f4ff; border: 1px solid rgba(26,58,122,0.15);
+            color: #15233C; font-size: 13px; outline: none; font-family: inherit; transition: 0.2s;
+        }
+        .comment-input:focus { border-color: #FF6B1A; box-shadow: 0 0 10px rgba(255,107,26,0.15); }
+        .comment-input::placeholder { color: rgba(21,35,60,0.35); }
+        .comment-send {
+            padding: 10px 14px; background: #FF6B1A; border: none;
+            border-radius: 10px; color: #fff; cursor: pointer; font-size: 13px; transition: 0.2s;
+        }
+        .comment-send:hover { transform: translateY(-1px); background: #e05a0f; }
+
+        /* ===== TRAITEMENT ===== */
+        .traitement-item {
+            border: 1px solid rgba(26,58,122,0.10); border-radius: 12px;
+            padding: 14px; margin-bottom: 12px; background: rgba(26,58,122,0.03);
+        }
+        .traitement-item.traitement-final { border-color: rgba(26,58,122,0.25); background: rgba(26,58,122,0.06); }
+        .traitement-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .traitement-step { display: flex; align-items: center; gap: 10px; }
+        .traitement-num {
+            width: 28px; height: 28px; border-radius: 8px;
+            background: rgba(255,107,26,0.12); color: #FF6B1A;
+            font-size: 11px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .traitement-num.success { background: rgba(26,58,122,0.12); color: #1A3A7A; }
+        .traitement-title-t { font-size: 13px; font-weight: 500; color: #15233C; line-height: 1.4; }
+        .traitement-date { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+        .traitement-body { display: flex; flex-direction: column; gap: 6px; padding-left: 38px; }
+        .traitement-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+        .traitement-row i { font-size: 13px; color: #FF6B1A; flex-shrink: 0; }
+        .traitement-row.success-text { color: #1A3A7A; }
+        .traitement-row.success-text i { color: #1A3A7A; }
+        .traitement-row strong { color: #15233C; font-weight: 500; }
+
+        /* ===== SELECTED ===== */
+        .sinistre-box.selected { border-color: #FF6B1A !important; }
+
+        /* ===== CONFIRM DELETE ===== */
+        .confirm-modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(26,58,122,0.35); backdrop-filter: blur(6px);
+            z-index: 9998; align-items: center; justify-content: center;
+        }
+        .confirm-modal-overlay.open { display: flex; }
+        .confirm-box {
+            background: #fff; border: 1px solid rgba(230,57,70,0.25);
+            border-radius: 16px; padding: 28px; width: 360px;
+            box-shadow: 0 20px 50px rgba(26,58,122,0.2); text-align: center;
+            animation: popIn 0.2s ease;
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity:0; } to { transform: scale(1); opacity:1; } }
+        .confirm-icon { font-size: 36px; color: var(--danger); margin-bottom: 12px; }
+        .confirm-title { font-size: 16px; font-weight: 600; color: #15233C; margin-bottom: 8px; }
+        .confirm-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+        .confirm-actions { display: flex; gap: 10px; }
+        .btn-confirm-cancel {
+            flex: 1; padding: 11px; border-radius: 10px;
+            background: rgba(26,58,122,0.06); border: 1px solid rgba(26,58,122,0.12);
+            color: var(--text-secondary); cursor: pointer; font-size: 14px; transition: 0.2s;
+        }
+        .btn-confirm-cancel:hover { background: rgba(26,58,122,0.10); }
+        .btn-confirm-delete {
+            flex: 1; padding: 11px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--danger), #f55); border: none;
+            color: #fff; cursor: pointer; font-size: 14px; font-weight: 500; transition: 0.2s;
+        }
+        .btn-confirm-delete:hover { transform: translateY(-1px); }
+
+        /* ===== MODAL — LIGHT THEME ===== */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(26,58,122,0.30);
+            backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+            justify-content: center; align-items: center; z-index: 9999;
+        }
+        .modal-box {
+            width: 460px; max-width: 94vw; padding: 28px; border-radius: 18px;
+            background: #ffffff;
+            border: 1px solid rgba(26,58,122,0.15);
+            box-shadow: 0 20px 60px rgba(26,58,122,0.18);
+            color: #15233C; position: relative;
+            animation: glassPop 0.25s ease;
+        }
+        @keyframes glassPop { from { transform: scale(0.92); opacity:0; } to { transform: scale(1); opacity:1; } }
+
+        .modal-box h3 { color: #15233C; font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+
+        .modal-box label {
+            display: block; font-size: 13px; font-weight: 500;
+            color: #15233C; margin-bottom: 6px;
+        }
+
+        .form-control {
+            width: 100%; padding: 11px 14px; margin-top: 0; margin-bottom: 14px;
+            border-radius: 11px;
+            background: #f0f4ff;
+            border: 1px solid rgba(26,58,122,0.15);
+            color: #15233C; outline: none;
+            font-family: inherit; font-size: 13px; transition: 0.2s;
+            box-sizing: border-box;
+        }
+        .form-control:hover { border-color: rgba(26,58,122,0.3); }
+        .form-control:focus {
+            border-color: #FF6B1A;
+            box-shadow: 0 0 12px rgba(255,107,26,0.15);
+            background: #fff;
+        }
+        .form-control::placeholder { color: rgba(21,35,60,0.35); }
+
+        select.form-control {
+            appearance: none; cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2315233C' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 12px center;
+            background-size: 14px; padding-right: 38px;
+            background-color: #f0f4ff;
+        }
+        select.form-control option { background: #ffffff; color: #15233C; }
+
+        textarea.form-control { resize: vertical; }
+
+        .btn-submit {
+            width: 100%; padding: 12px; border-radius: 11px; border: none;
+            background: #FF6B1A; color: #fff; font-weight: 600; font-size: 14px;
+            cursor: pointer; transition: 0.25s ease; margin-top: 4px;
+        }
+        .btn-submit:hover {
+            background: #e05a0f;
+            box-shadow: 0 6px 20px rgba(255,107,26,0.3);
+            transform: translateY(-1px);
+        }
+
+        .close-btn {
+            position: absolute; top: 14px; right: 14px;
+            width: 32px; height: 32px; border-radius: 10px;
+            background: rgba(26,58,122,0.08); border: 1px solid rgba(26,58,122,0.12);
+            color: #15233C; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; font-size: 15px;
+        }
+        .close-btn:hover { transform: rotate(90deg); background: rgba(26,58,122,0.14); }
+
+        /* ===== ANIMATED FIELDS ===== */
+        .animated-field { opacity: 0; transform: translateY(10px); animation: fadeUp 0.5s ease forwards; }
+        .animated-field:nth-child(1) { animation-delay: 0.05s; }
+        .animated-field:nth-child(2) { animation-delay: 0.12s; }
+        .animated-field:nth-child(3) { animation-delay: 0.19s; }
+        .animated-field:nth-child(4) { animation-delay: 0.26s; }
+        .animated-field:nth-child(5) { animation-delay: 0.33s; }
+        @keyframes fadeUp { to { opacity:1; transform:translateY(0); } }
+
+        /* ===== BADGE EXTRA ===== */
+        .badge-info   { background: rgba(255,107,26,0.10); color: #FF6B1A; }
+        .badge-danger { background: rgba(230,57,70,0.10);  color: var(--danger); }
+    </style>
+</head>
+<body>
+
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <a href="client.html" class="navbar-brand">
+            <img src="logo.png" alt="logo" width="40" height="40">
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">Assurance Digitale</div>
+            </div>
+        </a>
+
+        <div class="navbar-nav">
+            <a class="nav-link" href="client.html">
+                <i class="bi bi-grid-1x2"></i>
+                <span class="nav-label">Tableau de bord</span>
+            </a>
+            <a class="nav-link" href="mes-contrats.html">
+                <i class="bi bi-file-earmark-text"></i>
+                <span class="nav-label">Contrats</span>
+                <span class="nav-badge accent">3</span>
+            </a>
+            <a class="nav-link active" href="mes-sinistres.html">
+                <i class="bi bi-shield-exclamation"></i>
+                <span class="nav-label">Sinistres</span>
+                <span class="nav-badge">1</span>
+            </a>
+            <a class="nav-link" href="paiements.html">
+                <i class="bi bi-credit-card"></i>
+                <span class="nav-label">Paiements</span>
+            </a>
+            <div class="nav-separator"></div>
+            <a class="nav-link" href="reclamations.html">
+                <i class="bi bi-chat-dots"></i>
+                <span class="nav-label">Réclamations</span>
+            </a>
+            <a class="nav-link" href="agences.html">
+                <i class="bi bi-geo-alt"></i>
+                <span class="nav-label">Agences</span>
+            </a>
+            <a class="nav-link" href="nos-offres.html">
+                <i class="bi bi-stars"></i>
+                <span class="nav-label">Nos offres</span>
+            </a>
+        </div>
+
+        <div class="navbar-right">
+            <a href="#" class="nav-btn" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="notif-dot"></span>
+            </a>
+            <a href="#" class="nav-btn" title="Aide">
+                <i class="bi bi-question-circle"></i>
+            </a>
+            <div class="avatar-wrap">
+                <div class="avatar-btn" id="avatarBtn" title="Mon compte">KM</div>
+                <div class="avatar-dropdown" id="avatarDropdown">
+                    <div class="dropdown-header">
+                        <div class="dropdown-avatar">KM</div>
+                        <div class="dropdown-info">
+                            <div class="dropdown-name">Karim Miledi</div>
+                            <div class="dropdown-email">karim.miledi@email.com</div>
+                            <span class="dropdown-role">Client Premium</span>
+                        </div>
+                    </div>
+                    <a href="monprofile.html" class="dropdown-item"><i class="bi bi-person-circle"></i> Mon profil</a>
+                    <a href="parametres.html" class="dropdown-item"><i class="bi bi-gear"></i> Paramètres</a>
+                    <div class="dropdown-divider"></div>
+                    <a href="login.html" class="dropdown-item logout"><i class="bi bi-box-arrow-right"></i> Se déconnecter</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main">
+        <div class="page-header">
+            <div>
+                <div class="page-title-main">Mes Sinistres</div>
+                <div class="page-breadcrumb">
+                    <i class="bi bi-house"></i>
+                    <a href="client.html" style="color:inherit;text-decoration:none;">Accueil</a>
+                    <i class="bi bi-chevron-right" style="font-size:10px"></i>
+                    <span>Mes Sinistres</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <div class="section-header fade-in">
+                <div>
+                    <div class="section-title">Mes sinistres</div>
+                    <div class="section-sub">Déclarer et suivre vos demandes</div>
+                </div>
+                <button class="btn btn-primary" onclick="openDeclareModal()">
+                    <i class="bi bi-plus-lg"></i> Déclarer
+                </button>
+            </div>
+
+            <!-- MODAL DECLARE / EDIT -->
+            <div id="sinistreModal" class="modal-overlay">
+                <div class="modal-box">
+                    <h3 id="modalTitle">Déclarer un sinistre</h3>
+                    <form id="sinistreFormElement" onsubmit="handleSinistreSubmit(event)">
+                        <div class="form-group animated-field">
+                            <label>ID Contrat</label>
+                            <input type="number" id="contrat_id" class="form-control" placeholder="Ex: 1023">
+                        </div>
+                        <div class="form-group animated-field">
+                            <label>Type de sinistre</label>
+                            <select id="type_sinistre" class="form-control">
+                                <option>Accident auto</option>
+                                <option>Incendie</option>
+                                <option>Vol</option>
+                                <option>Dégât des eaux</option>
+                            </select>
+                        </div>
+                        <div class="form-group animated-field">
+                            <label>Description</label>
+                            <textarea id="description" class="form-control" rows="3" placeholder="Décrivez le sinistre..."></textarea>
+                        </div>
+                        <div class="form-group animated-field">
+                            <label>Date de déclaration</label>
+                            <input type="date" id="date_declaration" class="form-control">
+                        </div>
+                        <div class="form-group animated-field">
+                            <label>Photo</label>
+                            <input type="file" id="photo" class="form-control" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn-submit">Envoyer</button>
+                    </form>
+                    <button class="close-btn" onclick="closeSinistreModal()">✕</button>
+                </div>
+            </div>
+
+            <!-- CONFIRM DELETE -->
+            <div class="confirm-modal-overlay" id="confirmDeleteModal">
+                <div class="confirm-box">
+                    <div class="confirm-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="confirm-title">Supprimer ce sinistre ?</div>
+                    <div class="confirm-sub">Cette action est irréversible.</div>
+                    <div class="confirm-actions">
+                        <button class="btn-confirm-cancel" onclick="closeConfirmDelete()">Annuler</button>
+                        <button class="btn-confirm-delete" onclick="confirmDelete()">Supprimer</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRID -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px;">
+                <div id="sinistreList"></div>
+                <div id="detailPanel">
+                    <div class="sinistre-box" style="text-align:center;padding:40px 20px;color:var(--text-secondary);">
+                        <i class="bi bi-shield" style="font-size:36px;opacity:0.2;"></i>
+                        <p style="margin-top:10px;font-size:13px;">Sélectionnez un sinistre</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<div class="toast-notif" id="toastNotif">
+    <i class="bi bi-check-circle"></i>
+    <span id="toastMsg"></span>
+</div>
+
+<script src="assets/js/main.js"></script>
+<script>
+let sinistres = [
+    { id: 1, contrat: '#1023', type: 'Accident auto', description: 'Accident sur autoroute A1, choc arrière.', date: '2026-04-05', statut: 'en_attente', montant: null, photo: 'assets/img/sample.jpg', commentaires: [], traitements: [{ num:'T1', decision:'Documents reçus, en cours de vérification', date:'02/04/2026', montant:null }] },
+    { id: 2, contrat: '#998',  type: 'Dégât des eaux', description: 'Inondation cuisine suite rupture canalisation.', date: '2026-04-01', statut: 'rembourse', montant: 300, photo: 'assets/img/sample.jpg', commentaires: [{ texte:'Merci pour le traitement rapide !', date:'05/04/2026' }], traitements: [{ num:'T1', decision:'Documents reçus', date:'02/04/2026', montant:null }, { num:'T2', decision:'Sinistre validé après vérification', date:'05/04/2026', montant:300 }] }
+];
+
+let editingId  = null;
+let deletingId = null;
+let selectedId = null;
+
+const STATUTS = {
+    en_attente: { label:'En attente', css:'badge-warning' },
+    valide:     { label:'Validé',     css:'badge-info' },
+    rembourse:  { label:'Remboursé',  css:'badge-success' },
+    refuse:     { label:'Refusé',     css:'badge-danger' },
+};
+
+function fmt(d) { if(!d) return '—'; const [y,m,day]=d.split('-'); return `${day}/${m}/${y}`; }
+
+function renderList() {
+    const el = document.getElementById('sinistreList');
+    if (!sinistres.length) { el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;">Aucun sinistre déclaré.</div>`; return; }
+    el.innerHTML = sinistres.map(s => {
+        const st = STATUTS[s.statut] || STATUTS.en_attente;
+        const canEdit = s.statut === 'en_attente';
+        return `<div class="sinistre-box ${selectedId===s.id?'selected':''}" style="cursor:pointer;margin-bottom:12px;" onclick="selectSinistre(${s.id})">
+            <div class="sinistre-header">
+                <div class="sinistre-title">${s.type}</div>
+                <span class="badge ${st.css}">${st.label}</span>
+            </div>
+            <div class="sinistre-meta">Déclaré le ${fmt(s.date)} — Contrat ${s.contrat}</div>
+            ${s.statut==='rembourse'&&s.montant?`<div class="montant-banner" style="margin-top:10px;margin-bottom:4px;"><i class="bi bi-cash-stack"></i><div><div class="montant-banner-label">Montant remboursé</div><div class="montant-banner-amount">${s.montant} DT</div></div></div>`:''}
+            <div class="contrat-actions">
+                <button class="btn btn-outline" onclick="event.stopPropagation();selectSinistre(${s.id})"><i class="bi bi-eye"></i> Voir</button>
+                ${canEdit?`<button class="btn btn-outline" onclick="event.stopPropagation();openEditModal(${s.id})"><i class="bi bi-pencil"></i> Modifier</button><button class="btn btn-outline danger" onclick="event.stopPropagation();openConfirmDelete(${s.id})"><i class="bi bi-trash"></i></button>`:''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function selectSinistre(id) {
+    selectedId = id;
+    renderList();
+    const s = sinistres.find(x=>x.id===id);
+    const st = STATUTS[s.statut] || STATUTS.en_attente;
+
+    const traitHTML = s.traitements.length ? s.traitements.map((t,i)=>`
+        <div class="traitement-item ${i===s.traitements.length-1&&t.montant?'traitement-final':''}">
+            <div class="traitement-header">
+                <div class="traitement-step"><span class="traitement-num ${t.montant?'success':''}">${t.num}</span><span class="traitement-title-t">${t.decision}</span></div>
+                <span class="traitement-date">${t.date}</span>
+            </div>
+            ${t.montant?`<div class="traitement-body"><div class="traitement-row success-text"><i class="bi bi-currency-exchange"></i><span>Montant indemnisé : <strong>${t.montant} DT</strong></span></div></div>`:''}
+        </div>`).join('') : `<p style="font-size:12px;color:var(--text-secondary);">Aucun traitement enregistré.</p>`;
+
+    const commHTML = s.commentaires.length ? s.commentaires.map(c=>`
+        <div class="comment-item"><div class="comment-meta">Vous — ${c.date}</div><div class="comment-text">${c.texte}</div></div>`).join('')
+        : `<p style="font-size:12px;color:var(--text-secondary);">Aucun commentaire.</p>`;
+
+    document.getElementById('detailPanel').innerHTML = `
+        <div class="sinistre-box">
+            <div class="sinistre-header"><div class="sinistre-title">${s.type}</div><span class="badge ${st.css}">${st.label}</span></div>
+            <div class="sinistre-meta">Contrat ${s.contrat} — ${fmt(s.date)}</div>
+            ${s.statut==='rembourse'&&s.montant?`<div class="montant-banner"><i class="bi bi-cash-stack"></i><div><div class="montant-banner-label">Montant indemnisé accordé</div><div class="montant-banner-amount">${s.montant} DT</div></div></div>`:''}
+            <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px;">${s.description}</p>
+            <img src="${s.photo}" style="width:100%;border-radius:10px;margin-bottom:14px;" alt="photo" onerror="this.style.display='none'">
+
+            <div class="sinistre-title" style="margin-bottom:10px;">Suivi du statut</div>
+            <div class="timeline" style="margin-bottom:16px;">
+                <div class="timeline-item"><div class="timeline-dot gray"></div><div class="timeline-content"><div class="timeline-title">Déclaration reçue</div><div class="timeline-date">${fmt(s.date)}</div></div></div>
+                ${s.statut!=='en_attente'?`<div class="timeline-item"><div class="timeline-dot blue"></div><div class="timeline-content"><div class="timeline-title">En cours de traitement</div></div></div>`:''}
+                ${s.statut==='rembourse'?`<div class="timeline-item"><div class="timeline-dot green"></div><div class="timeline-content"><div class="timeline-title">Remboursé</div><div class="timeline-desc">Montant: ${s.montant} DT</div></div></div>`:''}
+                ${s.statut==='valide'?`<div class="timeline-item"><div class="timeline-dot green"></div><div class="timeline-content"><div class="timeline-title">Validé</div></div></div>`:''}
+                ${s.statut==='refuse'?`<div class="timeline-item"><div class="timeline-dot red"></div><div class="timeline-content"><div class="timeline-title">Refusé</div></div></div>`:''}
+            </div>
+
+            <div class="sinistre-title" style="margin-bottom:10px;"><i class="bi bi-journal-text" style="margin-right:5px;"></i>Historique des traitements</div>
+            ${traitHTML}
+
+            <div class="comment-section">
+                <div class="comment-title"><i class="bi bi-chat-left-text" style="margin-right:5px;"></i>Mes commentaires</div>
+                <div id="commentList_${s.id}">${commHTML}</div>
+                <div class="comment-form">
+                    <input class="comment-input" id="commentInput_${s.id}" placeholder="Ajouter un commentaire...">
+                    <button class="comment-send" onclick="addComment(${s.id})"><i class="bi bi-send"></i> Envoyer</button>
+                </div>
+            </div>
+        </div>`;
+}
+
+function addComment(id) {
+    const input = document.getElementById(`commentInput_${id}`);
+    const texte = input.value.trim();
+    if (!texte) return;
+    sinistres.find(x=>x.id===id).commentaires.push({ texte, date: new Date().toLocaleDateString('fr-FR') });
+    input.value = '';
+    selectSinistre(id);
+    showToast('Commentaire ajouté.', 'success');
+}
+
+function openDeclareModal() {
+    editingId = null;
+    document.getElementById('modalTitle').textContent = 'Déclarer un sinistre';
+    ['contrat_id','description'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('date_declaration').value = new Date().toISOString().split('T')[0];
+    document.getElementById('sinistreModal').style.display = 'flex';
+}
+function openEditModal(id) {
+    editingId = id;
+    const s = sinistres.find(x=>x.id===id);
+    document.getElementById('modalTitle').textContent = 'Modifier le sinistre';
+    document.getElementById('contrat_id').value = s.contrat.replace('#','');
+    document.getElementById('type_sinistre').value = s.type;
+    document.getElementById('description').value = s.description;
+    document.getElementById('date_declaration').value = s.date;
+    document.getElementById('sinistreModal').style.display = 'flex';
+}
+function closeSinistreModal() { document.getElementById('sinistreModal').style.display = 'none'; }
+
+function handleSinistreSubmit(e) {
+    e.preventDefault();
+    const contrat = document.getElementById('contrat_id').value.trim();
+    const type    = document.getElementById('type_sinistre').value;
+    const desc    = document.getElementById('description').value.trim();
+    const date    = document.getElementById('date_declaration').value;
+    if (!contrat||!desc||!date) { showToast('Remplissez tous les champs.','warning'); return; }
+    if (editingId) {
+        const s = sinistres.find(x=>x.id===editingId);
+        Object.assign(s, { contrat:'#'+contrat, type, description:desc, date });
+        showToast('Sinistre modifié.','success');
+        if (selectedId===editingId) selectSinistre(editingId);
+    } else {
+        const newId = sinistres.length ? Math.max(...sinistres.map(x=>x.id))+1 : 1;
+        sinistres.push({ id:newId, contrat:'#'+contrat, type, description:desc, date, statut:'en_attente', montant:null, photo:'', commentaires:[], traitements:[] });
+        showToast('Sinistre déclaré avec succès.','success');
+    }
+    closeSinistreModal();
+    renderList();
+}
+
+function openConfirmDelete(id) { deletingId=id; document.getElementById('confirmDeleteModal').classList.add('open'); }
+function closeConfirmDelete()  { document.getElementById('confirmDeleteModal').classList.remove('open'); deletingId=null; }
+function confirmDelete() {
+    sinistres = sinistres.filter(x=>x.id!==deletingId);
+    if (selectedId===deletingId) {
+        selectedId=null;
+        document.getElementById('detailPanel').innerHTML=`<div class="sinistre-box" style="text-align:center;padding:40px 20px;color:var(--text-secondary);"><i class="bi bi-shield" style="font-size:36px;opacity:0.2;"></i><p style="margin-top:10px;font-size:13px;">Sélectionnez un sinistre</p></div>`;
+    }
+    closeConfirmDelete(); renderList(); showToast('Sinistre supprimé.','danger');
+}
+
+function showToast(msg, type='success') {
+    const icons = { success:'bi-check-circle', warning:'bi-exclamation-circle', danger:'bi-x-circle', info:'bi-info-circle' };
+    const el = document.getElementById('toastNotif');
+    el.querySelector('i').className=`bi ${icons[type]||icons.success}`;
+    document.getElementById('toastMsg').textContent=msg;
+    el.className=`toast-notif toast-${type} show`;
+    setTimeout(()=>el.classList.remove('show'), 3000);
+}
+
+document.addEventListener('DOMContentLoaded', ()=>renderList());
+</script>
+</body>
+</html>
