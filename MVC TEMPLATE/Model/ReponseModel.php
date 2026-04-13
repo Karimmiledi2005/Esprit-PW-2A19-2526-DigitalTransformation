@@ -1,0 +1,32 @@
+<?php
+
+class Reponse
+{
+    private ?int    $id_re;
+    private ?string $date_reponse;
+    private string  $contenu;
+    private string  $statut;
+    private int     $reclamation_id;
+
+    public function __construct(
+        ?int    $id_re,
+        ?string $date_reponse,
+        string  $contenu,
+        string  $statut,
+        int     $reclamation_id
+    ) {
+        $this->id_re          = $id_re;
+        $this->date_reponse   = $date_reponse;
+        $this->contenu        = $contenu;
+        $this->statut         = $statut;
+        $this->reclamation_id = $reclamation_id;
+    }
+
+    // GETTERS
+    public function getIdRe()          { return $this->id_re; }
+    public function getDateReponse()   { return $this->date_reponse; }
+    public function getContenu()       { return $this->contenu; }
+    public function getStatut()        { return $this->statut; }
+    public function getReclamationId() { return $this->reclamation_id; }
+}
+?>
