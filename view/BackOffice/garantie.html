@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Back Office Garanties - Protex</title>
+    <meta name="description" content="3D Glassmorphism Dashboard Template by TemplateMo">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/templatemo-glass-admin-style.css">
+    <!--
+
+TemplateMo 607 Glass Admin
+
+https://templatemo.com/tm-607-glass-admin
+
+-->
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="logo.png" alt="logo" width="50" height="50">              
+                  <span class="logo-text">Protex</span>
+            </div>
+
+            <ul class="nav-menu">
+    <li class="nav-section">
+        <span class="nav-section-title">Main Menu</span>
+        <ul>
+            <li class="nav-item">
+                <a href="index.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
+                    Dashboard
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="contrats-admin.html" class="nav-link ">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    Contrats
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="garanties-admin.html" class="nav-link active">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    </svg>
+                    Garanties
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <a href="settings.html" class="nav-link">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                    Settings
+                </a>
+            </li>
+        </ul>
+    </li>
+</ul>
+
+            <div class="sidebar-footer">
+                <div class="user-profile">
+                    <div class="user-avatar">TM</div>
+                    <div class="user-info">
+                       <div class="user-name">Admin Protex</div>
+                    <div class="user-role">Gestionnaire</div>
+                    </div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Navbar -->
+           <nav class="navbar">
+    <div class="page-header">
+       <h1 class="page-title">Gestion des garanties</h1>
+<div class="page-breadcrumb">
+    <a href="index.html">Dashboard</a>
+    <span>/</span>
+    <span>Garanties</span>
+</div>
+    </div>
+
+    <div class="navbar-right">
+    <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" class="search-input" placeholder="Rechercher une garantie...">
+    </div>
+
+    <button class="nav-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span class="notification-dot"></span>
+    </button>
+
+    <button class="nav-btn" id="theme-toggle" title="Toggle Light/Dark Mode">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2"/><path d="M12 20v2"/>
+            <path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/>
+            <path d="M2 12h2"/><path d="M20 12h2"/>
+            <path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/>
+        </svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+        </svg>
+    </button>
+</div>
+</nav>
+
+            <!-- Stats Cards -->
+           <section class="stats-grid">
+    <div class="glass-card glass-card-3d stat-card">
+        <div class="stat-card-inner">
+            <div class="stat-info">
+                <h3>Total garanties</h3>
+                <div class="stat-value">214</div>
+                <span class="stat-change positive">+15%</span>
+            </div>
+            <div class="stat-icon cyan">🛡️</div>
+        </div>
+    </div>
+
+    <div class="glass-card glass-card-3d stat-card">
+        <div class="stat-card-inner">
+            <div class="stat-info">
+                <h3>Garanties Premium</h3>
+                <div class="stat-value">72</div>
+                <span class="stat-change positive">+7%</span>
+            </div>
+            <div class="stat-icon magenta">⭐</div>
+        </div>
+    </div>
+
+    <div class="glass-card glass-card-3d stat-card">
+        <div class="stat-card-inner">
+            <div class="stat-info">
+                <h3>Garanties Standard</h3>
+                <div class="stat-value">96</div>
+                <span class="stat-change positive">+5%</span>
+            </div>
+            <div class="stat-icon purple">📋</div>
+        </div>
+    </div>
+
+    <div class="glass-card glass-card-3d stat-card">
+        <div class="stat-card-inner">
+            <div class="stat-info">
+                <h3>Garanties désactivées</h3>
+                <div class="stat-value">12</div>
+                <span class="stat-change negative">-2%</span>
+            </div>
+            <div class="stat-icon success">⛔</div>
+        </div>
+    </div>
+</section>
+
+                
+            </section>
+
+         
+            <section class="content-grid" style="grid-template-columns: 1fr;">
+
+    <!-- TABLE CONTRATS -->
+    <div class="glass-card table-card" style="grid-column: span 1; margin-bottom: 24px;">
+    <div class="card-header">
+        <div>
+            <h2 class="card-title">Gestion des garanties</h2>
+            <p class="card-subtitle">Création, mise à jour et suppression des garanties du système</p>
+        </div>
+        <div class="card-actions">
+            <button type="button" class="card-btn" onclick="openGarantieModal()">+ Ajouter garantie</button>
+            <button class="card-btn">Export</button>
+        </div>
+    </div>
+
+    <div class="table-wrapper">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID Garantie</th>
+                    <th>Nom garantie</th>
+                    <th>Description</th>
+                    <th>Plafond</th>
+                    <th>Niveau</th>
+                    <th>Type contrat</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                    <td>GAR-001</td>
+                    <td>Garantie Vol</td>
+                    <td>Protection contre le vol du véhicule</td>
+                    <td>20 000 DT</td>
+                    <td>Premium</td>
+                    <td>Auto</td>
+                    <td><span class="status-badge completed">Active</span></td>
+                    <td>
+                        <button class="card-btn">Modifier</button>
+                        <button class="card-btn danger-btn">Supprimer</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>GAR-002</td>
+                    <td>Garantie Incendie</td>
+                    <td>Couverture en cas d’incendie</td>
+                    <td>15 000 DT</td>
+                    <td>Basique</td>
+                    <td>Habitation</td>
+                    <td><span class="status-badge completed">Active</span></td>
+                    <td>
+                        <button class="card-btn">Modifier</button>
+                        <button class="card-btn danger-btn">Supprimer</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>GAR-003</td>
+                    <td>Garantie Hospitalisation</td>
+                    <td>Prise en charge des frais médicaux</td>
+                    <td>30 000 DT</td>
+                    <td>Premium</td>
+                    <td>Santé</td>
+                    <td><span class="status-badge pending">Brouillon</span></td>
+                    <td>
+                        <button class="card-btn">Modifier</button>
+                        <button class="card-btn danger-btn">Supprimer</button>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>GAR-004</td>
+                    <td>Garantie Dégâts des eaux</td>
+                    <td>Couverture contre les fuites et infiltrations</td>
+                    <td>25 000 DT</td>
+                    <td>Standard</td>
+                    <td>Habitation</td>
+                    <td><span class="status-badge processing">Désactivée</span></td>
+                    <td>
+                        <button class="card-btn">Modifier</button>
+                        <button class="card-btn danger-btn">Supprimer</button>
+                    </td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+   
+
+</section>
+        </main>
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+        <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-toggle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+    </button>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <p>Copyright © 2026 Your Company. Designed by <a href="https://templatemo.com" target="_blank" rel="nofollow">TemplateMo</a></p>
+    </footer>
+    
+
+    <!-- MODAL AJOUT GARANTIE -->
+    <div id="modalGarantie" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Nouvelle garantie</h2>
+                <span class="close-btn" onclick="closeGarantieModal()">&times;</span>
+            </div>
+
+            <form>
+                <div class="form-group">
+                    <label>Nom garantie</label>
+                    <input type="text" placeholder="Ex : Garantie Vol">
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea placeholder="Détails de la garantie" rows="3"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Plafond couverture</label>
+                        <input type="number" placeholder="DT">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Niveau couverture</label>
+                        <select>
+                            <option>Basique</option>
+                            <option>Standard</option>
+                            <option>Premium</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Contrat associé</label>
+                    <select>
+                        <option>CTR-2026-001 - Auto</option>
+                        <option>CTR-2026-002 - Santé</option>
+                        <option>CTR-2025-003 - Habitation</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Valider</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeGarantieModal()">Annuler</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/templatemo-glass-admin-script.js"></script>
+
+   <script>
+function openGarantieModal() {
+    const modal = document.getElementById("modalGarantie");
+    if (modal) {
+        modal.style.display = "flex";
+    }
+}
+
+function closeGarantieModal() {
+    const modal = document.getElementById("modalGarantie");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+window.addEventListener("click", function(e) {
+    const modal = document.getElementById("modalGarantie");
+    if (e.target === modal) {
+        modal.style.display = "none";
+    }
+});
+</script>
+</body>
+</html>
