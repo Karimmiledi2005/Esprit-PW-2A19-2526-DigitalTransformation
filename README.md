@@ -165,8 +165,8 @@ http://localhost/Protex/
 ## Gestion Réclamation
 | Todo | In Progress | Done |
 |------|------------|------|
-| ⬜ Le fonctionalités avancées  | 🔄Amélioration de l'interface | ✅ CRUD complet  |
-| ⬜ Le fonctionalités innovantes | | ✅ Base de données |
+| ⬜ Le fonctionalités avancées  | 🔄Amélioration de l'interface | ✅ CRUD complet "Réclamation"  |
+| ⬜ Le fonctionalités innovantes | 🔄 CRUD "Réponse" | ✅ Base de données |
 |  | | ✅ la jointure associée |
 |  | | ✅ integration de les interfaces |
 
