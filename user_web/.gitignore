@@ -1,0 +1,10 @@
+config.env.php
+
+# Fichiers systèmes
+.DS_Store
+Thumbs.db
+*.log
+
+# Dépendances
+/vendor/
+node_modules/
