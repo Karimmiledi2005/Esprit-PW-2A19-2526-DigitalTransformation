@@ -169,6 +169,13 @@ http://localhost/Protex/
 | ⬜ Le fonctionalités innovantes | 🔄 CRUD "Réponse" | ✅ Base de données |
 |  | | ✅ la jointure associée |
 |  | | ✅ integration de les interfaces |
+## USER
+| Todo | In Progress | Done |
+|------|------------|------|
+| ⬜ Le fonctionalités de bases  | 🔄Amélioration de l'interface | ✅ CRUD complet  |
+| ⬜ Le fonctionalités innovantes | 🔄 Forget password | ✅ Base de données |
+|  | | ✅ la jointure associée |
+|  | | ✅ integration de les interfaces |
 
 
 ## Acknowledgments
