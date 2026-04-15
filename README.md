@@ -176,6 +176,14 @@ http://localhost/Protex/
 | ⬜ Le fonctionalités innovantes | 🔄 Forget password | ✅ Base de données |
 |  | | ✅ la jointure associée |
 |  | | ✅ integration de les interfaces |
+## Gestion Offre & Paiement
+| Todo | In Progress | Done |
+|------|------------|------|
+| ⬜ Le fonctionalités avancées  | 🔄Amélioration de l'interface | ✅ CRUD complet "Offre"  |
+| ⬜ Le fonctionalités innovantes | 🔄 CRUD "Paiement" | ✅ Base de données |
+|  | | ✅ la jointure associée |
+|  | | ✅ integration de les interfaces |
+
 
 
 ## Acknowledgments
