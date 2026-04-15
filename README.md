@@ -163,6 +163,11 @@ http://localhost/Protex/
 | Client | client@protex.tn | client123 |
 
 ---
+| Todo | In Progress | Done |
+|------|------------|------|
+| ⬜ Le fonctionalités avancées  | 🔄Amélioration de l'interface | ✅ CRUD complet  |
+| ⬜ Le fonctionalités innovantes | | ✅ Base de données |
+
 
 ## Acknowledgments
 
@@ -174,3 +179,4 @@ http://localhost/Protex/
 ---
 
 > *Protex — Smart, green and 100% digital insurance.*
+> 
