@@ -167,6 +167,8 @@ http://localhost/Protex/
 |------|------------|------|
 | ⬜ Le fonctionalités avancées  | 🔄Amélioration de l'interface | ✅ CRUD complet  |
 | ⬜ Le fonctionalités innovantes | | ✅ Base de données |
+|  | | ✅ la jointure associée |
+|  | | ✅ integration de les interfaces |
 
 
 ## Acknowledgments
