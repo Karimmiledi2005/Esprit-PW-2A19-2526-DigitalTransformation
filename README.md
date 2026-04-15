@@ -183,6 +183,13 @@ http://localhost/Protex/
 | ⬜ Le fonctionalités innovantes | 🔄 CRUD "Paiement" | ✅ Base de données |
 |  | | ✅ la jointure associée |
 |  | | ✅ integration de les interfaces |
+## Gestion Sinistre & Traitement
+| 📝 Todo | 🔄 In Progress | ✅ Done |
+|--------|--------------|--------|
+| Fonctionnalités avancées (statistiques, recherche filtrée) | Amélioration de l’interface | CRUD |
+|  |  | Base de données |
+|  |  | Jointure Sinistre–Traitement |
+|  |  | Intégration des interfaces |
 
 
 
