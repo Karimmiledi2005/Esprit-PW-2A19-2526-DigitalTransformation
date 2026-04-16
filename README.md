@@ -191,6 +191,17 @@ http://localhost/Protex/
 |  |  | Jointure Sinistre–Traitement |
 |  |  | Intégration des interfaces |
 
+## Gestion Contrat & Garantie
+
+| 📝 Todo | 🔄 In Progress | ✅ Done |
+|--------|--------------|--------|
+| Fonctionnalités avancées (statistiques, filtrage des contrats) | Ajout & gestion des garanties | Ajout & gestion des contrats |
+|  | CRUD "Garantie" | Affichage dynamique FrontOffice |
+|  |  | Base de données |
+|  |  | Intégration Front/Back |
+|  |  | Intégration des interfaces |
+|  |  | CRUD complet "Contrat" |
+
 
 
 ## Acknowledgments
