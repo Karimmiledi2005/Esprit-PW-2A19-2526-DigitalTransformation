@@ -3,9 +3,7 @@ require_once '../../controller/contratController.php';
 require_once '../../model/contratmodel.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validation côté serveur
-    $errors = [];
-
+    $id      = (int)($_POST['id_contrat'] ?? 0);
     $numero  = trim($_POST['numero_contrat'] ?? '');
     $type    = trim($_POST['type_contrat'] ?? '');
     $debut   = trim($_POST['date_debut'] ?? '');
@@ -16,6 +14,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $formule = $_POST['formule'] ?? '';
     $details = $_POST['details_formule'] ?? '';
 
+    $errors = [];
+    if (!$id) $errors[] = "Identifiant du contrat manquant.";
     if (!$numero || !preg_match('/^CTR-\d{4}-\d{3,}$/', $numero)) $errors[] = "Numéro contrat invalide.";
     if (!in_array($type, ['Auto','Sante','Habitation','Protection'])) $errors[] = "Type de contrat invalide.";
     if (!$debut) $errors[] = "Date début obligatoire.";
@@ -49,15 +49,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $idCategorie = match($type) { 'Auto'=>1, 'Habitation'=>2, 'Sante'=>3, 'Protection'=>4, default=>null };
 
-    $contrat = new Contrat(null, $numero, $type,
+    $contrat = new Contrat($id, $numero, $type,
         new DateTime($debut), new DateTime($fin),
-        (float)$prime, (float)$franc,
-        $statut, $idCategorie, $formule ?: null, $details ?: null
+        $prime, $franc, $statut, $idCategorie,
+        $formule ?: null, $details ?: null
     );
 
     $c = new ContratController();
-    $c->addContrat($contrat);
-    header('Location: contrat.php?msg=ajoute');
+    $c->updateContrat($contrat, $id);
+    header('Location: contrat.php?msg=modifie');
     exit;
 }
 header('Location: contrat.php');

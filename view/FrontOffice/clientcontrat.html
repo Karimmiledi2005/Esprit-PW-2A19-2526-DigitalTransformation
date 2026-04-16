@@ -328,58 +328,92 @@
 </div>
 <script src="assets/js/main.js"></script>
 <div id="modalContrat" class="modal">
-
     <div class="modal-content">
 
         <div class="modal-header">
-            <h2>Nouveau contrat</h2>
+            <h2 id="modalTitle">Nouveau contrat</h2>
             <span class="close-btn" onclick="closeModal()">&times;</span>
         </div>
 
-        <form>
+        <form method="POST" id="contratForm" action="../BackOffice/addcontrat.php">
+            <input type="hidden" name="id_contrat" id="id_contrat">
+            <input type="hidden" name="id_categorie" id="id_categorie">
 
             <div class="form-group">
                 <label>Type de contrat</label>
-                <select>
-                    <option>Auto</option>
-                    <option>Sante</option>
-                    <option>Habitation</option>
+                <select name="type_contrat" id="type_contrat" onchange="remplirFormuleParType(this.value)">
+                    <option value="Auto">Auto</option>
+                    <option value="Sante">Santé</option>
+                    <option value="Habitation">Habitation</option>
+                    <option value="Protection">Protection</option>
                 </select>
+                <div class="error-message" id="error_type_contrat"></div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label>Date début</label>
-                    <input type="date">
+                    <input type="date" name="date_debut" id="date_debut">
+                    <div class="error-message" id="error_date_debut"></div>
                 </div>
 
                 <div class="form-group">
                     <label>Date fin</label>
-                    <input type="date">
+                    <input type="date" name="date_fin" id="date_fin">
+                    <div class="error-message" id="error_date_fin"></div>
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label>Prime</label>
-                    <input type="number" placeholder="DT">
+                    <input type="number" name="montant_prime" id="montant_prime" placeholder="DT">
+                    <div class="error-message" id="error_montant_prime"></div>
                 </div>
 
                 <div class="form-group">
                     <label>Franchise</label>
-                    <input type="number" placeholder="DT">
+                    <input type="number" name="franchise" id="franchise" placeholder="DT">
+                    <div class="error-message" id="error_franchise"></div>
                 </div>
             </div>
 
-            <div class="modal-actions">
-                <button type="submit" class="btn btn-primary">Valider</button>
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+            <div class="form-group">
+                <label>Statut</label>
+                <select name="statut" id="statut">
+                    <option value="en attente">En attente</option>
+                    <option value="actif">Actif</option>
+                    <option value="expiré">Expiré</option>
+                    <option value="refuse">Refusé</option>
+                </select>
+                <div class="error-message" id="error_statut"></div>
             </div>
 
+            <div class="form-group">
+                <label>Numéro du contrat</label>
+                <input type="text" name="numero_contrat" id="numero_contrat" placeholder="Ex: CTR-2026-005">
+                <div class="error-message" id="error_numero_contrat"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Formule</label>
+                <input type="text" name="formule" id="formule" class="form-control" placeholder="Ex: Premium">
+                <div class="error-message" id="error_formule"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Détails de la formule</label>
+                <textarea name="details_formule" id="details_formule" class="form-control" rows="5" placeholder="Ex: Décès, Invalidité, Assistance..."></textarea>
+                <div class="error-message" id="error_details_formule"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary" id="submitBtn">Valider</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+            </div>
         </form>
 
     </div>
-
 </div>
 <script>
 function openModal() {

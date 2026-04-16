@@ -1,5 +1,3 @@
-
-
 .page-title-main {
     font-size: 30px;
     font-weight: 700;
@@ -495,7 +493,7 @@
 .contracts-intro h2 {
     margin: 0 0 8px;
     font-size: 28px;
-    color: #fff;
+    color: rgb(21, 255, 255);
     font-weight: 700;
 }
 
@@ -1190,7 +1188,7 @@
     margin: 0 0 22px;
     font-size: 34px;
     font-weight: 800;
-    color: #fff;
+    color: rgb(21, 35, 60);
     line-height: 1.08;
 }
 
@@ -1334,4 +1332,277 @@
     border-bottom: 1px solid rgba(255,255,255,0.08);
 
     box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+}
+.action-btn.danger {
+    background: #c94b4b;
+    color: #fff;
+    border: none;
+}
+
+.action-btn.danger:hover {
+    background: #a93232;
+}.form-control {
+    font-size: 14px;
+    font-weight: 500;
+    color: #e6edf7;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+}
+
+.form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #9fb3c8;
+}
+
+/* FORMULE */
+#formule {
+    font-size: 15px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* DETAILS */
+#details_formule {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #d6e2f0;
+    resize: none;
+    min-height: 90px;
+}
+.card {
+    backdrop-filter: blur(12px);
+}
+
+.form-control:focus {
+    border-color: #4cc9f0;
+    box-shadow: 0 0 8px rgba(76,201,240,0.4);
+}
+.error-message {
+    display: block;
+    color: red;
+    font-size: 12px;
+    margin-top: 4px;
+    min-height: 16px;
+}
+
+.input-error {
+    border: 2px solid red !important;
+}
+
+.input-valid {
+    border: 2px solid #22c55e !important;
+}
+/* =============================================
+   PATCH FINAL LIGHT THEME
+   À COLLER TOUT EN BAS DU FICHIER
+   ============================================= */
+
+/* fond global */
+body,
+.main,
+.content {
+    background: linear-gradient(135deg, #ffffff 0%, #f6f8ff 48%, #fff4ec 100%) !important;
+    color: #15233C !important;
+}
+
+/* titres */
+.page-title-main,
+.contracts-header h2,
+.contracts-intro h2,
+.auto-types-header h2,
+.guarantees-section-title,
+.garanties-header h3,
+.modal-header h2,
+.category-card h3,
+.auto-type-card h3,
+.contract-banner-left h3,
+.garantie-left h4 {
+    color: #15233C !important;
+}
+
+/* textes secondaires */
+.page-breadcrumb,
+.page-breadcrumb a,
+.contracts-header p,
+.contracts-intro p,
+.auto-types-header p,
+.guarantees-section-subtitle,
+.garanties-header p,
+.category-card p,
+.auto-type-card p,
+.garantie-left p,
+.form-group label,
+.info-item .label {
+    color: rgba(21,35,60,0.58) !important;
+}
+
+/* cartes */
+.contract-banner,
+.garanties-box,
+.category-card,
+.auto-type-card,
+.guarantees-panel,
+.garantie-item,
+.modal-content {
+    background: rgba(255,255,255,0.88) !important;
+    border: 1px solid rgba(26,58,122,0.10) !important;
+    box-shadow: 0 10px 30px rgba(26,58,122,0.10) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* retire les gros dégradés dark sur certaines cartes */
+.contract-banner,
+.guarantees-panel,
+.guarantees-container {
+    background: rgba(255,255,255,0.88) !important;
+}
+
+/* contour des grosses cartes */
+.contract-banner::before {
+    background: linear-gradient(90deg, rgba(255,107,26,0.85), rgba(255,107,26,0.85)) !important;
+}
+
+/* infos fortes */
+.info-item strong,
+.garantie-middle,
+.auto-type-features li,
+.auto-type-price,
+.accordion-header,
+.accordion-content {
+    color: #15233C !important;
+}
+
+/* badges */
+.status-badge.active {
+    background: rgba(34,197,94,0.12) !important;
+    color: #15803d !important;
+}
+
+.status-badge.waiting {
+    background: rgba(255,107,26,0.12) !important;
+    color: #c65a12 !important;
+}
+
+.status-badge.expired {
+    background: rgba(230,57,70,0.10) !important;
+    color: #c53030 !important;
+}
+
+/* boutons */
+.action-btn {
+    background: #fff !important;
+    color: #FF6B1A !important;
+    border: 1px solid rgba(255,107,26,0.25) !important;
+}
+
+.action-btn:hover {
+    background: rgba(255,107,26,0.06) !important;
+    color: #e05a0f !important;
+}
+
+.action-btn.secondary,
+.choose-type-btn,
+.hero-btn.primary,
+.btn-primary {
+    background: #FF6B1A !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+.action-btn.secondary:hover,
+.choose-type-btn:hover,
+.hero-btn.primary:hover,
+.btn-primary:hover {
+    background: #e05a0f !important;
+}
+
+.hero-btn.secondary,
+.btn-secondary {
+    background: #fff !important;
+    color: #FF6B1A !important;
+    border: 1px solid rgba(255,107,26,0.25) !important;
+}
+
+/* inputs */
+.form-group input,
+.form-group select,
+.form-row input,
+.form-row select,
+.form-control,
+#details_formule,
+#formule {
+    background: #fff !important;
+    color: #15233C !important;
+    border: 1px solid rgba(26,58,122,0.12) !important;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-row input:focus,
+.form-row select:focus,
+.form-control:focus,
+#details_formule:focus,
+#formule:focus {
+    border-color: #FF6B1A !important;
+    box-shadow: 0 0 0 4px rgba(255,107,26,0.12) !important;
+    outline: none;
+}
+
+/* modale */
+.modal {
+    background: rgba(20,35,60,0.22) !important;
+}
+
+.modal-content {
+    width: 420px;
+    border-radius: 18px;
+}
+
+/* accordéon */
+.accordion-item {
+    border-bottom: 1px solid rgba(26,58,122,0.08) !important;
+}
+
+.accordion-header i {
+    color: #FF6B1A !important;
+}
+
+/* catégories */
+.category-card:hover,
+.category-card.active,
+.auto-type-card:hover,
+.auto-type-card.featured {
+    border-color: rgba(255,107,26,0.30) !important;
+    box-shadow:
+        0 16px 32px rgba(26,58,122,0.12),
+        0 0 0 1px rgba(255,107,26,0.10) !important;
+}
+
+/* section garanties large */
+.guarantees-container {
+    border-top: 1px solid rgba(26,58,122,0.08) !important;
+    border-bottom: 1px solid rgba(26,58,122,0.08) !important;
+}
+
+/* nav active */
+.nav-link.active::after {
+    background: #FF6B1A !important;
+}
+
+/* mobile */
+@media (max-width: 768px) {
+    .page-header {
+        padding: 18px 20px 0 !important;
+    }
+
+    .contract-banner,
+    .guarantees-panel,
+    .category-card,
+    .auto-type-card,
+    .garanties-box {
+        border-radius: 20px !important;
+    }
 }

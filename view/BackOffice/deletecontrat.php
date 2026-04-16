@@ -1,10 +1,9 @@
 <?php
-require_once '../../Controller/ContratController.php';
+require_once '../../controller/contratController.php';
 
-if (isset($_GET['id'])) {
-    $contratC = new ContratController();
-    $contratC->deleteContrat($_GET['id']);
+if (isset($_GET['id']) && is_numeric($_GET['id'])) {
+    $c = new ContratController();
+    $c->deleteContrat((int)$_GET['id']);
 }
-
-header('Location: contrat.php');
-?>
+header('Location: contrat.php?msg=supprime');
+exit;

@@ -1,8 +1,11 @@
 <?php
-require_once '../Controller/ContratController.php';
+require_once '../../controller/contratController.php';
 
 $contratC = new ContratController();
 $list = $contratC->listContrats();
+
+$nom = "Karim Miledi";
+$email = "karim.miledi@email.com";
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -125,9 +128,9 @@ $list = $contratC->listContrats();
         <div class="page-title-main">Contrats Habitation</div>
         <div class="page-breadcrumb">
             <i class="bi bi-house"></i>
-            <a href="client.php">Accueil</a>
+            <a href="clientcontrat.php">Accueil</a>
             <i class="bi bi-chevron-right" style="font-size:10px"></i>
-            <a href="client.php">Contrats</a>
+            <a href="clientcontrat.php">Contrats</a>
             <i class="bi bi-chevron-right" style="font-size:10px"></i>
             <span>Habitation</span>
         </div>
@@ -165,7 +168,7 @@ $list = $contratC->listContrats();
 
     <div class="auto-types-grid">
 
-        <div class="auto-type-card" onclick="selectHomeType('Essentielle')">
+        <div class="auto-type-card" onclick="selectHomeType('Habitation')">
             <div class="auto-type-badge">Basique</div>
             <div class="auto-type-icon tiers">
                 <i class="bi bi-house"></i>
@@ -190,7 +193,7 @@ $list = $contratC->listContrats();
             </div>
         </div>
 
-        <div class="auto-type-card featured" onclick="selectHomeType('Confort')">
+        <div class="auto-type-card featured" onclick="selectHomeType('Habitation')">
             <div class="auto-type-badge">Recommandé</div>
             <div class="auto-type-icon etendu">
                 <i class="bi bi-house-door"></i>
@@ -214,7 +217,7 @@ $list = $contratC->listContrats();
             </div>
         </div>
 
-        <div class="auto-type-card premium" onclick="selectHomeType('Premium')">
+        <div class="auto-type-card premium" onclick="selectHomeType('Habitation')">
             <div class="auto-type-badge">Premium</div>
             <div class="auto-type-icon tous-risques">
                 <i class="bi bi-stars"></i>
@@ -468,11 +471,11 @@ foreach ($garanties as $g) {
 
         <h2>Ajouter un contrat</h2>
 
-        <form method="POST" action="../View/BackOffice/addcontrat.php">
+        <form method="POST" action="../BackOffice/addContrat.php" id="contratForm" onsubmit="return validateAddContrat(this)" novalidate>
 
     <div class="form-group">
         <label>Type de contrat</label>
-        <select name="type_contrat">
+        <select name="type_contrat" id="type_contrat" required>
             <option value="Auto">Auto</option>
             <option value="Sante">Santé</option>
             <option value="Habitation" selected>Habitation</option>
@@ -483,29 +486,29 @@ foreach ($garanties as $g) {
     <div class="form-row">
         <div class="form-group">
             <label>Date début</label>
-            <input type="date" name="date_debut">
+            <input type="date" name="date_debut" id="date_debut" required>
         </div>
 
         <div class="form-group">
             <label>Date fin</label>
-            <input type="date" name="date_fin">
+            <input type="date" name="date_fin" id="date_fin" required>
         </div>
     </div>
 
     <div class="form-row">
         <div class="form-group">
             <label>Prime</label>
-            <input type="number" name="montant_prime" placeholder="DT">
+            <input type="number" name="montant_prime" id="montant_prime" placeholder="DT" required min="0" step="0.01">
         </div>
 
         <div class="form-group">
             <label>Franchise</label>
-            <input type="number" name="franchise" placeholder="DT">
+            <input type="number" name="franchise" id="franchise" placeholder="DT" required min="0" step="0.01">
         </div>
     </div>
     <div class="form-group">
     <label>Statut</label>
-    <select name="statut">
+    <select name="statut" id="statut" required>
         <option value="en attente">En attente</option>
         <option value="actif">Actif</option>
         <option value="resilie">Résilié</option>
@@ -515,7 +518,7 @@ foreach ($garanties as $g) {
     <!-- IMPORTANT : numéro contrat -->
     <div class="form-group">
         <label>Numéro du contrat</label>
-        <input type="text" name="numero_contrat" placeholder="Ex: CTR-2026-005">
+        <input type="text" name="numero_contrat" id="numero_contrat" placeholder="Ex: CTR-2026-005" required pattern="CTR-[0-9]{4}-[0-9]{3,}">
     </div>
 
     <div class="modal-actions">
@@ -531,7 +534,56 @@ foreach ($garanties as $g) {
 <!-- ✅ SCRIPT ICI -->
  <script>
 
+function validateAddContrat(form) {
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return false;
+    }
+    const type = form.querySelector('#type_contrat').value;
+    const debut = form.querySelector('#date_debut').value;
+    const fin = form.querySelector('#date_fin').value;
+    const prime = parseFloat(form.querySelector('#montant_prime').value);
+    const franchise = parseFloat(form.querySelector('#franchise').value);
+    const numero = form.querySelector('#numero_contrat').value.trim();
+    if (!/^CTR-\d{4}-\d{3,}$/.test(numero)) {
+        alert('Numéro contrat invalide. Utilisez le format CTR-2026-001.');
+        form.querySelector('#numero_contrat').focus();
+        return false;
+    }
+    if (fin <= debut) {
+        alert('La date fin doit être après la date début.');
+        form.querySelector('#date_fin').focus();
+        return false;
+    }
+    const minValues = {
+        'Auto':       { prime: 120, franchise: 80 },
+        'Sante':      { prime: 180, franchise: 50 },
+        'Habitation': { prime: 320, franchise: 150 },
+        'Protection': { prime: 140, franchise: 70 }
+    };
+    const min = minValues[type] || { prime: 0, franchise: 0 };
+    if (prime < min.prime) {
+        alert('Prime invalide. Minimum ' + min.prime + ' DT pour ' + type + '.');
+        form.querySelector('#montant_prime').focus();
+        return false;
+    }
+    if (franchise < min.franchise) {
+        alert('Franchise invalide. Minimum ' + min.franchise + ' DT pour ' + type + '.');
+        form.querySelector('#franchise').focus();
+        return false;
+    }
+    return true;
+}
+
 function openModal(type = "") {
+    const form = document.getElementById('contratForm');
+    if (form) {
+        form.reset();
+        if (type) {
+            const select = form.querySelector('#type_contrat');
+            if (select) select.value = type;
+        }
+    }
     document.getElementById("contractModal").style.display = "flex";
 }
 

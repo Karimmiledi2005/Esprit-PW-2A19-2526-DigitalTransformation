@@ -14,9 +14,7 @@ class config {
                 self::$password
             );
 
-            // important pour les erreurs
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
             return $conn;
 
         } catch (Exception $e) {
