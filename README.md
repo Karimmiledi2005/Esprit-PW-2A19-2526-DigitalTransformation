@@ -195,7 +195,7 @@ http://localhost/Protex/
 
 | 📝 Todo | 🔄 In Progress | ✅ Done |
 |--------|--------------|--------|
-| Fonctionnalités avancées (statistiques, filtrage des contrats) | Ajout & gestion des garanties | Ajout & gestion des contrats |
+| Fonctionnalités avancées (statistiques, filtrage des contrats) | Ajout & gestion des garanties |
 |  | CRUD "Garantie" | Affichage dynamique FrontOffice |
 |  |  | Base de données |
 |  |  | Intégration Front/Back |
