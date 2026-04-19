@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Tableau de bord — Protex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/client.css">
+    <style>
+        .toast-notif {
+            position: fixed; bottom: 24px; right: 24px;
+            background: var(--navy-mid); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px 20px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 14px; color: var(--text-primary);
+            z-index: 9999; opacity: 0; transform: translateY(10px);
+            transition: all 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .toast-notif.show { opacity: 1; transform: translateY(0); }
+        .toast-success i { color: var(--success); font-size: 18px; }
+        .toast-warning i { color: var(--gold); font-size: 18px; }
+        .toast-danger  i { color: var(--danger); font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <a href="client.html" class="navbar-brand">
+           <img src="logo.png" alt="logo" width="40" height="40">
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">Assurance Digitale</div>
+            </div>
+        </a>
+
+        <div class="navbar-nav">
+            <a class="nav-link" href="client.html">
+                <i class="bi bi-grid-1x2"></i>
+                <span class="nav-label">Tableau de bord</span>
+            </a>
+            <a class="nav-link active" href="contrat.html">
+    <i class="bi bi-file-earmark-text"></i>
+    <span class="nav-label">Contrats</span>
+    <span class="nav-badge accent">3</span>
+</a>
+            <a class="nav-link" href="mes-sinistres.html">
+                <i class="bi bi-shield-exclamation"></i>
+                <span class="nav-label">Sinistres</span>
+                <span class="nav-badge">1</span>
+            </a>
+            <a class="nav-link" href="paiement.html">
+                <i class="bi bi-credit-card"></i>
+                <span class="nav-label">Paiements</span>
+            </a>
+            <div class="nav-separator"></div>
+            <a class="nav-link" href="reclamationList.php">
+                <i class="bi bi-chat-dots"></i>
+                <span class="nav-label">Réclamations</span>
+            </a>
+            <a class="nav-link" href="agences.html">
+                <i class="bi bi-geo-alt"></i>
+                <span class="nav-label">Agences</span>
+            </a>
+            <a class="nav-link" href="offres.html">
+                <i class="bi bi-stars"></i>
+                <span class="nav-label">Nos offres</span>
+            </a>
+        </div>
+
+        <div class="navbar-right">
+            <a href="#" class="nav-btn" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="notif-dot"></span>
+            </a>
+            <a href="#" class="nav-btn" title="Aide">
+                <i class="bi bi-question-circle"></i>
+            </a>
+            <div class="avatar-wrap">
+                <div class="avatar-btn" id="avatarBtn" title="Mon compte">KM</div>
+                <div class="avatar-dropdown" id="avatarDropdown">
+                    <div class="dropdown-header">
+                        <div class="dropdown-avatar">KM</div>
+                        <div class="dropdown-info">
+                            <div class="dropdown-name">Karim Miledi</div>
+                            <div class="dropdown-email">karim.miledi@email.com</div>
+                            <span class="dropdown-role">Client Premium</span>
+                        </div>
+                    </div>
+                    <a href="monprofile.html" class="dropdown-item">
+                        <i class="bi bi-person-circle"></i> Mon profil
+                    </a>
+                    <a href="parametres.html" class="dropdown-item">
+                        <i class="bi bi-gear"></i> Paramètres
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="login.html" class="dropdown-item logout">
+                        <i class="bi bi-box-arrow-right"></i> Se déconnecter
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main">
+
+    <div class="page-header">
+        <div>
+            <div class="page-title-main">Contrats</div>
+            <div class="page-breadcrumb">
+                <i class="bi bi-house"></i>
+                <a href="client.html" style="color:inherit;text-decoration:none;">Accueil</a>
+                <i class="bi bi-chevron-right" style="font-size:10px"></i>
+                <span>Contrats</span>
+            </div>
+        </div>
+    </div>
+    <div class="contracts-intro">
+    <div>
+        <h2>Choisissez une catégorie</h2>
+        <p>Sélectionnez le type d’assurance avant de remplir votre contrat.</p>
+    </div>
+</div>
+
+<div class="categories-grid">
+    <a href="contratauto.html" class="category-card active">
+        <div class="category-icon auto">
+            <i class="bi bi-car-front-fill"></i>
+        </div>
+        <h3>Auto</h3>
+        <p>Assurance automobile et mobilité.</p>
+    </a>
+
+    <a href="contrathabitation.html" class="category-card">
+        <div class="category-icon habitation">
+            <i class="bi bi-house-door-fill"></i>
+        </div>
+        <h3>Habitation</h3>
+        <p>Protection du logement et du patrimoine.</p>
+    </a>
+
+    <a href="contratsante.html" class="category-card">
+        <div class="category-icon sante">
+            <i class="bi bi-heart-pulse-fill"></i>
+        </div>
+        <h3>Santé</h3>
+        <p>Couverture santé et assistance médicale.</p>
+    </a>
+
+    <a href="contratprotection.html" class="category-card">
+        <div class="category-icon protection">
+            <i class="bi bi-shield-check"></i>
+        </div>
+        <h3>Protection</h3>
+        <p>Prévoyance, sécurité et assistance.</p>
+    </a>
+</div>
+    <section class="content contracts-page">
+
+        <div class="contracts-header">
+            <div>
+                <h2>Mes contrats</h2>
+                <p>Consultez et gérez facilement tous vos contrats</p>
+            </div>
+        </div>
+
+        <div class="contracts-list">
+
+            <!-- Contrat 1 -->
+            <div class="contract-banner">
+                <div class="contract-banner-left">
+                    <div class="contract-icon auto">
+                        <i class="bi bi-car-front-fill"></i>
+                    </div>
+                    <div>
+                        <h3>Contrat Auto</h3>
+                        <span class="contract-ref">N° CTR-2026-001</span>
+                    </div>
+                </div>
+
+                <div class="contract-banner-center">
+                    <div class="info-item">
+                        <span class="label">Date début</span>
+                        <strong>01/01/2026</strong>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Date fin</span>
+                        <strong>01/01/2027</strong>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Prime</span>
+                        <strong>850 DT</strong>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Franchise</span>
+                        <strong>200 DT</strong>
+                    </div>
+                </div>
+
+                <div class="contract-banner-right">
+                    <span class="status-badge active">Actif</span>
+                    <div class="contract-actions">
+                        <a href="#" class="action-btn" onclick="toggleGaranties('garantie-1'); return false;">Voir</a>
+                        <a href="#" class="action-btn secondary">Modifier</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="garantie-1" class="garanties-box">
+                <div class="garanties-header">
+                    <div>
+                        <h3>Garanties associées</h3>
+                        <p>Les garanties liées à ce contrat</p>
+                    </div>
+                    <a href="#" class="btn btn-primary">+ Ajouter une garantie</a>
+                </div>
+
+                <div class="garantie-item">
+                    <div class="garantie-left">
+                        <h4>Garantie Vol</h4>
+                        <p>Protection contre le vol du véhicule</p>
+                    </div>
+                    <div class="garantie-middle">
+                        <span><strong>Plafond :</strong> 20 000 DT</span>
+                        <span><strong>Niveau :</strong> Premium</span>
+                    </div>
+                    <div class="garantie-actions">
+                        <a href="#" class="action-btn">Modifier</a>
+                        <a href="#" class="action-btn secondary">Supprimer</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contrat 2 -->
+            <div class="contract-banner">
+                <div class="contract-banner-left">
+                    <div class="contract-icon health">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                    </div>
+                    <div>
+                        <h3>Contrat Santé</h3>
+                        <span class="contract-ref">N° CTR-2026-002</span>
+                    </div>
+                </div>
+
+                <div class="contract-banner-center">
+                    <div class="info-item">
+                        <span class="label">Date début</span>
+                        <strong>15/02/2026</strong>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Date fin</span>
+                        <strong>15/02/2027</strong>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Prime</span>
+                        <strong>620 DT</strong>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Franchise</span>
+                        <strong>100 DT</strong>
+                    </div>
+                </div>
+
+                <div class="contract-banner-right">
+                    <span class="status-badge waiting">En attente</span>
+                    <div class="contract-actions">
+                        <a href="#" class="action-btn" onclick="toggleGaranties('garantie-2'); return false;">Voir</a>
+                        <a href="#" class="action-btn secondary">Modifier</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contrat 3 -->
+            <div class="contract-banner">
+                <div class="contract-banner-left">
+                    <div class="contract-icon home">
+                        <i class="bi bi-house-door-fill"></i>
+                    </div>
+                    <div>
+                        <h3>Contrat Habitation</h3>
+                        <span class="contract-ref">N° CTR-2025-003</span>
+                    </div>
+                </div>
+
+                <div class="contract-banner-center">
+                    <div class="info-item">
+                        <span class="label">Date début</span>
+                        <strong>10/03/2025</strong>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Date fin</span>
+                        <strong>10/03/2026</strong>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Prime</span>
+                        <strong>540 DT</strong>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Franchise</span>
+                        <strong>150 DT</strong>
+                    </div>
+                </div>
+
+                <div class="contract-banner-right">
+                    <span class="status-badge expired">Résilié</span>
+                    <div class="contract-actions">
+                        <a href="#" class="action-btn" onclick="toggleGaranties('garantie-3'); return false;">Voir</a>
+                        <a href="#" class="action-btn secondary">Modifier</a>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+</div>
+<script src="assets/js/main.js"></script>
+<div id="modalContrat" class="modal">
+    <div class="modal-content">
+
+        <div class="modal-header">
+            <h2 id="modalTitle">Nouveau contrat</h2>
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+        </div>
+
+        <form method="POST" id="contratForm" action="../BackOffice/addcontrat.php">
+            <input type="hidden" name="id_contrat" id="id_contrat">
+            <input type="hidden" name="id_categorie" id="id_categorie">
+
+            <div class="form-group">
+                <label>Type de contrat</label>
+                <select name="type_contrat" id="type_contrat" onchange="remplirFormuleParType(this.value)">
+                    <option value="Auto">Auto</option>
+                    <option value="Sante">Santé</option>
+                    <option value="Habitation">Habitation</option>
+                    <option value="Protection">Protection</option>
+                </select>
+                <div class="error-message" id="error_type_contrat"></div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date début</label>
+                    <input type="date" name="date_debut" id="date_debut">
+                    <div class="error-message" id="error_date_debut"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Date fin</label>
+                    <input type="date" name="date_fin" id="date_fin">
+                    <div class="error-message" id="error_date_fin"></div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Prime</label>
+                    <input type="number" name="montant_prime" id="montant_prime" placeholder="DT">
+                    <div class="error-message" id="error_montant_prime"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Franchise</label>
+                    <input type="number" name="franchise" id="franchise" placeholder="DT">
+                    <div class="error-message" id="error_franchise"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Statut</label>
+                <select name="statut" id="statut">
+                    <option value="en attente">En attente</option>
+                    <option value="actif">Actif</option>
+                    <option value="expiré">Expiré</option>
+                    <option value="refuse">Refusé</option>
+                </select>
+                <div class="error-message" id="error_statut"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Numéro du contrat</label>
+                <input type="text" name="numero_contrat" id="numero_contrat" placeholder="Ex: CTR-2026-005">
+                <div class="error-message" id="error_numero_contrat"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Formule</label>
+                <input type="text" name="formule" id="formule" class="form-control" placeholder="Ex: Premium">
+                <div class="error-message" id="error_formule"></div>
+            </div>
+
+            <div class="form-group">
+                <label>Détails de la formule</label>
+                <textarea name="details_formule" id="details_formule" class="form-control" rows="5" placeholder="Ex: Décès, Invalidité, Assistance..."></textarea>
+                <div class="error-message" id="error_details_formule"></div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="submit" class="btn btn-primary" id="submitBtn">Valider</button>
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+<script>
+function openModal() {
+    document.getElementById("modalContrat").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("modalContrat").style.display = "none";
+}
+function toggleGaranties(id) {
+    const box = document.getElementById(id);
+
+    if (box.style.display === "block") {
+        box.style.display = "none";
+    } else {
+        box.style.display = "block";
+    }
+}
+</script>
+</body>
+</html>
