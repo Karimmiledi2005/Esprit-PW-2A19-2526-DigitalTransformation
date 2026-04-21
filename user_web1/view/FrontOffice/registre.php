@@ -1,0 +1,46 @@
+<?php
+header('Content-Type: application/json');
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+require_once __DIR__ . '/../../controller/Client_Con.php';
+
+if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+    echo json_encode(["success" => false, "message" => "Méthode non autorisée"]);
+    exit;
+}
+
+$nom            = trim($_POST['nom']            ?? '');
+$prenom         = trim($_POST['prenom']         ?? '');
+$email          = trim($_POST['email']          ?? '');
+$password       =      $_POST['password']       ?? '';
+$telephone      = trim($_POST['telephone']      ?? '');
+$cin            = trim($_POST['cin']            ?? '');
+$adresse        = trim($_POST['adresse']        ?? '');
+$date_naissance = trim($_POST['date_naissance'] ?? '');
+
+try {
+    $user = new User(
+        $nom,
+        $prenom,
+        $email,
+        $password,
+        $telephone  ?: null,
+        $adresse    ?: null,
+        !empty($date_naissance) ? new DateTime($date_naissance) : null,
+        $cin ?: null,
+        '',
+        'client',
+        'actif',
+        null,
+        new DateTime()
+    );
+
+    $controller = new UserController();
+    $controller->addclient($user);
+
+} catch (Exception $e) {
+    echo json_encode(["success" => false, "message" => $e->getMessage()]);
+    exit;
+}
