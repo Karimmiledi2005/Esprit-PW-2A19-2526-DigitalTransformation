@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Gestion des paiements — Protex Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="user/css/variables.css">
+    <link rel="stylesheet" href="user/css/base.css">
+    <link rel="stylesheet" href="user/css/layout.css">
+    <link rel="stylesheet" href="user/css/admin-users.css">
+    <style>
+        /* ── Hero ── */
+        .page-hero {
+            position: relative; margin-bottom: 24px; padding: 26px 28px 22px;
+            border-radius: 22px;
+            background: radial-gradient(circle at top right, rgba(0,180,216,.14), transparent 35%),
+                        radial-gradient(circle at bottom left, rgba(255,140,0,.08), transparent 40%),
+                        rgba(255,255,255,.03);
+            border: 1px solid rgba(255,255,255,0.08); overflow: hidden;
+        }
+        .page-hero-head { display:flex; justify-content:space-between; align-items:flex-start; gap:18px; flex-wrap:wrap; }
+        .page-hero-title { font-size:26px; font-weight:800; color:#fff; margin-bottom:8px; }
+        .page-hero-sub   { color:var(--text-secondary); font-size:14px; line-height:1.6; max-width:700px; }
+        .hero-stats      { display:flex; gap:14px; flex-wrap:wrap; margin-top:18px; }
+        .hero-stat-pill  {
+            display:inline-flex; align-items:center; gap:8px; padding:8px 14px;
+            border-radius:999px; background:rgba(255,255,255,.05);
+            border:1px solid rgba(255,255,255,.08); font-size:12px; font-weight:600; color:#fff;
+        }
+        .hero-stat-pill i { color:var(--accent); }
+        .hero-side { display:flex; gap:12px; flex-wrap:wrap; }
+        .hero-mini-card {
+            min-width:120px; padding:14px 16px; border-radius:16px;
+            background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); text-align:center;
+        }
+        .hero-mini-card strong { display:block; color:#fff; font-size:20px; font-weight:800; margin-bottom:4px; }
+        .hero-mini-card span   { color:var(--text-secondary); font-size:11px; }
+
+        /* ── Quick stats ── */
+        .quick-info-bar { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:24px; }
+        .quick-info-card {
+            position:relative; overflow:hidden; padding:18px; border-radius:18px;
+            border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04);
+            transition:transform .2s;
+        }
+        .quick-info-card:hover { transform:translateY(-3px); }
+        .quick-info-card::before { content:""; position:absolute; top:0; left:0; width:100%; height:3px; opacity:.9; }
+        .quick-info-card.blue::before  { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+        .quick-info-card.gold::before  { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+        .quick-info-card.green::before { background:linear-gradient(90deg,#10b981,#34d399); }
+        .quick-info-card.red::before   { background:linear-gradient(90deg,#ef4444,#f87171); }
+        .quick-info-icon { width:42px; height:42px; border-radius:13px; display:grid; place-items:center; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); color:#fff; font-size:18px; margin-bottom:12px; }
+        .quick-info-value { color:#fff; font-size:28px; font-weight:800; line-height:1; margin-bottom:6px; }
+        .quick-info-label { color:var(--text-secondary); font-size:12px; }
+
+        /* ── Status bar ── */
+        .status-bar {
+            display:flex; align-items:center; gap:20px; padding:14px 20px;
+            background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.06);
+            border-radius:16px; margin-bottom:22px; flex-wrap:wrap;
+        }
+        .status-bar-item { display:flex; align-items:center; gap:8px; font-size:13px; }
+        .status-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+        .status-dot.attente  { background:#f59e0b; }
+        .status-dot.valide   { background:#10b981; }
+        .status-dot.refuse   { background:#ef4444; }
+        .status-dot.rembourse{ background:#3b82f6; }
+
+        /* ── Filter ── */
+        .filter-row { display:grid; grid-template-columns:1.5fr 1fr 1fr 1fr auto; gap:12px; margin-bottom:18px; }
+        .filter-row input, .filter-row select {
+            width:100%; height:44px; border-radius:14px; padding:0 12px;
+            border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.05);
+            color:#fff; outline:none; font-size:13px; font-family:var(--font-body);
+        }
+        .filter-row .search-wrap { position:relative; }
+        .filter-row .search-wrap i { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-secondary); font-size:14px; }
+        .filter-row .search-wrap input { padding-left:38px; }
+        .filter-row select option { background:var(--navy-mid); }
+        .btn-reset { height:44px; padding:0 16px; border-radius:14px; border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.05); color:var(--text-secondary); cursor:pointer; font-size:13px; font-family:var(--font-body); transition:.2s; }
+        .btn-reset:hover { background:rgba(255,255,255,.09); color:#fff; }
+
+        /* ── Table ── */
+        .table-wrap-inner { overflow-x:auto; border-radius:18px; border:1px solid rgba(255,255,255,.06); }
+        .table-protex { width:100%; border-collapse:collapse; }
+        .table-protex thead th {
+            background:rgba(255,255,255,.04); color:#cdd6f4; font-size:11px; font-weight:700;
+            text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid rgba(255,255,255,.08);
+            white-space:nowrap; padding:14px 16px; position:sticky; top:0; z-index:1;
+        }
+        .table-protex tbody td { border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle; padding:14px 16px; font-size:13px; }
+        .table-protex tbody tr:hover { background:rgba(255,255,255,.03); }
+        .table-protex tbody tr:last-child td { border-bottom:none; }
+
+        /* ── Status select ── */
+        .status-select {
+            padding:5px 24px 5px 10px; border-radius:20px; font-size:11px; font-weight:600;
+            border:1px solid transparent; cursor:pointer; outline:none;
+            font-family:var(--font-body); transition:var(--transition); appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 7px center;
+        }
+        .status-select.en_attente { background-color:rgba(245,158,11,.15); color:#f59e0b; border-color:rgba(245,158,11,.3); }
+        .status-select.valide     { background-color:rgba(16,185,129,.15); color:#10b981; border-color:rgba(16,185,129,.3); }
+        .status-select.refuse     { background-color:rgba(239,68,68,.15);  color:#ef4444; border-color:rgba(239,68,68,.3); }
+        .status-select.rembourse  { background-color:rgba(59,130,246,.15); color:#60a5fa; border-color:rgba(59,130,246,.3); }
+        .status-select option     { background:#0d2845; color:#fff; }
+
+        /* ── Methode badge ── */
+        .methode-badge {
+            display:inline-flex; align-items:center; gap:5px; padding:5px 10px;
+            border-radius:8px; font-size:11px; font-weight:600;
+            background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); color:#fff;
+        }
+
+        /* ── Offre cell ── */
+        .offre-cell { display:flex; align-items:center; gap:8px; }
+        .offre-type-icon {
+            width:28px; height:28px; border-radius:8px;
+            background:var(--glass-bg); border:1px solid var(--glass-border);
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; color:var(--accent); flex-shrink:0;
+        }
+
+        /* ── Actions ── */
+        .action-group { display:flex; gap:8px; }
+        .action-icon {
+            width:34px; height:34px; border-radius:10px;
+            display:inline-flex; align-items:center; justify-content:center;
+            background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08);
+            color:#fff; transition:.2s; cursor:pointer;
+        }
+        .action-icon:hover { background:rgba(255,255,255,.1); transform:translateY(-1px); }
+        .action-icon.valider   { background:rgba(16,185,129,.1); color:#86efac; border-color:rgba(16,185,129,.2); }
+        .action-icon.refuser   { background:rgba(239,68,68,.1);  color:#fca5a5; border-color:rgba(239,68,68,.2);  }
+        .action-icon.view      { background:rgba(59,130,246,.1); color:#93c5fd; border-color:rgba(59,130,246,.2); }
+
+        /* ── Modal ── */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); z-index:9000; display:none; align-items:center; justify-content:center; }
+        .modal-overlay.open { display:flex; }
+        .modal-box {
+            background:var(--navy-mid); border:1px solid rgba(255,255,255,.12);
+            border-radius:20px; padding:28px; width:520px; max-width:94vw;
+            box-shadow:0 20px 60px rgba(0,0,0,.5); animation:fadeUp .25s ease;
+        }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:translateY(0);} }
+        .modal-title { font-size:17px; font-weight:700; color:#fff; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+        .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .detail-field { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:12px; padding:14px; }
+        .detail-field.full { grid-column:span 2; }
+        .detail-field-label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:var(--text-secondary); display:flex; align-items:center; gap:5px; margin-bottom:6px; }
+        .detail-field-value { font-size:13px; color:var(--text-primary); font-weight:500; }
+        .form-group { margin-bottom:14px; }
+        .form-label { font-size:12px; color:var(--text-secondary); font-weight:600; display:block; margin-bottom:6px; text-transform:uppercase; letter-spacing:.3px; }
+        .form-control {
+            width:100%; padding:11px 14px; border-radius:12px;
+            border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05);
+            color:#fff; font-family:var(--font-body); font-size:13px; outline:none; transition:.2s; box-sizing:border-box;
+        }
+        .form-control:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(0,180,216,.1); }
+        .modal-footer { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,.08); }
+
+        /* ── Buttons ── */
+        .btn { padding:8px 16px; border-radius:10px; font-size:13px; font-weight:600; font-family:var(--font-body); border:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:.2s; text-decoration:none; white-space:nowrap; }
+        .btn-primary { background:var(--accent); color:#fff; }
+        .btn-primary:hover { background:var(--accent-dark); }
+        .btn-outline { background:transparent; color:var(--accent); border:1px solid rgba(0,180,216,.4); }
+        .btn-outline:hover { background:var(--accent-glow); }
+        .btn-success { background:rgba(16,185,129,.15); color:#86efac; border:1px solid rgba(16,185,129,.3); }
+        .btn-danger  { background:rgba(239,68,68,.15); color:#fca5a5; border:1px solid rgba(239,68,68,.3); }
+        .btn-sm { padding:5px 12px; font-size:12px; }
+
+        .empty-box { text-align:center; padding:60px 20px; color:var(--text-secondary); }
+        .empty-box i      { font-size:42px; display:block; margin-bottom:12px; opacity:.7; }
+        .empty-box strong { display:block; color:#fff; margin-bottom:8px; font-size:18px; }
+
+        @media(max-width:1100px){ .quick-info-bar{grid-template-columns:repeat(2,minmax(0,1fr));} }
+        @media(max-width:900px) { .filter-row{grid-template-columns:1fr 1fr;} }
+    </style>
+</head>
+<body>
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="../FrontOffice/logo.png" alt="logo" width="40" height="40" style="border-radius:9px;">
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">Back-Office</div>
+            </div>
+        </div>
+        <div class="sidebar-user">
+            <div class="user-avatar">AD</div>
+            <div>
+                <div class="user-name">Admin Protex</div>
+                <span class="user-role">Administrateur</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Principal</div>
+            <a class="nav-item" href="admin-users.html">
+                <i class="bi bi-grid-1x2"></i> Tableau de bord
+            </a>
+            <div class="nav-section">Gestion</div>
+            <a class="nav-item" href="sinsiter.html">
+                <i class="bi bi-shield-exclamation"></i> Sinistres
+            </a>
+            <a class="nav-item" href="traitement.html">
+                <i class="bi bi-file-earmark-text"></i> Traitements
+            </a>
+            <a class="nav-item" href="admin-users.html">
+                <i class="bi bi-people"></i> Utilisateurs
+                <span class="nav-badge accent">24</span>
+            </a>
+            <a class="nav-item" href="admin-contrats.html">
+                <i class="bi bi-file-earmark-text"></i> Contrats
+            </a>
+            <a class="nav-item active" href="paiements_back.html">
+                <i class="bi bi-credit-card"></i> Paiements
+            </a>
+            <a class="nav-item" href="offres_back.html">
+                <i class="bi bi-tags"></i> Offres
+            </a>
+            <a class="nav-item" href="admin-reclamations.html">
+                <i class="bi bi-chat-dots"></i> Réclamations
+            </a>
+            <a class="nav-item" href="admin-agences.html">
+                <i class="bi bi-geo-alt"></i> Agences
+            </a>
+            <div class="nav-section">Compte</div>
+            <a class="nav-item" href="adminprofile.html">
+                <i class="bi bi-person-gear"></i> Mon profil
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="connexion.html" class="logout-btn">
+                <i class="bi bi-box-arrow-left"></i> Se déconnecter
+            </a>
+        </div>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="topbar-title">Gestion des paiements</div>
+                <div class="topbar-sub" id="topbarDate"></div>
+            </div>
+            <div class="topbar-actions">
+                <a href="#" class="topbar-btn"><i class="bi bi-bell"></i><span class="notif-dot"></span></a>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <div class="page-breadcrumb" style="margin-bottom:24px;">
+                <i class="bi bi-house"></i> <span>Admin</span>
+                <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+                <span>Paiements</span>
+            </div>
+
+            <!-- Hero -->
+            <section class="page-hero">
+                <div class="page-hero-head">
+                    <div>
+                        <div class="page-hero-title">Gestion des paiements</div>
+                        <div class="page-hero-sub">Suivez en temps réel tous les paiements, validez ou refusez les transactions.</div>
+                        <div class="hero-stats">
+                            <span class="hero-stat-pill"><i class="bi bi-clock"></i> <span id="heroAttente">0</span> en attente</span>
+                            <span class="hero-stat-pill"><i class="bi bi-check-circle"></i> <span id="heroValides">0</span> validés</span>
+                            <span class="hero-stat-pill"><i class="bi bi-currency-exchange"></i> <span id="heroCA">0</span> TND</span>
+                        </div>
+                    </div>
+                    <div class="hero-side">
+                        <div class="hero-mini-card"><strong id="heroTotal">0</strong><span>Total paiements</span></div>
+                        <div class="hero-mini-card"><strong id="heroValides2">0</strong><span>Validés</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats -->
+            <section class="quick-info-bar">
+                <div class="quick-info-card blue">
+                    <div class="quick-info-icon"><i class="bi bi-credit-card"></i></div>
+                    <div class="quick-info-value" id="statTotal">0</div>
+                    <div class="quick-info-label">Total paiements</div>
+                </div>
+                <div class="quick-info-card gold">
+                    <div class="quick-info-icon"><i class="bi bi-hourglass-split"></i></div>
+                    <div class="quick-info-value" id="statAttente">0</div>
+                    <div class="quick-info-label">En attente de validation</div>
+                </div>
+                <div class="quick-info-card green">
+                    <div class="quick-info-icon"><i class="bi bi-check-circle"></i></div>
+                    <div class="quick-info-value" id="statValides">0</div>
+                    <div class="quick-info-label">Paiements validés</div>
+                </div>
+                <div class="quick-info-card red">
+                    <div class="quick-info-icon"><i class="bi bi-x-circle"></i></div>
+                    <div class="quick-info-value" id="statRefuses">0</div>
+                    <div class="quick-info-label">Refusés / Remboursés</div>
+                </div>
+            </section>
+
+            <!-- Status bar -->
+            <div class="status-bar">
+                <span style="font-size:12px;color:var(--text-secondary);font-weight:600;">Statuts :</span>
+                <div class="status-bar-item"><div class="status-dot attente"></div><span style="color:var(--text-secondary);font-size:12px;">En attente</span></div>
+                <div class="status-bar-item"><div class="status-dot valide"></div><span style="color:var(--text-secondary);font-size:12px;">Validé</span></div>
+                <div class="status-bar-item"><div class="status-dot refuse"></div><span style="color:var(--text-secondary);font-size:12px;">Refusé</span></div>
+                <div class="status-bar-item"><div class="status-dot rembourse"></div><span style="color:var(--text-secondary);font-size:12px;">Remboursé</span></div>
+                <span id="echeancesAlert" style="margin-left:auto;font-size:12px;color:#f59e0b;display:none;"><i class="bi bi-bell-fill"></i> Échéances proches !</span>
+            </div>
+
+            <!-- Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-table"></i> Liste des paiements</div>
+                    <button class="btn btn-outline btn-sm" onclick="exportCSV()">
+                        <i class="bi bi-download"></i> Exporter
+                    </button>
+                </div>
+                <div style="padding:16px 24px;border-bottom:1px solid var(--glass-border);">
+                    <div class="filter-row">
+                        <div class="search-wrap">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="searchInput" placeholder="Rechercher par référence, offre...">
+                        </div>
+                        <select id="filterStatut">
+                            <option value="">Tous les statuts</option>
+                            <option value="en_attente">En attente</option>
+                            <option value="valide">Validé</option>
+                            <option value="refuse">Refusé</option>
+                            <option value="rembourse">Remboursé</option>
+                        </select>
+                        <select id="filterMethode">
+                            <option value="">Toutes méthodes</option>
+                            <option value="carte">Carte</option>
+                            <option value="virement">Virement</option>
+                            <option value="mobile">Mobile</option>
+                        </select>
+                        <select id="filterPeriode">
+                            <option value="">Toutes périodes</option>
+                            <option value="mensuel">Mensuel</option>
+                            <option value="annuel">Annuel</option>
+                        </select>
+                        <button class="btn-reset" onclick="resetFilters()">
+                            <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-wrap-inner">
+                    <table class="table-protex">
+                        <thead>
+                            <tr>
+                                <th>Référence</th>
+                                <th>Offre</th>
+                                <th>Montant</th>
+                                <th>Méthode</th>
+                                <th>Périodicité</th>
+                                <th>Date</th>
+                                <th>Échéance</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paiementsBody"></tbody>
+                    </table>
+                    <div id="emptyState" style="display:none;">
+                        <div class="empty-box">
+                            <i class="bi bi-inbox"></i>
+                            <strong>Aucun paiement trouvé</strong>
+                            <p>Modifiez vos filtres.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="pagination">
+                    <div class="pagination-info" id="paginationInfo"></div>
+                    <div class="pagination-btns" id="paginationBtns"></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- ===== MODAL DÉTAIL ===== -->
+<div class="modal-overlay" id="modalDetail">
+    <div class="modal-box">
+        <div class="modal-title"><i class="bi bi-credit-card"></i> Détails du paiement</div>
+        <div id="modalDetailBody"></div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('modalDetail')">Fermer</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== MODAL MOTIF ===== -->
+<div class="modal-overlay" id="modalMotif">
+    <div class="modal-box">
+        <div class="modal-title" id="motifTitle"><i class="bi bi-chat-left-text"></i> Motif</div>
+        <div class="form-group">
+            <label class="form-label">Motif *</label>
+            <textarea class="form-control" id="motifText" rows="4" placeholder="Saisissez le motif..." style="resize:vertical;"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('modalMotif')">Annuler</button>
+            <button class="btn btn-danger" id="motifConfirmBtn" onclick="confirmMotif()"><i class="bi bi-check2"></i> Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<script src="user/js/main.js"></script>
+<script>
+    /* ── Données statiques ── */
+    let paiements = [
+        { id:1, ref:'PTX-A1B2C3D4', offre:'Auto Premium',   type:'auto',  montant:85,   methode:'carte',    periodicite:'mensuel', statut:'en_attente', date:'2026-04-15', echeance:'2026-05-15', carte:'**** 3456' },
+        { id:2, ref:'PTX-E5F6G7H8', offre:'Santé Premium',  type:'sante', montant:1350, methode:'virement',  periodicite:'annuel',  statut:'valide',     date:'2026-04-14', echeance:'2027-04-14', carte:null        },
+        { id:3, ref:'PTX-I9J0K1L2', offre:'Habitation Eco', type:'maison',montant:45,   methode:'mobile',    periodicite:'mensuel', statut:'refuse',     date:'2026-04-13', echeance:'2026-05-13', carte:null        },
+        { id:4, ref:'PTX-M3N4O5P6', offre:'Vie Sérénité',   type:'vie',   montant:290,  methode:'carte',     periodicite:'annuel',  statut:'rembourse',  date:'2026-04-12', echeance:'2027-04-12', carte:'**** 7890' },
+        { id:5, ref:'PTX-Q7R8S9T0', offre:'Auto Premium',   type:'auto',  montant:85,   methode:'carte',     periodicite:'mensuel', statut:'en_attente', date:'2026-04-11', echeance:'2026-05-11', carte:'**** 1234' },
+    ];
+    let currentPage = 1, motifAction = null, motifId = null;
+    const perPage = 8;
+
+    const typeIcons = { auto:'bi-car-front', sante:'bi-heart-pulse', maison:'bi-house-check', vie:'bi-shield-heart' };
+    const methodeIcons = { carte:'bi-credit-card-2-front', virement:'bi-bank', mobile:'bi-phone' };
+
+    /* ── Topbar date ── */
+    document.getElementById('topbarDate').textContent =
+        new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+    /* ── Filters ── */
+    function getFiltered() {
+        const q  = document.getElementById('searchInput').value.toLowerCase();
+        const st = document.getElementById('filterStatut').value;
+        const me = document.getElementById('filterMethode').value;
+        const pe = document.getElementById('filterPeriode').value;
+        return paiements.filter(p =>
+            (!q  || p.ref.toLowerCase().includes(q) || p.offre.toLowerCase().includes(q)) &&
+            (!st || p.statut === st) && (!me || p.methode === me) && (!pe || p.periodicite === pe)
+        );
+    }
+    function resetFilters() {
+        ['searchInput','filterStatut','filterMethode','filterPeriode'].forEach(id=>document.getElementById(id).value='');
+        currentPage=1; render();
+    }
+
+    /* ── Render ── */
+    function render() {
+        const filtered = getFiltered(), total = filtered.length;
+        const pages = Math.ceil(total/perPage)||1;
+        if (currentPage>pages) currentPage=pages;
+        const slice = filtered.slice((currentPage-1)*perPage, currentPage*perPage);
+
+        const tbody = document.getElementById('paiementsBody');
+        const empty = document.getElementById('emptyState');
+
+        if (!slice.length) { tbody.innerHTML=''; empty.style.display='block'; }
+        else {
+            empty.style.display='none';
+            tbody.innerHTML = slice.map(p => {
+                const icon = typeIcons[p.type]||'bi-tags';
+                const mIcon= methodeIcons[p.methode]||'bi-credit-card';
+                const today= new Date().toISOString().split('T')[0];
+                const echeAlerte = p.echeance && p.echeance <= new Date(Date.now()+3*86400000).toISOString().split('T')[0] && p.statut==='valide';
+                return `<tr>
+                    <td><span style="font-family:monospace;color:var(--accent);font-size:12px;">${p.ref}</span></td>
+                    <td>
+                        <div class="offre-cell">
+                            <div class="offre-type-icon"><i class="bi ${icon}"></i></div>
+                            <span style="color:var(--text-primary);font-weight:600;">${p.offre}</span>
+                        </div>
+                    </td>
+                    <td><strong style="color:#fff;">${p.montant.toFixed(3)} TND</strong><br><span style="font-size:11px;color:var(--text-secondary);">${ucfirst(p.periodicite)}</span></td>
+                    <td><span class="methode-badge"><i class="bi ${mIcon}"></i> ${ucfirst(p.methode)}</span></td>
+                    <td style="color:var(--text-secondary);">${ucfirst(p.periodicite)}</td>
+                    <td style="color:var(--text-secondary);font-size:12px;">${formatDate(p.date)}</td>
+                    <td style="font-size:12px;${echeAlerte?'color:#f59e0b;font-weight:700;':''}">${p.echeance?formatDate(p.echeance):'—'}${echeAlerte?' <i class="bi bi-bell-fill"></i>':''}</td>
+                    <td>
+                        <select class="status-select ${p.statut}" onchange="changeStatut(${p.id},this.value)">
+                            <option value="en_attente" ${p.statut==='en_attente'?'selected':''}>En attente</option>
+                            <option value="valide"     ${p.statut==='valide'    ?'selected':''}>Validé</option>
+                            <option value="refuse"     ${p.statut==='refuse'    ?'selected':''}>Refusé</option>
+                            <option value="rembourse"  ${p.statut==='rembourse' ?'selected':''}>Remboursé</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="action-group">
+                            <button class="action-icon view" onclick="viewPaiement(${p.id})" title="Voir détail"><i class="bi bi-eye"></i></button>
+                            ${p.statut==='en_attente'?`
+                            <button class="action-icon valider" onclick="valider(${p.id})" title="Valider"><i class="bi bi-check-lg"></i></button>
+                            <button class="action-icon refuser" onclick="openMotif(${p.id},'refuser')" title="Refuser"><i class="bi bi-x-lg"></i></button>`:
+                            p.statut==='valide'?`
+                            <button class="action-icon refuser" onclick="openMotif(${p.id},'rembourser')" title="Rembourser"><i class="bi bi-arrow-return-left"></i></button>`:''}
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        const start=total===0?0:(currentPage-1)*perPage+1, end=Math.min(currentPage*perPage,total);
+        document.getElementById('paginationInfo').textContent=`Affichage ${start}–${end} sur ${total} paiement${total>1?'s':''}`;
+        document.getElementById('paginationBtns').innerHTML=`
+            <button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}><i class="bi bi-chevron-left"></i></button>
+            ${Array.from({length:pages},(_,i)=>`<button class="page-btn ${i+1===currentPage?'active':''}" onclick="goPage(${i+1})">${i+1}</button>`).join('')}
+            <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=pages?'disabled':''}><i class="bi bi-chevron-right"></i></button>`;
+
+        updateStats();
+    }
+
+    function goPage(p) { currentPage=p; render(); }
+    function ucfirst(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+    function formatDate(d){ if(!d)return'—'; const[y,m,day]=d.split('-'); return`${day}/${m}/${y}`; }
+
+    function updateStats() {
+        const tot = paiements.length;
+        const att = paiements.filter(p=>p.statut==='en_attente').length;
+        const val = paiements.filter(p=>p.statut==='valide').length;
+        const ref = paiements.filter(p=>p.statut==='refuse'||p.statut==='rembourse').length;
+        const ca  = paiements.filter(p=>p.statut==='valide').reduce((s,p)=>s+p.montant,0);
+        document.getElementById('statTotal').textContent    = tot;
+        document.getElementById('statAttente').textContent  = att;
+        document.getElementById('statValides').textContent  = val;
+        document.getElementById('statRefuses').textContent  = ref;
+        document.getElementById('heroTotal').textContent    = tot;
+        document.getElementById('heroValides').textContent  = val;
+        document.getElementById('heroValides2').textContent = val;
+        document.getElementById('heroAttente').textContent  = att;
+        document.getElementById('heroCA').textContent       = ca.toFixed(3);
+    }
+
+    /* ── Actions ── */
+    function changeStatut(id, newStatut) {
+        const p = paiements.find(x=>x.id===id);
+        if (p) { p.statut=newStatut; render(); showToast(`Statut → ${ucfirst(newStatut)}`,'success'); }
+    }
+
+    function valider(id) {
+        const p=paiements.find(x=>x.id===id);
+        if(p){ p.statut='valide'; render(); showToast('Paiement validé.','success'); }
+    }
+
+    function openMotif(id, action) {
+        motifId=id; motifAction=action;
+        document.getElementById('motifTitle').innerHTML=`<i class="bi bi-chat-left-text"></i> ${action==='refuser'?'Motif de refus':'Motif de remboursement'}`;
+        document.getElementById('motifText').value='';
+        openModal('modalMotif');
+    }
+    function confirmMotif() {
+        const motif=document.getElementById('motifText').value.trim();
+        if(!motif){ showToast('Le motif est obligatoire.','warning'); return; }
+        const p=paiements.find(x=>x.id===motifId);
+        if(p){ p.statut=motifAction==='refuser'?'refuse':'rembourse'; }
+        closeModal('modalMotif');
+        render();
+        showToast(motifAction==='refuser'?'Paiement refusé.':'Paiement remboursé.', motifAction==='refuser'?'danger':'success');
+    }
+
+    /* ── View detail ── */
+    function viewPaiement(id) {
+        const p=paiements.find(x=>x.id===id); if(!p)return;
+        const icon=typeIcons[p.type]||'bi-tags';
+        document.getElementById('modalDetailBody').innerHTML=`
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--glass-border);">
+                <div style="width:48px;height:48px;border-radius:13px;background:var(--accent-glow);border:1px solid rgba(0,180,216,.25);display:grid;place-items:center;font-size:22px;color:var(--accent);">
+                    <i class="bi ${icon}"></i>
+                </div>
+                <div>
+                    <div style="font-size:16px;font-weight:700;color:#fff;">${p.offre}</div>
+                    <div style="font-size:12px;color:var(--text-secondary);">${p.ref}</div>
+                </div>
+            </div>
+            <div class="detail-grid">
+                <div class="detail-field"><div class="detail-field-label"><i class="bi bi-hash"></i> Référence</div><div class="detail-field-value" style="font-family:monospace;color:var(--accent);">${p.ref}</div></div>
+                <div class="detail-field"><div class="detail-field-label"><i class="bi bi-currency-exchange"></i> Montant</div><div class="detail-field-value" style="color:#fff;font-size:16px;font-weight:800;">${p.montant.toFixed(3)} TND</div></div>
+                <div class="detail-field"><div class="detail-field-label"><i class="bi bi-credit-card"></i> Méthode</div><div class="detail-field-value">${ucfirst(p.methode)}${p.carte?' — '+p.carte:''}</div></div>
+                <div class="detail-field"><div class="detail-field-label"><i class="bi bi-calendar3"></i> Périodicité</div><div class="detail-field-value">${ucfirst(p.periodicite)}</div></div>
+                <div class="detail-field"><div class="detail-field-label"><i class="bi bi-calendar-event"></i> Date paiement</div><div class="detail-field-value">${formatDate(p.date)}</div></div>
+                <div class="detail-field"><div class="detail-field-label"><i class="bi bi-calendar-check"></i> Échéance</div><div class="detail-field-value">${formatDate(p.echeance)}</div></div>
+            </div>`;
+        openModal('modalDetail');
+    }
+
+    /* ── Export CSV ── */
+    function exportCSV() {
+        const rows=[['Référence','Offre','Montant','Méthode','Période','Date','Statut']];
+        paiements.forEach(p=>rows.push([p.ref,p.offre,p.montant,p.methode,p.periodicite,p.date,p.statut]));
+        const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+        const a=document.createElement('a');
+        a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+        a.download='paiements.csv'; a.click();
+        showToast('Export CSV téléchargé.','success');
+    }
+
+    /* ── Modal helpers ── */
+    function openModal(id)  { document.getElementById(id).classList.add('open'); document.body.style.overflow='hidden'; }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow=''; }
+    document.querySelectorAll('.modal-overlay').forEach(o=>{
+        o.addEventListener('click',e=>{ if(e.target===o){o.classList.remove('open');document.body.style.overflow='';} });
+    });
+
+    /* ── Toast ── */
+    function showToast(msg,type='success') {
+        const icons={success:'check-circle',warning:'exclamation-triangle',danger:'x-circle'};
+        const t=document.createElement('div');
+        t.className=`toast-notif toast-${type}`;
+        t.innerHTML=`<i class="bi bi-${icons[type]}"></i><span>${msg}</span>`;
+        document.body.appendChild(t);
+        setTimeout(()=>t.classList.add('show'),50);
+        setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3000);
+    }
+
+    /* ── Search ── */
+    document.getElementById('searchInput').addEventListener('input',  ()=>{currentPage=1;render();});
+    document.getElementById('filterStatut').addEventListener('change', ()=>{currentPage=1;render();});
+    document.getElementById('filterMethode').addEventListener('change',()=>{currentPage=1;render();});
+    document.getElementById('filterPeriode').addEventListener('change',()=>{currentPage=1;render();});
+
+    render();
+</script>
+</body>
+</html>

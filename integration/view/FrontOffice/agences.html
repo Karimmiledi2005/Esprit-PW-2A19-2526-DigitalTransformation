@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Nos agences — Protex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- CSS TEMPLATE FRONTOFFICE -->
+    <link rel="stylesheet" href="user/css/variables.css">
+    <link rel="stylesheet" href="user/css/base.css">
+    <link rel="stylesheet" href="user/css/layout.css">
+    <link rel="stylesheet" href="user/css/client.css">
+
+    <style>
+        .toast-notif {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1A3A7A;
+            border: 1px solid rgba(26,58,122,0.15);
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #fff;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(26,58,122,0.25);
+        }
+
+        .toast-notif.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast-success i { color: #22c55e; font-size: 18px; }
+        .toast-warning i { color: #FF6B1A; font-size: 18px; }
+        .toast-danger i  { color: #e63946; font-size: 18px; }
+
+        .hero-panel {
+            background: #ffffff;
+            border: 1px solid rgba(26,58,122,0.10);
+            border-radius: var(--radius-xl);
+            padding: 28px;
+            box-shadow: 0 8px 30px rgba(26,58,122,0.06);
+            margin-bottom: 28px;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .hero-title {
+            font-family: var(--font-display);
+            font-size: 32px;
+            color: #15233C;
+            line-height: 1.15;
+            margin-bottom: 12px;
+        }
+
+        .hero-title span {
+            color: #FF6B1A;
+        }
+
+        .hero-text {
+            font-size: 15px;
+            color: rgba(21, 35, 60, 0.75);
+            line-height: 1.8;
+            margin-bottom: 18px;
+            max-width: 680px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-soft {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 10px;
+            border: 1px solid rgba(26,58,122,0.12);
+            background: rgba(26,58,122,0.04);
+            color: #15233C;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .btn-soft:hover {
+            border-color: #FF6B1A;
+            color: #FF6B1A;
+        }
+
+        .hero-boxes {
+            display: grid;
+            gap: 12px;
+        }
+
+        .mini-box {
+            background: rgba(26,58,122,0.04);
+            border: 1px solid rgba(26,58,122,0.08);
+            border-radius: var(--radius-lg);
+            padding: 18px;
+        }
+
+        .mini-value {
+            font-family: var(--font-display);
+            font-size: 26px;
+            color: #15233C;
+            line-height: 1;
+        }
+
+        .mini-label {
+            font-size: 13px;
+            color: rgba(21, 35, 60, 0.75);
+            margin-top: 6px;
+        }
+
+        .chat-card {
+            margin-bottom: 28px;
+        }
+
+        .chat-card .card-header,
+        .reviews-card .card-header {
+            background: rgba(26,58,122,0.02);
+            border-bottom: 1px solid rgba(26,58,122,0.08);
+        }
+
+        .chat-messages {
+            height: 230px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 14px;
+            padding-right: 4px;
+        }
+
+        .chat-bubble {
+            max-width: 85%;
+            padding: 12px 14px;
+            border-radius: 14px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .chat-bubble.bot {
+            align-self: flex-start;
+            background: rgba(26,58,122,0.06);
+            border: 1px solid rgba(26,58,122,0.08);
+            color: #15233C;
+        }
+
+        .chat-bubble.user {
+            align-self: flex-end;
+            background: rgba(255,107,26,0.14);
+            border: 1px solid rgba(255,107,26,0.18);
+            color: #15233C;
+        }
+
+        .chat-input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input {
+            flex: 1;
+            height: 46px;
+            padding: 0 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(26,58,122,0.10);
+            background: rgba(26,58,122,0.04);
+            color: #15233C;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .chat-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .hint-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .hint-chip {
+            padding: 7px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            cursor: pointer;
+            background: rgba(26,58,122,0.04);
+            border: 1px solid rgba(26,58,122,0.08);
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .hint-chip:hover {
+            border-color: #FF6B1A;
+            color: #FF6B1A;
+        }
+
+        .agency-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .agency-card {
+            background: #ffffff;
+            border: 1px solid rgba(26,58,122,0.10);
+            border-radius: var(--radius-lg);
+            box-shadow: 0 4px 16px rgba(26,58,122,0.06);
+            overflow: hidden;
+            transition: all 0.25s ease;
+        }
+
+        .agency-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 28px rgba(26,58,122,0.10);
+        }
+
+        .agency-head {
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid rgba(26,58,122,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .agency-name {
+            font-family: var(--font-display);
+            font-size: 18px;
+            color: #15233C;
+            margin-bottom: 4px;
+        }
+
+        .agency-country {
+            font-size: 13px;
+            color: rgba(21, 35, 60, 0.75);
+        }
+
+        .agency-body {
+            padding: 20px 24px;
+        }
+
+        .agency-contact {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .contact-box {
+            background: rgba(26,58,122,0.04);
+            border: 1px solid rgba(26,58,122,0.08);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+        }
+
+        .contact-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .contact-value {
+            font-size: 14px;
+            color: #15233C;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .post-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .post-card {
+            background: rgba(26,58,122,0.04);
+            border: 1px solid rgba(26,58,122,0.08);
+            border-radius: var(--radius-md);
+            padding: 14px;
+        }
+
+        .post-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .post-author {
+            font-size: 13px;
+            font-weight: 600;
+            color: #15233C;
+        }
+
+        .post-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .post-content {
+            font-size: 14px;
+            color: #31415f;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .post-meta {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .post-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            color: rgba(21, 35, 60, 0.75);
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #fff;
+            border: 1px solid rgba(26,58,122,0.08);
+        }
+
+        .reviews-card .score-box {
+            background: rgba(26,58,122,0.04);
+            border: 1px solid rgba(26,58,122,0.08);
+            border-radius: var(--radius-md);
+            padding: 18px;
+            margin-bottom: 16px;
+        }
+
+        .score-stars {
+            color: #FF6B1A;
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+
+        .score-value {
+            font-family: var(--font-display);
+            font-size: 34px;
+            color: #15233C;
+            line-height: 1;
+        }
+
+        .score-meta {
+            font-size: 13px;
+            color: rgba(21, 35, 60, 0.75);
+            margin-top: 8px;
+        }
+
+        .review-item {
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(26,58,122,0.08);
+        }
+
+        .review-item:last-child {
+            border-bottom: none;
+        }
+
+        .review-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+
+        .review-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #15233C;
+        }
+
+        .review-date {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .review-text {
+            font-size: 13px;
+            color: #31415f;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .review-stats {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            font-size: 12px;
+            color: rgba(21, 35, 60, 0.75);
+        }
+
+        /* Fix light theme */
+        .hero-panel,
+        .agency-card,
+        .card,
+        .reviews-card {
+            background: #ffffff !important;
+            border: 1px solid rgba(26,58,122,0.10) !important;
+            box-shadow: 0 8px 28px rgba(26,58,122,0.08) !important;
+        }
+
+        .hero-title,
+        .agency-name,
+        .section-title,
+        .review-name,
+        .score-value,
+        .mini-value,
+        .card-title,
+        h1, h2, h3, h4, h5, h6 {
+            color: #15233C !important;
+        }
+
+        .hero-text,
+        .card-subtitle,
+        .section-sub,
+        .review-date,
+        .review-text,
+        .post-date,
+        .post-content,
+        .contact-label,
+        .contact-value,
+        .mini-label,
+        .score-meta {
+            color: rgba(21, 35, 60, 0.75) !important;
+        }
+
+        .mini-box,
+        .contact-box,
+        .post-card,
+        .score-box {
+            background: rgba(26,58,122,0.04) !important;
+            border: 1px solid rgba(26,58,122,0.08) !important;
+        }
+
+        .badge-active {
+            background: rgba(26,58,122,0.10) !important;
+            color: #1A3A7A !important;
+            border: 1px solid rgba(26,58,122,0.20) !important;
+        }
+
+        .badge-info,
+        .badge-pending {
+            background: rgba(255,107,26,0.10) !important;
+            color: #FF6B1A !important;
+            border: 1px solid rgba(255,107,26,0.20) !important;
+        }
+
+        .page-title-main,
+        .page-breadcrumb,
+        .page-breadcrumb a {
+            color: #ffffff !important;
+        }
+
+        .page-breadcrumb span {
+            color: #00d2ff !important;
+        }
+
+        @media (max-width: 1100px) {
+            .hero-grid,
+            .agency-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .agency-contact {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-input-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+
+    <header class="navbar">
+        <a href="client.html" class="navbar-brand">
+            <div class="logo-icon">🛡️</div>
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">ASSURANCE DIGITALE</div>
+            </div>
+        </a>
+
+        <nav class="navbar-nav">
+    <a class="nav-link" href="client.html">
+        <i class="bi bi-grid-1x2"></i>
+        <span class="nav-label">Tableau de bord</span>
+    </a>
+
+    <a class="nav-link" href="contrat.html">
+        <i class="bi bi-file-earmark-text"></i>
+        <span class="nav-label">Contrats</span>
+    </a>
+
+    <a class="nav-link" href="mes-sinistres.html">
+        <i class="bi bi-shield-exclamation"></i>
+        <span class="nav-label">Sinistres</span>
+    </a>
+
+    <a class="nav-link" href="paiement.html">
+        <i class="bi bi-credit-card"></i>
+        <span class="nav-label">Paiements</span>
+    </a>
+
+    <div class="nav-separator"></div>
+
+    <a class="nav-link" href="reclamations.html">
+        <i class="bi bi-chat-dots"></i>
+        <span class="nav-label">Réclamations</span>
+    </a>
+
+    <a class="nav-link" href="postes.html">
+        <i class="bi bi-megaphone"></i>
+        <span class="nav-label">Postes</span>
+    </a>
+
+    <a class="nav-link active" href="agences.html">
+        <i class="bi bi-geo-alt"></i>
+        <span class="nav-label">Agences</span>
+    </a>
+
+    <a class="nav-link" href="offres.html">
+        <i class="bi bi-stars"></i>
+        <span class="nav-label">Nos offres</span>
+    </a>
+</nav>
+
+        <div class="navbar-right">
+            <a href="#" class="nav-btn" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="notif-dot"></span>
+            </a>
+
+            <div class="avatar-wrap">
+                <button class="avatar-btn" id="avatarBtn">KM</button>
+
+                <div class="avatar-dropdown" id="avatarDropdown">
+                    <div class="dropdown-header">
+                        <div class="dropdown-avatar">KM</div>
+                        <div class="dropdown-info">
+                            <div class="dropdown-name">Karim Miledi</div>
+                            <div class="dropdown-email">karim@example.com</div>
+                            <div class="dropdown-role">Client Premium</div>
+                        </div>
+                    </div>
+
+                    <a href="profil.html" class="dropdown-item">
+                        <i class="bi bi-person"></i> Mon profil
+                    </a>
+                    <a href="parametres.html" class="dropdown-item">
+                        <i class="bi bi-gear"></i> Paramètres
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="connexion.html" class="dropdown-item logout">
+                        <i class="bi bi-box-arrow-right"></i> Déconnexion
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="page-header">
+            <div>
+                <div class="page-title-main">Nos agences</div>
+                <div class="page-breadcrumb">
+                    <i class="bi bi-house"></i>
+                    <a href="client.html" style="color:inherit;text-decoration:none;">Accueil</a>
+                    <i class="bi bi-chevron-right" style="font-size:10px"></i>
+                    <span>Aujourd’hui</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <div class="hero-panel">
+                <div class="hero-grid">
+                    <div>
+                        <div class="hero-title">Une assurance <span>nationale</span>, simple et digitale</div>
+                        <div class="hero-text">
+                            Retrouvez les coordonnées de nos agences, leurs dernières publications
+                            et utilisez notre assistant pour obtenir une estimation rapide.
+                        </div>
+
+                        <div class="hero-actions">
+                            <a href="#chatbot" class="btn-nav-primary">
+                                <i class="bi bi-robot"></i> Estimer avec le chatbot
+                            </a>
+                            <a href="#agences-list" class="btn-soft">
+                                <i class="bi bi-geo-alt"></i> Voir les agences
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="hero-boxes">
+                        <div class="mini-box">
+                            <div class="mini-value">4</div>
+                            <div class="mini-label">Agences visibles</div>
+                        </div>
+                        <div class="mini-box">
+                            <div class="mini-value">120+</div>
+                            <div class="mini-label">Avis clients</div>
+                        </div>
+                        <div class="mini-box">
+                            <div class="mini-value">4.5/5</div>
+                            <div class="mini-label">Satisfaction moyenne</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card chat-card" id="chatbot">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Assistant d’estimation</div>
+                        <div class="card-subtitle">Estimation rapide par chatbot</div>
+                    </div>
+                    <span class="badge badge-info">En ligne</span>
+                </div>
+
+                <div class="card-body">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="chat-bubble bot">
+                            Bonjour 👋 Je peux vous aider à estimer une assurance auto, santé ou habitation.
+                        </div>
+                    </div>
+
+                    <div class="chat-input-row">
+                        <input type="text" id="chatInput" class="chat-input" placeholder="Ex : je veux une assurance auto">
+                        <button class="btn-nav-primary" onclick="sendEstimateMessage()">
+                            <i class="bi bi-send"></i> Envoyer
+                        </button>
+                    </div>
+
+                    <div class="hint-row">
+                        <span class="hint-chip" onclick="fillSuggestion('Je veux une assurance auto')">Assurance auto</span>
+                        <span class="hint-chip" onclick="fillSuggestion('Je veux une assurance santé')">Assurance santé</span>
+                        <span class="hint-chip" onclick="fillSuggestion('Je veux une assurance habitation')">Assurance habitation</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-header" id="agences-list">
+                <div>
+                    <div class="section-title">Réseau d’agences</div>
+                    <div class="section-sub">Coordonnées et publications récentes</div>
+                </div>
+            </div>
+
+            <div class="agency-grid">
+
+                <div class="agency-card">
+                    <div class="agency-head">
+                        <div>
+                            <div class="agency-name">Protex Tunis Centre</div>
+                            <div class="agency-country"><i class="bi bi-geo-alt"></i> Tunisie</div>
+                        </div>
+                        <span class="badge badge-active">2 publications</span>
+                    </div>
+
+                    <div class="agency-body">
+                        <div class="agency-contact">
+                            <div class="contact-box">
+                                <div class="contact-label">Téléphone</div>
+                                <div class="contact-value">+216 71 000 111</div>
+                            </div>
+                            <div class="contact-box">
+                                <div class="contact-label">E-mail</div>
+                                <div class="contact-value">tunis@protex.tn</div>
+                            </div>
+                        </div>
+
+                        <div class="post-list">
+                            <div class="post-card">
+                                <div class="post-top">
+                                    <div class="post-author">Admin Tunis</div>
+                                    <div class="post-date">12 Mai 2026</div>
+                                </div>
+                                <div class="post-content">Nouvelle offre d’assurance auto digitale avec accompagnement rapide.</div>
+                                <div class="post-meta">
+                                    <span><i class="bi bi-star-fill"></i> 4.8</span>
+                                    <span><i class="bi bi-heart"></i> 120</span>
+                                    <span><i class="bi bi-chat-left-text"></i> 34</span>
+                                </div>
+                            </div>
+
+                            <div class="post-card">
+                                <div class="post-top">
+                                    <div class="post-author">Responsable Communication</div>
+                                    <div class="post-date">08 Mai 2026</div>
+                                </div>
+                                <div class="post-content">Nos conseillers vous accompagnent dans le choix de votre contrat habitation.</div>
+                                <div class="post-meta">
+                                    <span><i class="bi bi-star-fill"></i> 4.5</span>
+                                    <span><i class="bi bi-heart"></i> 87</span>
+                                    <span><i class="bi bi-chat-left-text"></i> 19</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agency-card">
+                    <div class="agency-head">
+                        <div>
+                            <div class="agency-name">Protex Sfax</div>
+                            <div class="agency-country"><i class="bi bi-geo-alt"></i> Tunisie</div>
+                        </div>
+                        <span class="badge badge-info">1 publication</span>
+                    </div>
+
+                    <div class="agency-body">
+                        <div class="agency-contact">
+                            <div class="contact-box">
+                                <div class="contact-label">Téléphone</div>
+                                <div class="contact-value">+216 74 222 333</div>
+                            </div>
+                            <div class="contact-box">
+                                <div class="contact-label">E-mail</div>
+                                <div class="contact-value">sfax@protex.tn</div>
+                            </div>
+                        </div>
+
+                        <div class="post-list">
+                            <div class="post-card">
+                                <div class="post-top">
+                                    <div class="post-author">Equipe Sfax</div>
+                                    <div class="post-date">10 Mai 2026</div>
+                                </div>
+                                <div class="post-content">Campagne de sensibilisation à l’assurance santé familiale avec devis instantané.</div>
+                                <div class="post-meta">
+                                    <span><i class="bi bi-star-fill"></i> 4.2</span>
+                                    <span><i class="bi bi-heart"></i> 64</span>
+                                    <span><i class="bi bi-chat-left-text"></i> 11</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agency-card">
+                    <div class="agency-head">
+                        <div>
+                            <div class="agency-name">Protex Sousse</div>
+                            <div class="agency-country"><i class="bi bi-geo-alt"></i> Tunisie</div>
+                        </div>
+                        <span class="badge badge-active">2 publications</span>
+                    </div>
+
+                    <div class="agency-body">
+                        <div class="agency-contact">
+                            <div class="contact-box">
+                                <div class="contact-label">Téléphone</div>
+                                <div class="contact-value">+216 73 555 777</div>
+                            </div>
+                            <div class="contact-box">
+                                <div class="contact-label">E-mail</div>
+                                <div class="contact-value">sousse@protex.tn</div>
+                            </div>
+                        </div>
+
+                        <div class="post-list">
+                            <div class="post-card">
+                                <div class="post-top">
+                                    <div class="post-author">Equipe Produit</div>
+                                    <div class="post-date">11 Mai 2026</div>
+                                </div>
+                                <div class="post-content">Le portail client propose désormais un suivi plus rapide des demandes.</div>
+                                <div class="post-meta">
+                                    <span><i class="bi bi-star-fill"></i> 4.4</span>
+                                    <span><i class="bi bi-heart"></i> 72</span>
+                                    <span><i class="bi bi-chat-left-text"></i> 14</span>
+                                </div>
+                            </div>
+
+                            <div class="post-card">
+                                <div class="post-top">
+                                    <div class="post-author">Direction Réseau</div>
+                                    <div class="post-date">09 Mai 2026</div>
+                                </div>
+                                <div class="post-content">Nos agences nationales renforcent la proximité et l’accompagnement client.</div>
+                                <div class="post-meta">
+                                    <span><i class="bi bi-star-fill"></i> 4.6</span>
+                                    <span><i class="bi bi-heart"></i> 58</span>
+                                    <span><i class="bi bi-chat-left-text"></i> 9</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agency-card">
+                    <div class="agency-head">
+                        <div>
+                            <div class="agency-name">Protex Nabeul</div>
+                            <div class="agency-country"><i class="bi bi-geo-alt"></i> Tunisie</div>
+                        </div>
+                        <span class="badge badge-pending">1 publication</span>
+                    </div>
+
+                    <div class="agency-body">
+                        <div class="agency-contact">
+                            <div class="contact-box">
+                                <div class="contact-label">Téléphone</div>
+                                <div class="contact-value">+216 72 444 888</div>
+                            </div>
+                            <div class="contact-box">
+                                <div class="contact-label">E-mail</div>
+                                <div class="contact-value">nabeul@protex.tn</div>
+                            </div>
+                        </div>
+
+                        <div class="post-list">
+                            <div class="post-card">
+                                <div class="post-top">
+                                    <div class="post-author">Agence Nabeul</div>
+                                    <div class="post-date">07 Mai 2026</div>
+                                </div>
+                                <div class="post-content">Nouvelle offre habitation dédiée aux jeunes propriétaires.</div>
+                                <div class="post-meta">
+                                    <span><i class="bi bi-star-fill"></i> 4.1</span>
+                                    <span><i class="bi bi-heart"></i> 49</span>
+                                    <span><i class="bi bi-chat-left-text"></i> 8</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="card reviews-card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Score et avis clients</div>
+                        <div class="card-subtitle">Satisfaction moyenne sur l’ensemble du réseau</div>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="score-box">
+                        <div class="score-stars">★★★★★</div>
+                        <div class="score-value">4.5/5</div>
+                        <div class="score-meta">120 avis clients enregistrés</div>
+                    </div>
+
+                    <div class="review-item">
+                        <div class="review-top">
+                            <div class="review-name">Sophie Dupont</div>
+                            <div class="review-date">15/10/2021</div>
+                        </div>
+                        <div class="review-text">Super agence ! Service impeccable. Je recommande vivement.</div>
+                        <div class="review-stats">
+                            <span><i class="bi bi-hand-thumbs-up-fill"></i> 124 j’aime</span>
+                            <span><i class="bi bi-chat-left-text"></i> 18 commentaires</span>
+                        </div>
+                    </div>
+
+                    <div class="review-item">
+                        <div class="review-top">
+                            <div class="review-name">Lucas Martin</div>
+                            <div class="review-date">10/09/2021</div>
+                        </div>
+                        <div class="review-text">Très bon accompagnement et explications claires sur les offres.</div>
+                        <div class="review-stats">
+                            <span><i class="bi bi-hand-thumbs-up-fill"></i> 98 j’aime</span>
+                            <span><i class="bi bi-chat-left-text"></i> 5 commentaires</span>
+                        </div>
+                    </div>
+
+                    <div class="review-item">
+                        <div class="review-top">
+                            <div class="review-name">Amine B.</div>
+                            <div class="review-date">02/08/2021</div>
+                        </div>
+                        <div class="review-text">Excellente expérience, plateforme simple et efficace.</div>
+                        <div class="review-stats">
+                            <span><i class="bi bi-hand-thumbs-up-fill"></i> 76 j’aime</span>
+                            <span><i class="bi bi-chat-left-text"></i> 9 commentaires</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="user/js/main.js"></script>
+<script>
+function fillSuggestion(text) {
+    const input = document.getElementById('chatInput');
+    if (!input) return;
+    input.value = text;
+    input.focus();
+}
+
+function sendEstimateMessage() {
+    const input = document.getElementById('chatInput');
+    const messages = document.getElementById('chatMessages');
+    if (!input || !messages) return;
+
+    const userText = input.value.trim();
+    if (!userText) return;
+
+    const userBubble = document.createElement('div');
+    userBubble.className = 'chat-bubble user';
+    userBubble.textContent = userText;
+    messages.appendChild(userBubble);
+
+    const text = userText.toLowerCase();
+    let response = "Je peux vous aider à estimer une assurance auto, santé ou habitation.";
+
+    if (text.includes('auto') || text.includes('voiture') || text.includes('vehicule') || text.includes('véhicule')) {
+        response = "🚗 Pour une assurance auto, le prix estimé commence à partir de 250 TND.";
+    } else if (text.includes('santé') || text.includes('sante')) {
+        response = "❤️ Pour une assurance santé, le prix estimé commence à partir de 400 TND.";
+    } else if (text.includes('habitation') || text.includes('maison')) {
+        response = "🏠 Pour une assurance habitation, le prix estimé commence à partir de 320 TND.";
+    }
+
+    setTimeout(() => {
+        const botBubble = document.createElement('div');
+        botBubble.className = 'chat-bubble bot';
+        botBubble.innerHTML = response;
+        messages.appendChild(botBubble);
+        messages.scrollTop = messages.scrollHeight;
+    }, 350);
+
+    input.value = '';
+    messages.scrollTop = messages.scrollHeight;
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const input = document.getElementById('chatInput');
+    if (input) {
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                sendEstimateMessage();
+            }
+        });
+    }
+
+    window.showToast = function (message, type = 'success') {
+        const icons = { success: 'check-circle', warning: 'exclamation-triangle', danger: 'x-circle' };
+        const toast = document.createElement('div');
+        toast.className = `toast-notif toast-${type}`;
+        toast.innerHTML = `<i class="bi bi-${icons[type] || 'info-circle'}"></i><span>${message}</span>`;
+        document.body.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 50);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    };
+});
+</script>
+
+</body>
+</html>
