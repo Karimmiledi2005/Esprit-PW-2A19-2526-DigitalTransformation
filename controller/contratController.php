@@ -1,125 +1,222 @@
 <?php
-include(__DIR__ . '/../config.php');
-include(__DIR__ . '/../model/contratmodel.php');
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../model/Contrat.php';
 
 class ContratController
 {
-    public function listContrats()
+    private PDO $db;
+
+    public function __construct()
     {
-        $sql = "SELECT * FROM contrat ORDER BY id_contrat DESC";
-        $db  = config::getConnexion();
-        try {
-            return $db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            die('Erreur : ' . $e->getMessage());
-        }
+        $this->db = config::getConnexion();
     }
 
-    public function addContrat($contrat)
+    public function getAll(): array
     {
-        $sql = "INSERT INTO contrat
-            (numero_contrat, type_contrat, date_debut, date_fin, montant_prime, franchise, statut, id_categorie, formule, details_formule)
-            VALUES
-            (:numero_contrat, :type_contrat, :date_debut, :date_fin, :montant_prime, :franchise, :statut, :id_categorie, :formule, :details_formule)";
-        $db = config::getConnexion();
+        $stmt = $this->db->query("
+            SELECT 
+                c.*,
+                cat.nom_categorie,
+                u.nom,
+                u.prenom,
+                u.email
+            FROM contrat c
+            LEFT JOIN categorie cat ON c.id_categorie = cat.id_categorie
+            LEFT JOIN user u ON c.id_client = u.id_user
+            ORDER BY c.date_debut_contrat DESC
+        ");
+
+        $contrats = [];
+
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $contrat = new Contrat(
+                $row['numero_contrat'],
+                $row['type_contrat'],
+                $row['id_client'],
+                $row['id_categorie'],
+                $row['prime_contrat'],
+                $row['franchise_contrat'],
+                $row['date_debut_contrat'],
+                $row['date_fin_contrat'],
+                $row['statut_contrat']
+            );
+
+            $contrat->setIdContrat($row['id_contrat']);
+            $contrat->setNomCategorie($row['nom_categorie'] ?? '—');
+            $contrat->setNomClient($row['nom'] ?? '');
+            $contrat->setPrenomClient($row['prenom'] ?? '');
+            $contrat->setEmailClient($row['email'] ?? '');
+
+            $contrats[] = $contrat;
+        }
+
+        return $contrats;
+    }
+
+    public function getByClient(int $userId): array
+    {
+        if (!$userId) return [];
+
+        $stmt = $this->db->prepare("
+            SELECT 
+                c.*,
+                cat.nom_categorie
+            FROM contrat c
+            LEFT JOIN categorie cat ON c.id_categorie = cat.id_categorie
+            WHERE c.id_client = :id_client
+            ORDER BY c.date_debut_contrat DESC
+        ");
+        $stmt->execute(['id_client' => $userId]);
+
+        $contrats = [];
+
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $contrat = new Contrat(
+                $row['numero_contrat'],
+                $row['type_contrat'],
+                $row['id_client'],
+                $row['id_categorie'],
+                $row['prime_contrat'],
+                $row['franchise_contrat'],
+                $row['date_debut_contrat'],
+                $row['date_fin_contrat'],
+                $row['statut_contrat']
+            );
+
+            $contrat->setIdContrat($row['id_contrat']);
+            $contrat->setNomCategorie($row['nom_categorie'] ?? '—');
+
+            $contrats[] = $contrat;
+        }
+
+        return $contrats;
+    }
+
+    public function getStats(): array
+    {
+        $contrats = $this->getAll();
+
+        $stats = [
+            'total' => count($contrats),
+            'actifs' => 0,
+            'attente' => 0,
+            'expires' => 0
+        ];
+
+        foreach ($contrats as $contrat) {
+            $statut = strtolower(trim($contrat->getStatutContrat()));
+
+            if ($statut === 'actif') {
+                $stats['actifs']++;
+            } elseif ($statut === 'en attente' || $statut === 'en_attente') {
+                $stats['attente']++;
+            } elseif ($statut === 'expire' || $statut === 'expiré' || $statut === 'resilie' || $statut === 'résilié') {
+                $stats['expires']++;
+            }
+        }
+
+        return $stats;
+    }
+
+    public function addContrat($contrat): bool
+    {
+        $sql = "INSERT INTO contrat (numero_contrat, type_contrat, id_client, id_categorie, 
+                                     prime_contrat, franchise_contrat, date_debut_contrat, 
+                                     date_fin_contrat, statut_contrat)
+                VALUES (:numero_contrat, :type_contrat, :id_client, :id_categorie,
+                        :prime_contrat, :franchise_contrat, :date_debut_contrat,
+                        :date_fin_contrat, :statut_contrat)";
+
         try {
-            $q = $db->prepare($sql);
-            $q->execute([
-                'numero_contrat'  => $contrat->getNumeroContrat(),
-                'type_contrat'    => $contrat->getTypeContrat(),
-                'date_debut'      => $contrat->getDateDebut()->format('Y-m-d'),
-                'date_fin'        => $contrat->getDateFin()->format('Y-m-d'),
-                'montant_prime'   => $contrat->getMontantPrime(),
-                'franchise'       => $contrat->getFranchise(),
-                'statut'          => $contrat->getStatut(),
-                'id_categorie'    => $contrat->getIdCategorie(),
-                'formule'         => $contrat->getFormule(),
-                'details_formule' => $contrat->getDetailsFormule()
+            $query = $this->db->prepare($sql);
+            return $query->execute([
+                'numero_contrat' => $contrat->getNumeroContrat(),
+                'type_contrat' => $contrat->getTypeContrat(),
+                'id_client' => $contrat->getIdClient(),
+                'id_categorie' => $contrat->getIdCategorie(),
+                'prime_contrat' => $contrat->getPrimeContrat(),
+                'franchise_contrat' => $contrat->getFranchiseContrat(),
+                'date_debut_contrat' => $contrat->getDateDebutContrat(),
+                'date_fin_contrat' => $contrat->getDateFinContrat(),
+                'statut_contrat' => $contrat->getStatutContrat()
             ]);
         } catch (Exception $e) {
-            die('Erreur : ' . $e->getMessage());
+            die('Erreur addContrat: ' . $e->getMessage());
         }
     }
 
-    public function updateContrat($contrat, $id)
+    public function getById(int $id): ?array
     {
-        $sql = "UPDATE contrat SET
-                    numero_contrat   = :numero_contrat,
-                    type_contrat     = :type_contrat,
-                    date_debut       = :date_debut,
-                    date_fin         = :date_fin,
-                    montant_prime    = :montant_prime,
-                    franchise        = :franchise,
-                    statut           = :statut,
-                    id_categorie     = :id_categorie,
-                    formule          = :formule,
-                    details_formule  = :details_formule
+        $sql = "SELECT c.*, cat.nom_categorie, u.nom, u.prenom, u.email
+                FROM contrat c
+                LEFT JOIN categorie cat ON c.id_categorie = cat.id_categorie
+                LEFT JOIN user u ON c.id_client = u.id_user
+                WHERE c.id_contrat = :id";
+
+        try {
+            $query = $this->db->prepare($sql);
+            $query->execute(['id' => $id]);
+            return $query->fetch(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            die('Erreur getById: ' . $e->getMessage());
+        }
+    }
+
+    public function updateContrat(int $id, $contrat): bool
+    {
+        $sql = "UPDATE contrat
+                SET numero_contrat = :numero_contrat,
+                    type_contrat = :type_contrat,
+                    id_client = :id_client,
+                    id_categorie = :id_categorie,
+                    prime_contrat = :prime_contrat,
+                    franchise_contrat = :franchise_contrat,
+                    date_debut_contrat = :date_debut_contrat,
+                    date_fin_contrat = :date_fin_contrat,
+                    statut_contrat = :statut_contrat
                 WHERE id_contrat = :id";
-        $db = config::getConnexion();
+
         try {
-            $q = $db->prepare($sql);
-            $q->execute([
-                'id'              => $id,
-                'numero_contrat'  => $contrat->getNumeroContrat(),
-                'type_contrat'    => $contrat->getTypeContrat(),
-                'date_debut'      => $contrat->getDateDebut()->format('Y-m-d'),
-                'date_fin'        => $contrat->getDateFin()->format('Y-m-d'),
-                'montant_prime'   => $contrat->getMontantPrime(),
-                'franchise'       => $contrat->getFranchise(),
-                'statut'          => $contrat->getStatut(),
-                'id_categorie'    => $contrat->getIdCategorie(),
-                'formule'         => $contrat->getFormule(),
-                'details_formule' => $contrat->getDetailsFormule()
+            $query = $this->db->prepare($sql);
+            return $query->execute([
+                'id' => $id,
+                'numero_contrat' => $contrat->getNumeroContrat(),
+                'type_contrat' => $contrat->getTypeContrat(),
+                'id_client' => $contrat->getIdClient(),
+                'id_categorie' => $contrat->getIdCategorie(),
+                'prime_contrat' => $contrat->getPrimeContrat(),
+                'franchise_contrat' => $contrat->getFranchiseContrat(),
+                'date_debut_contrat' => $contrat->getDateDebutContrat(),
+                'date_fin_contrat' => $contrat->getDateFinContrat(),
+                'statut_contrat' => $contrat->getStatutContrat()
             ]);
         } catch (Exception $e) {
-            die('Erreur : ' . $e->getMessage());
+            die('Erreur updateContrat: ' . $e->getMessage());
         }
     }
 
-    public function deleteContrat($id)
+    public function deleteContrat(int $id): bool
     {
-        $db = config::getConnexion();
-        $q  = $db->prepare("DELETE FROM contrat WHERE id_contrat = :id");
-        $q->execute(['id' => (int)$id]);
+        $sql = "DELETE FROM contrat WHERE id_contrat = :id";
+
+        try {
+            $query = $this->db->prepare($sql);
+            return $query->execute(['id' => $id]);
+        } catch (Exception $e) {
+            die('Erreur deleteContrat: ' . $e->getMessage());
+        }
     }
 
-    public function validerContrat($id)
+    public function countContrats(): int
     {
-        $db = config::getConnexion();
-        $q  = $db->prepare("UPDATE contrat SET statut = 'actif' WHERE id_contrat = :id");
-        $q->execute(['id' => (int)$id]);
-    }
+        $sql = "SELECT COUNT(*) AS total FROM contrat";
 
-    public function refuserContrat($id)
-    {
-        $db = config::getConnexion();
-        $q  = $db->prepare("UPDATE contrat SET statut = 'refuse' WHERE id_contrat = :id");
-        $q->execute(['id' => (int)$id]);
-    }
-
-    public function resilierContrat($id)
-    {
-        $db = config::getConnexion();
-        $q  = $db->prepare("UPDATE contrat SET statut = 'resilie' WHERE id_contrat = :id");
-        $q->execute(['id' => (int)$id]);
-    }
-
-    public function getContratById($id)
-    {
-        $db = config::getConnexion();
-        $q  = $db->prepare("SELECT * FROM contrat WHERE id_contrat = :id");
-        $q->execute(['id' => (int)$id]);
-        return $q->fetch(PDO::FETCH_ASSOC);
-    }
-
-    public function showContrat($id) { return $this->getContratById($id); }
-
-    public function getGarantiesByContrat($id)
-    {
-        $db = config::getConnexion();
-        $q  = $db->prepare("SELECT * FROM garantie WHERE id_contrat = :id");
-        $q->execute(['id' => (int)$id]);
-        return $q->fetchAll(PDO::FETCH_ASSOC);
+        try {
+            $query = $this->db->query($sql);
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            return (int)$row['total'];
+        } catch (Exception $e) {
+            die('Erreur countContrats: ' . $e->getMessage());
+        }
     }
 }
-?>

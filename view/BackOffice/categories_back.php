@@ -1,0 +1,302 @@
+<?php
+require_once __DIR__ . '/../../controller/CategorieController.php';
+
+$categorieC = new CategorieController();
+$list = $categorieC->listCategories();
+
+$totalCategories = $categorieC->countCategories();
+$totalGaranties = $categorieC->countGarantiesLiees();
+$totalContrats = $categorieC->countContratsLiees();
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Catégories — Protex Admin</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/admin-users.css">
+    <link rel="stylesheet" href="assets/css/contrats.css">
+</head>
+<body>
+
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+
+    <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🛡️</div>
+      <div>
+        <div class="logo-text">Protex</div>
+        <div class="logo-sub">Back-Office</div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">AD</div>
+      <div>
+        <div class="user-name">Agent Admin</div>
+        <span class="user-role">Administrateur</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <a class="nav-item" href="#">
+        <i class="bi bi-grid-1x2"></i> Tableau de bord
+      </a>
+
+      <div class="nav-section">Gestion</div>
+      <a class="nav-item" href="admin-users.html">
+        <i class="bi bi-people"></i> Utilisateurs
+        <span class="nav-badge accent">24</span>
+      </a>
+
+      <a class="nav-item" href="sinsiter.html">
+        <i class="bi bi-shield-exclamation"></i> Sinistres
+      </a>
+
+      <a class="nav-item" href="traitement.html">
+        <i class="bi bi-file-earmark-text"></i> Traitements
+      </a>
+
+      <a class="nav-item active" href="contrats_back.php">
+        <i class="bi bi-file-earmark-text"></i> Contrats
+      </a>
+
+      <a class="nav-item" href="categories_back.php">
+        <i class="bi bi-grid-3x3-gap"></i> Catégories
+      </a>
+
+      <a class="nav-item" href="garanties_back.php">
+        <i class="bi bi-shield-check"></i> Garanties
+      </a>
+
+      <a class="nav-item" href="paiements_back.html">
+        <i class="bi bi-credit-card"></i> Paiements
+      </a>
+
+      <a class="nav-item" href="offres_back.html">
+        <i class="bi bi-tags"></i> Offres
+      </a>
+
+      <a class="nav-item" href="admin-reclamations.html">
+        <i class="bi bi-chat-dots"></i> Réclamations
+      </a>
+
+      <a class="nav-item" href="admin-agences.html">
+        <i class="bi bi-geo-alt"></i> Agences
+      </a>
+
+      <div class="nav-section">Compte</div>
+      <a class="nav-item" href="adminprofile.html">
+        <i class="bi bi-person-gear"></i> Mon profil
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="#" class="logout-btn">
+        <i class="bi bi-box-arrow-left"></i> Se déconnecter
+      </a>
+    </div>
+  </aside>
+
+    <main class="main">
+        <div class="topbar">
+            <div>
+                <div class="topbar-title">Gestion des catégories</div>
+                <div class="topbar-sub" id="topbarDate"></div>
+            </div>
+        </div>
+
+        <div class="content">
+
+           <div class="page-header-bar">
+    <div>
+        <div class="page-title">Catégories</div>
+        <div class="page-breadcrumb">
+            <i class="bi bi-house"></i>
+            <a href="#">Accueil</a>
+            <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+            <span>Catégories</span>
+        </div>
+    </div>
+    <div>
+        <a href="addCategorie.php" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Ajouter une catégorie
+        </a>
+    </div>
+</div>
+
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-icon"><i class="bi bi-grid-3x3-gap"></i></div>
+                    <div class="stat-value"><?= $totalCategories ?></div>
+                    <div class="stat-label">Total catégories</div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-icon"><i class="bi bi-file-earmark-text"></i></div>
+                    <div class="stat-value"><?= $totalContrats ?></div>
+                    <div class="stat-label">Contrats liés</div>
+                </div>
+
+                <div class="stat-card gold">
+                    <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
+                    <div class="stat-value"><?= $totalGaranties ?></div>
+                    <div class="stat-label">Garanties liées</div>
+                </div>
+
+                <div class="stat-card red">
+                    <div class="stat-icon"><i class="bi bi-folder2-open"></i></div>
+                    <div class="stat-value"><?= $totalCategories ?></div>
+                    <div class="stat-label">Structures disponibles</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-table"></i> Liste des catégories</div>
+                </div>
+
+                <div class="toolbar-inner">
+                    <div class="toolbar" style="margin-bottom:0;">
+                        <div class="search-box">
+                            <i class="bi bi-search"></i>
+                            <input type="text" id="searchInput" placeholder="Rechercher par nom ou description...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-wrap">
+                    <div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Description</th>
+                <th>Contrats liés</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody id="categoriesTable">
+
+            <?php if (!empty($list)) { ?>
+
+                <?php foreach ($list as $cat) { ?>
+                    <tr data-search="<?= htmlspecialchars(strtolower(($cat['nom_categorie'] ?? '') . ' ' . ($cat['description_categorie'] ?? ''))) ?>">
+
+                        <td>#<?= (int)$cat['id_categorie'] ?></td>
+
+                        <td class="category-name">
+                            <?= htmlspecialchars($cat['nom_categorie'] ?? '—') ?>
+                        </td>
+
+                        <td class="category-desc">
+                            <?= htmlspecialchars($cat['description_categorie'] ?? '—') ?>
+                        </td>
+
+                        <td>
+                            <?= (int)($cat['nb_contrats'] ?? 0) ?>
+                        </td>
+
+                        <td>
+                            <div class="actions">
+
+                                <!-- VOIR -->
+                                <a class="btn-soft"
+                                   href="showCategorie.php?id=<?= (int)$cat['id_categorie'] ?>">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                <!-- MODIFIER -->
+                                <a class="btn-soft"
+                                   href="updateCategorie.php?id=<?= (int)$cat['id_categorie'] ?>">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+
+                                <!-- SUPPRIMER (bloqué si lié) -->
+                                <?php if ((int)($cat['nb_contrats'] ?? 0) === 0) { ?>
+                                    <a class="btn-soft danger"
+                                       href="deleteCategorie.php?id=<?= (int)$cat['id_categorie'] ?>"
+                                       onclick="return confirm('Supprimer cette catégorie ?');">
+                                        <i class="bi bi-trash3"></i>
+                                    </a>
+                                <?php } else { ?>
+                                    <span class="btn-soft disabled"
+                                          title="Impossible : catégorie liée à des contrats">
+                                        <i class="bi bi-lock"></i>
+                                    </span>
+                                <?php } ?>
+
+                            </div>
+                        </td>
+
+                    </tr>
+                <?php } ?>
+
+            <?php } else { ?>
+
+                <!-- Aucun résultat -->
+                <tr>
+                    <td colspan="5" style="text-align:center; padding:20px;">
+                        Aucune catégorie trouvée
+                    </td>
+                </tr>
+
+            <?php } ?>
+
+        </tbody>
+    </table>
+</div>
+
+                    <div id="emptyState" class="empty-box" style="display:none;">
+                        <i class="bi bi-folder-x"></i>
+                        <strong>Aucune catégorie trouvée</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+document.getElementById('topbarDate').textContent =
+    new Date().toLocaleDateString('fr-FR', {
+        weekday:'long',
+        day:'numeric',
+        month:'long',
+        year:'numeric'
+    });
+
+document.getElementById('searchInput').addEventListener('input', function () {
+    const value = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#categoriesTable tr');
+    let visible = 0;
+
+    rows.forEach(row => {
+        const search = row.dataset.search || '';
+        if (search.includes(value)) {
+            row.style.display = '';
+            visible++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    document.getElementById('emptyState').style.display = visible ? 'none' : 'block';
+});
+</script>
+
+</body>
+</html>

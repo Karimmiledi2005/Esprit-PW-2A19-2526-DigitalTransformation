@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sinistres — Protex Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/admin-users.css">
+    <script src="assets/js/validation.js"></script>
+</head>
+  <style>
+    /* ── Status select inline ── */
+    .status-select {
+      padding: 4px 24px 4px 10px;
+      border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer; outline: none;
+      font-family: var(--font-body);
+      transition: var(--transition);
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
+    }
+    .status-select.en_attente { background-color:rgba(244,162,97,0.15); color:var(--gold);    border-color:rgba(244,162,97,0.3); }
+    .status-select.valide     { background-color:rgba(0,180,216,0.15);  color:var(--accent);  border-color:rgba(0,180,216,0.3); }
+    .status-select.rembourse  { background-color:rgba(46,196,182,0.15); color:var(--success); border-color:rgba(46,196,182,0.3); }
+    .status-select.refuse     { background-color:rgba(230,57,70,0.15);  color:var(--danger);  border-color:rgba(230,57,70,0.3); }
+    .status-select option { background:#0d2845; color:var(--text-primary); }
+
+    /* ── Type icon cell ── */
+    .type-cell { display:flex; align-items:center; gap:8px; color:var(--text-secondary); font-size:13px; }
+    .type-icon {
+      width:28px; height:28px; border-radius:var(--radius-sm);
+      background:var(--glass-bg); border:1px solid var(--glass-border);
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; color:var(--accent); flex-shrink:0;
+    }
+
+    /* ── Detail modal ── */
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
+    .detail-field {
+      background:var(--glass-bg); border:1px solid var(--glass-border);
+      border-radius:var(--radius-md); padding:14px;
+    }
+    .detail-field.full { grid-column:span 2; }
+    .detail-field-label {
+      font-size:10px; font-weight:600; text-transform:uppercase;
+      letter-spacing:1px; color:var(--text-secondary);
+      display:flex; align-items:center; gap:5px; margin-bottom:6px;
+    }
+    .detail-field-value { font-size:13px; color:var(--text-primary); font-weight:500; line-height:1.6; }
+
+    /* ── Sinistre header in detail modal ── */
+    .sinistre-modal-header {
+      display:flex; align-items:center; gap:14px;
+      margin-bottom:20px; padding-bottom:18px;
+      border-bottom:1px solid var(--glass-border);
+    }
+    .sinistre-modal-icon {
+      width:48px; height:48px; border-radius:var(--radius-md);
+      background:var(--accent-glow); border:1px solid rgba(0,180,216,0.25);
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; color:var(--accent); flex-shrink:0;
+    }
+    .sinistre-modal-type { font-family:var(--font-display); font-size:16px; font-weight:700; color:#fff; }
+    .sinistre-modal-id   { font-size:12px; color:var(--text-secondary); margin-top:3px; }
+
+    /* toolbar padding override */
+    .toolbar-inner {
+      padding:16px 24px;
+      border-bottom:1px solid var(--glass-border);
+    }
+  </style>
+</head>
+<body>
+
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🛡️</div>
+      <div>
+        <div class="logo-text">Protex</div>
+        <div class="logo-sub">Back-Office</div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">AD</div>
+      <div>
+        <div class="user-name">Agent Admin</div>
+        <span class="user-role">Administrateur</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <a class="nav-item" href="#">
+        <i class="bi bi-grid-1x2"></i> Tableau de bord
+      </a>
+
+      <div class="nav-section">Gestion</div>
+      <a class="nav-item" href="admin-users.html">
+    <i class="bi bi-people"></i> Utilisateurs
+    <span class="nav-badge accent">24</span>
+</a>
+<a class="nav-item active" href="sinsiter.html">
+    <i class="bi bi-shield-exclamation"></i> Sinistres
+</a>
+
+<a class="nav-item" href="traitement.html">
+    <i class="bi bi-file-earmark-text"></i> Traitements
+</a>
+
+<a class="nav-item" href="contrats_back.php">
+    <i class="bi bi-file-earmark-text"></i> Contrats
+</a>
+
+<!-- 🔥 AJOUT ICI -->
+<a class="nav-item" href="categories_back.php">
+    <i class="bi bi-grid-3x3-gap"></i> Catégories
+</a>
+
+<a class="nav-item" href="garanties_back.php">
+    <i class="bi bi-shield-check"></i> Garanties
+</a>
+<!-- 🔥 FIN AJOUT -->
+
+<a class="nav-item" href="paiements_back.html">
+    <i class="bi bi-credit-card"></i> Paiements
+</a>
+
+<a class="nav-item" href="offres_back.html">
+    <i class="bi bi-tags"></i> Offres
+</a>
+
+<a class="nav-item" href="admin-reclamations.html">
+    <i class="bi bi-chat-dots"></i> Réclamations
+</a>
+
+<a class="nav-item" href="admin-agences.html">
+    <i class="bi bi-geo-alt"></i> Agences
+</a>
+
+<div class="nav-section">Compte</div>
+
+<a class="nav-item" href="adminprofile.html">
+    <i class="bi bi-person-gear"></i> Mon profil
+</a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="#" class="logout-btn">
+        <i class="bi bi-box-arrow-left"></i> Se déconnecter
+      </a>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Gestion des sinistres</div>
+        <div class="topbar-sub" id="topbarDate"></div>
+      </div>
+      <div class="topbar-actions">
+        <a href="#" class="topbar-btn" title="Notifications">
+          <i class="bi bi-bell"></i>
+          <span class="notif-dot"></span>
+        </a>
+        <a href="#" class="topbar-btn" title="Aide">
+          <i class="bi bi-question-circle"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="page-header-bar">
+        <div>
+          <div class="page-title">Sinistres</div>
+          <div class="page-breadcrumb">
+            <i class="bi bi-house"></i>
+            <a href="#">Accueil</a>
+            <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+            <span>Sinistres</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon"><i class="bi bi-shield-exclamation"></i></div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total sinistres</div>
+          <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> +8.2% ce mois</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+          <div class="stat-value" id="statAttente">0</div>
+          <div class="stat-label">En attente</div>
+          <div class="stat-trend trend-warn"><i class="bi bi-clock"></i> À traiter</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+          <div class="stat-value" id="statValides">0</div>
+          <div class="stat-label">Validés</div>
+          <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> +2 ce mois</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+          <div class="stat-value" id="statRefuses">0</div>
+          <div class="stat-label">Refusés</div>
+          <div class="stat-trend trend-down"><i class="bi bi-exclamation-triangle"></i> À vérifier</div>
+        </div>
+      </div>
+
+      <!-- TABLE CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="bi bi-table"></i> Liste des sinistres
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">
+            <i class="bi bi-download"></i> Exporter
+          </button>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar-inner">
+          <div class="toolbar" style="margin-bottom:0;">
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="searchInput" placeholder="Rechercher par ID, contrat, type...">
+            </div>
+            <select class="filter-select" id="filterStatut">
+              <option value="">Tous les statuts</option>
+              <option value="en_attente">En attente</option>
+              <option value="valide">Validé</option>
+              <option value="rembourse">Remboursé</option>
+              <option value="refuse">Refusé</option>
+            </select>
+            <select class="filter-select" id="filterType">
+              <option value="">Tous les types</option>
+              <option value="Accident auto">Accident auto</option>
+              <option value="Incendie">Incendie</option>
+              <option value="Vol">Vol</option>
+              <option value="Dégât des eaux">Dégât des eaux</option>
+            </select>
+            <input type="date" class="filter-select" id="filterDate" style="padding-right:10px;">
+            <button class="btn btn-outline btn-sm" onclick="resetFilters()">
+              <i class="bi bi-x-circle"></i> Réinitialiser
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Contrat</th>
+                <th>Type</th>
+                <th>Client</th>
+                <th>Date</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="sinistreBody"></tbody>
+          </table>
+          <div id="emptyState" style="display:none;text-align:center;padding:48px 20px;color:var(--text-secondary);">
+            <i class="bi bi-shield-slash" style="font-size:36px;display:block;margin-bottom:10px;opacity:0.3;"></i>
+            <p style="font-size:14px;">Aucun sinistre trouvé</p>
+          </div>
+        </div>
+
+        <div class="pagination">
+          <div class="pagination-info" id="paginationInfo"></div>
+          <div class="pagination-btns" id="paginationBtns"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ===== MODAL DÉTAIL ===== -->
+<div class="modal-overlay" id="modalDetail">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="bi bi-shield-exclamation"></i> Détails du sinistre</div>
+      <button class="modal-close" onclick="closeModal('modalDetail')"><i class="bi bi-x"></i></button>
+    </div>
+    <div id="modalDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalDetail')">Fermer</button>
+    </div>
+  </div>
+</div>
+<!-- ===== MODAL SUPPRIMER ===== -->
+<div class="modal-overlay delete-modal" id="modalDelete">
+  <div class="modal">
+    <div class="delete-icon"><i class="bi bi-trash3"></i></div>
+    <div class="delete-title">Supprimer ce sinistre ?</div>
+    <div class="delete-msg" id="deleteMsg">Cette action est irréversible.</div>
+    <div class="modal-footer" style="justify-content:center;margin-top:28px;">
+      <button class="btn btn-outline" onclick="closeModal('modalDelete')">Annuler</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">
+        <i class="bi bi-trash3"></i> Supprimer définitivement
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/sinistre.js"></script>
+
+</body>
+</html>
