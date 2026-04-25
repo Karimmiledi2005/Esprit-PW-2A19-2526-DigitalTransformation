@@ -162,13 +162,6 @@ http://localhost/Protex/
 | Agent | agent@protex.tn | agent123 |
 | Client | client@protex.tn | client123 |
 
-## Gestion Réclamation
-| Todo | In Progress | Done |
-|------|------------|------|
-| ⬜ Le fonctionalités avancées  | 🔄Amélioration de l'interface | ✅ CRUD complet "Réclamation"  |
-| ⬜ Le fonctionalités innovantes | 🔄 CRUD "Réponse" | ✅ Base de données |
-|  | | ✅ la jointure associée |
-|  | | ✅ integration de les interfaces |
 ## USER
 | Todo | In Progress | Done |
 |------|------------|------|
