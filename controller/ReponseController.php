@@ -95,7 +95,7 @@ class ReponseController
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    // ── LIST ALL RECLAMATIONS + REPONSE (Back Office) ────────────────────────
+    // ── LIST ALL RECLAMATIONS + REPONSE (Back Office) ────────────────────────    
     public function listAllReclamations()
     {
         $sql = "SELECT
