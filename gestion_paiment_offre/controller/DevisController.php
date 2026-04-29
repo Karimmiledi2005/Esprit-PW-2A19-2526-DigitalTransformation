@@ -1,0 +1,757 @@
+<?php
+/**
+ * DevisController.php
+ * Gestion complète des devis : ajout, liste, détails, modification, suppression
+ * Validation renforcée avec messages précis — Protex 2026
+ */
+
+include(__DIR__ . '/../config.php');
+include(__DIR__ . '/../model/Devis.php');
+
+class DevisController
+{
+    // ═══════════════════════════════════════════════════════════════
+    // CONSTANTES
+    // ═══════════════════════════════════════════════════════════════
+
+    private const TYPES_VALIDES   = ['auto', 'habitation', 'sante'];
+    private const STATUTS_VALIDES = ['en_attente', 'en_cours', 'accepte', 'refuse', 'expire'];
+
+    private const ANNEE_MIN_VEHICULE  = 1950;
+    private const SURFACE_MIN         = 5;        // m²
+    private const SURFACE_MAX         = 10000;    // m²
+    private const VALEUR_BIEN_MAX     = 99999999;
+    private const AGE_MIN             = 0;
+    private const AGE_MAX             = 120;
+    private const PUISSANCE_MIN       = 1;
+    private const PUISSANCE_MAX       = 50;       // chevaux fiscaux
+
+    // URL de base du projet
+    private string $baseUrl = '/projet_web1/gestion_paiment_offre';
+
+    // ═══════════════════════════════════════════════════════════════
+    // REDIRECTIONS
+    // ═══════════════════════════════════════════════════════════════
+
+    private function redirectFront(string $message = '', string $erreur = ''): void
+    {
+        $params = [];
+        if ($message !== '') $params['success'] = urlencode($message);
+        if ($erreur  !== '') $params['erreur']  = urlencode($erreur);
+
+        $query = $params ? '?' . http_build_query($params) : '';
+        header('Location: ' . $this->baseUrl . '/view/FrontOffice/ajoutdevis.php' . $query);
+        exit;
+    }
+
+    private function redirectBack(string $message = '', string $erreur = ''): void
+    {
+        $params = ['action' => 'index'];
+        if ($message !== '') $params['message'] = $message;
+        if ($erreur  !== '') $params['erreur']  = $erreur;
+
+        header('Location: ' . $this->baseUrl . '/controller/DevisController.php?' . http_build_query($params));
+        exit;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // INDEX — liste des devis (Back-Office)
+    // ═══════════════════════════════════════════════════════════════
+
+    public function index(): void
+    {
+        $db      = config::getConnexion();
+        $message = $_GET['message'] ?? '';
+        $erreur  = $_GET['erreur']  ?? '';
+
+        try {
+            $devis = $db->query("
+                SELECT d.*, o.nom_offre
+                FROM devis d
+                LEFT JOIN offre o ON d.id_offre = o.id_offre
+                ORDER BY d.date_demande DESC, d.id_devis DESC
+            ")->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            die('Erreur chargement devis : ' . htmlspecialchars($e->getMessage()));
+        }
+
+        try {
+            $stats = $db->query("
+                SELECT
+                    COUNT(*)                          AS total,
+                    SUM(statut = 'en_attente')        AS en_attente,
+                    SUM(statut = 'en_cours')          AS en_cours,
+                    SUM(statut = 'accepte')           AS acceptes,
+                    SUM(statut = 'refuse')            AS refuses,
+                    SUM(statut = 'expire')            AS expires,
+                    AVG(NULLIF(montant_estime, 0))    AS montant_moyen
+                FROM devis
+            ")->fetch(PDO::FETCH_ASSOC) ?: [];
+        } catch (Exception $e) {
+            $stats = [];
+        }
+
+        if (file_exists(__DIR__ . '/../view/BackOffice/devis/liste.php')) {
+            require_once __DIR__ . '/../view/BackOffice/devis/liste.php';
+        } else {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['devis' => $devis, 'stats' => $stats]);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // AJOUTER — formulaire Front-Office
+    // ═══════════════════════════════════════════════════════════════
+
+    public function ajouter(): void
+    {
+        $errors = [];
+        $old    = [];
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $old    = $this->sanitizePost($_POST);
+            $errors = $this->valider($_POST);
+
+            if (empty($errors)) {
+                try {
+                    $db = config::getConnexion();
+                    $db->beginTransaction();
+
+                    // ── Vérifier que l'offre existe et est active ──
+                    if (!empty($_POST['id_offre'])) {
+                        $check = $db->prepare("SELECT id_offre FROM offre WHERE id_offre = ? AND statut = 'active'");
+                        $check->execute([(int)$_POST['id_offre']]);
+                        if (!$check->fetch()) {
+                            $errors['id_offre'] = "L'offre sélectionnée n'existe pas ou n'est plus disponible.";
+                            $db->rollBack();
+                        }
+                    }
+
+                    if (empty($errors)) {
+                        // ── Insertion principale ──
+                        $stmt = $db->prepare("
+                            INSERT INTO devis
+                                (id_offre, nom, prenom, email, telephone, type_assurance, statut, montant_estime, reponse_admin)
+                            VALUES
+                                (:id_offre, :nom, :prenom, :email, :telephone, :type_assurance, :statut, :montant_estime, :reponse_admin)
+                        ");
+
+                        $stmt->execute([
+                            ':id_offre'       => !empty($_POST['id_offre']) ? (int)$_POST['id_offre'] : null,
+                            ':nom'            => trim($_POST['nom']),
+                            ':prenom'         => trim($_POST['prenom']),
+                            ':email'          => strtolower(trim($_POST['email'])),
+                            ':telephone'      => preg_replace('/\s+/', '', trim($_POST['telephone'])),
+                            ':type_assurance' => trim($_POST['type_assurance']),
+                            ':statut'         => 'en_attente',
+                            ':montant_estime' => null,
+                            ':reponse_admin'  => null,
+                        ]);
+
+                        $id_devis = (int)$db->lastInsertId();
+                        $type     = strtolower(trim($_POST['type_assurance']));
+
+                        $this->insererDetails($db, $id_devis, $type, $_POST);
+                        $db->commit();
+
+                        $reference = 'DEV-2026-' . str_pad($id_devis, 4, '0', STR_PAD_LEFT);
+                        $this->redirectFront("Votre demande de devis a bien été enregistrée. Référence : $reference");
+                    }
+
+                } catch (Exception $e) {
+                    if (isset($db) && $db->inTransaction()) {
+                        $db->rollBack();
+                    }
+                    $errors['general'] = "Erreur lors de l'enregistrement : " . $e->getMessage();
+                }
+            }
+        }
+
+        $offres = $this->chargerOffresParType();
+        require_once __DIR__ . '/../view/FrontOffice/ajoutdevis.php';
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // DÉTAILS — Back-Office
+    // ═══════════════════════════════════════════════════════════════
+
+    public function details(): void
+    {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+        if ($id <= 0) {
+            $this->redirectBack('', 'Identifiant de devis invalide.');
+        }
+
+        $db = config::getConnexion();
+
+        try {
+            $stmt = $db->prepare("
+                SELECT d.*, o.nom_offre
+                FROM devis d
+                LEFT JOIN offre o ON d.id_offre = o.id_offre
+                WHERE d.id_devis = ?
+            ");
+            $stmt->execute([$id]);
+            $devis = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$devis) {
+                $this->redirectBack('', "Le devis #$id n'existe pas.");
+            }
+
+            $details = $this->chargerDetails($db, $id, $devis['type_assurance']);
+
+        } catch (Exception $e) {
+            die('Erreur : ' . htmlspecialchars($e->getMessage()));
+        }
+
+        if (file_exists(__DIR__ . '/../view/BackOffice/devis/details.php')) {
+            require_once __DIR__ . '/../view/BackOffice/devis/details.php';
+        } else {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['devis' => $devis, 'details' => $details]);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // MODIFIER — Back-Office
+    // ═══════════════════════════════════════════════════════════════
+
+    public function modifier(): void
+    {
+        $id     = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $errors = [];
+        $old    = [];
+
+        if ($id <= 0) {
+            $this->redirectBack('', 'Identifiant de devis invalide.');
+        }
+
+        $db   = config::getConnexion();
+        $stmt = $db->prepare("
+            SELECT d.*, o.nom_offre
+            FROM devis d
+            LEFT JOIN offre o ON d.id_offre = o.id_offre
+            WHERE d.id_devis = ?
+        ");
+        $stmt->execute([$id]);
+        $devis = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$devis) {
+            $this->redirectBack('', "Le devis #$id n'existe pas.");
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $old    = $this->sanitizePost($_POST);
+            $errors = $this->validerModification($_POST);
+
+            if (empty($errors)) {
+                try {
+                    $stmt = $db->prepare("
+                        UPDATE devis
+                        SET statut         = :statut,
+                            montant_estime = :montant_estime,
+                            reponse_admin  = :reponse_admin
+                        WHERE id_devis = :id_devis
+                    ");
+
+                    $stmt->execute([
+                        ':statut'         => trim($_POST['statut']),
+                        ':montant_estime' => (isset($_POST['montant_estime']) && $_POST['montant_estime'] !== '')
+                            ? round((float)$_POST['montant_estime'], 3) : null,
+                        ':reponse_admin'  => trim($_POST['reponse_admin'] ?? ''),
+                        ':id_devis'       => $id,
+                    ]);
+
+                    $this->redirectBack('Devis modifié avec succès.');
+
+                } catch (Exception $e) {
+                    $errors['general'] = 'Erreur lors de la modification : ' . $e->getMessage();
+                }
+            }
+        }
+
+        if (file_exists(__DIR__ . '/../view/BackOffice/devis/modifier.php')) {
+            require_once __DIR__ . '/../view/BackOffice/devis/modifier.php';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SUPPRIMER — Back-Office
+    // ═══════════════════════════════════════════════════════════════
+
+    public function supprimer(): void
+    {
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+
+        if ($id <= 0) {
+            $this->redirectBack('', 'Identifiant de devis invalide.');
+        }
+
+        $db   = config::getConnexion();
+        $stmt = $db->prepare("SELECT id_devis, nom, prenom, type_assurance FROM devis WHERE id_devis = ?");
+        $stmt->execute([$id]);
+        $devis = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$devis) {
+            $this->redirectBack('', "Le devis #$id n'existe pas.");
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $db->beginTransaction();
+                $db->prepare("DELETE FROM devis_auto       WHERE id_devis = ?")->execute([$id]);
+                $db->prepare("DELETE FROM devis_habitation WHERE id_devis = ?")->execute([$id]);
+                $db->prepare("DELETE FROM devis_sante      WHERE id_devis = ?")->execute([$id]);
+                $db->prepare("DELETE FROM devis            WHERE id_devis = ?")->execute([$id]);
+                $db->commit();
+                $this->redirectBack('Devis supprimé avec succès.');
+
+            } catch (Exception $e) {
+                if ($db->inTransaction()) $db->rollBack();
+                $this->redirectBack('', 'Erreur lors de la suppression : ' . $e->getMessage());
+            }
+        }
+
+        if (file_exists(__DIR__ . '/../view/BackOffice/devis/supprimer.php')) {
+            require_once __DIR__ . '/../view/BackOffice/devis/supprimer.php';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // VALIDATION — création (avec messages PRÉCIS)
+    // ═══════════════════════════════════════════════════════════════
+
+    private function valider(array $data): array
+    {
+        $errors = [];
+
+        $nom            = trim($data['nom'] ?? '');
+        $prenom         = trim($data['prenom'] ?? '');
+        $email          = trim($data['email'] ?? '');
+        $telephone      = preg_replace('/\s+/', '', trim($data['telephone'] ?? ''));
+        $type           = trim($data['type_assurance'] ?? '');
+        $id_offre       = trim($data['id_offre'] ?? '');
+
+        // ─────────────────────────────────────────────────────
+        // 👤 NOM — minimum 2 lettres, lettres uniquement
+        // ─────────────────────────────────────────────────────
+        if ($nom === '') {
+            $errors['nom'] = "Le nom est obligatoire.";
+        } elseif (mb_strlen($nom) < 2) {
+            $errors['nom'] = "Le nom doit contenir au moins 2 caractères.";
+        } elseif (mb_strlen($nom) > 100) {
+            $errors['nom'] = "Le nom ne peut pas dépasser 100 caractères.";
+        } elseif (!preg_match("/^[a-zA-ZÀ-ÿ\s'-]+$/u", $nom)) {
+            $errors['nom'] = "Le nom ne doit contenir que des lettres, espaces, apostrophes ou tirets (pas de chiffres).";
+        }
+
+        // ─────────────────────────────────────────────────────
+        // 👤 PRÉNOM
+        // ─────────────────────────────────────────────────────
+        if ($prenom === '') {
+            $errors['prenom'] = "Le prénom est obligatoire.";
+        } elseif (mb_strlen($prenom) < 2) {
+            $errors['prenom'] = "Le prénom doit contenir au moins 2 caractères.";
+        } elseif (mb_strlen($prenom) > 100) {
+            $errors['prenom'] = "Le prénom ne peut pas dépasser 100 caractères.";
+        } elseif (!preg_match("/^[a-zA-ZÀ-ÿ\s'-]+$/u", $prenom)) {
+            $errors['prenom'] = "Le prénom ne doit contenir que des lettres, espaces, apostrophes ou tirets (pas de chiffres).";
+        }
+
+        // ─────────────────────────────────────────────────────
+        // 📧 EMAIL — format valide
+        // ─────────────────────────────────────────────────────
+        if ($email === '') {
+            $errors['email'] = "L'adresse email est obligatoire.";
+        } elseif (mb_strlen($email) > 150) {
+            $errors['email'] = "L'email ne peut pas dépasser 150 caractères.";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $errors['email'] = "Format d'email invalide. Exemple correct : nom@exemple.com";
+        }
+
+        // ─────────────────────────────────────────────────────
+        // 📞 TÉLÉPHONE — 8 chiffres exactement (format tunisien)
+        // ─────────────────────────────────────────────────────
+        if ($telephone === '') {
+            $errors['telephone'] = "Le numéro de téléphone est obligatoire.";
+        } elseif (!preg_match('/^[0-9]{8}$/', $telephone)) {
+            $errors['telephone'] = "Le téléphone doit contenir exactement 8 chiffres (ex: 20123456).";
+        } elseif (!preg_match('/^[2-59]/', $telephone)) {
+            $errors['telephone'] = "Le numéro doit commencer par 2, 3, 4, 5 ou 9 (numéro tunisien valide).";
+        }
+
+        // ─────────────────────────────────────────────────────
+        // 🛡️ TYPE D'ASSURANCE
+        // ─────────────────────────────────────────────────────
+        if ($type === '') {
+            $errors['type_assurance'] = "Veuillez choisir un type d'assurance (Auto, Habitation ou Santé).";
+        } elseif (!in_array($type, self::TYPES_VALIDES, true)) {
+            $errors['type_assurance'] = "Type d'assurance invalide. Choix possibles : Auto, Habitation ou Santé.";
+        }
+
+        // ─────────────────────────────────────────────────────
+        // 🎁 OFFRE
+        // ─────────────────────────────────────────────────────
+        if ($id_offre === '') {
+            $errors['id_offre'] = "Veuillez sélectionner une offre.";
+        } elseif (!ctype_digit($id_offre) || (int)$id_offre <= 0) {
+            $errors['id_offre'] = "Offre invalide.";
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 🚗 SECTION AUTO
+        // ═══════════════════════════════════════════════════════════
+        if ($type === 'auto') {
+            $marque          = trim($data['marque'] ?? '');
+            $modele          = trim($data['modele'] ?? '');
+            $annee           = trim($data['annee'] ?? '');
+            $immatriculation = trim($data['immatriculation'] ?? '');
+            $puissance       = trim($data['puissance'] ?? '');
+            $valeur_vehicule = trim($data['valeur_vehicule'] ?? '');
+
+            // Marque
+            if ($marque === '') {
+                $errors['marque'] = "La marque du véhicule est obligatoire (ex: Peugeot, Renault, Toyota).";
+            } elseif (mb_strlen($marque) < 2) {
+                $errors['marque'] = "La marque doit contenir au moins 2 caractères.";
+            } elseif (!preg_match("/^[a-zA-Z0-9À-ÿ\s'-]+$/u", $marque)) {
+                $errors['marque'] = "La marque contient des caractères invalides.";
+            }
+
+            // Modèle
+            if ($modele === '') {
+                $errors['modele'] = "Le modèle du véhicule est obligatoire (ex: 208, Clio, Yaris).";
+            } elseif (mb_strlen($modele) < 1) {
+                $errors['modele'] = "Le modèle doit contenir au moins 1 caractère.";
+            }
+
+            // Année
+            $anneeActuelle = (int)date('Y');
+            if ($annee === '') {
+                $errors['annee'] = "L'année du véhicule est obligatoire.";
+            } elseif (!ctype_digit($annee) || strlen($annee) !== 4) {
+                $errors['annee'] = "L'année doit être un nombre à 4 chiffres (ex: 2020).";
+            } elseif ((int)$annee < self::ANNEE_MIN_VEHICULE) {
+                $errors['annee'] = "L'année doit être supérieure à " . self::ANNEE_MIN_VEHICULE . ".";
+            } elseif ((int)$annee > $anneeActuelle + 1) {
+                $errors['annee'] = "L'année ne peut pas être supérieure à " . ($anneeActuelle + 1) . ".";
+            }
+
+            // Immatriculation
+            if ($immatriculation === '') {
+                $errors['immatriculation'] = "L'immatriculation est obligatoire (ex: 123 TUN 4567).";
+            } elseif (mb_strlen($immatriculation) < 4) {
+                $errors['immatriculation'] = "L'immatriculation doit contenir au moins 4 caractères.";
+            } elseif (mb_strlen($immatriculation) > 20) {
+                $errors['immatriculation'] = "L'immatriculation ne peut pas dépasser 20 caractères.";
+            }
+
+            // Puissance fiscale (optionnelle)
+            if ($puissance !== '') {
+                if (!ctype_digit($puissance)) {
+                    $errors['puissance'] = "La puissance fiscale doit être un nombre entier.";
+                } elseif ((int)$puissance < self::PUISSANCE_MIN || (int)$puissance > self::PUISSANCE_MAX) {
+                    $errors['puissance'] = "La puissance doit être entre " . self::PUISSANCE_MIN . " et " . self::PUISSANCE_MAX . " chevaux.";
+                }
+            }
+
+            // Valeur véhicule (optionnelle)
+            if ($valeur_vehicule !== '') {
+                if (!is_numeric($valeur_vehicule)) {
+                    $errors['valeur_vehicule'] = "La valeur estimée doit être un nombre (ex: 25000).";
+                } elseif ((float)$valeur_vehicule <= 0) {
+                    $errors['valeur_vehicule'] = "La valeur doit être supérieure à 0.";
+                } elseif ((float)$valeur_vehicule > self::VALEUR_BIEN_MAX) {
+                    $errors['valeur_vehicule'] = "La valeur est trop élevée (maximum " . number_format(self::VALEUR_BIEN_MAX, 0, ',', ' ') . " DT).";
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // 🏠 SECTION HABITATION
+        // ═══════════════════════════════════════════════════════════
+        if ($type === 'habitation') {
+            $type_logement = trim($data['type_logement'] ?? $data['type_habitation'] ?? '');
+            $surface       = trim($data['surface'] ?? $data['superficie'] ?? '');
+            $valeur_bien   = trim($data['valeur_bien'] ?? '');
+            $ville         = trim($data['ville'] ?? '');
+            $adresse       = trim($data['adresse'] ?? '');
+            $statut_occ    = trim($data['proprietaire_locataire'] ?? $data['statut_occupation'] ?? '');
+
+            // Type de logement
+            if ($type_logement === '') {
+                $errors['type_logement'] = "Le type de logement est obligatoire (Appartement, Maison, Studio, Villa).";
+            }
+
+            // Surface
+            if ($surface === '') {
+                $errors['surface'] = "La surface est obligatoire.";
+            } elseif (!is_numeric($surface)) {
+                $errors['surface'] = "La surface doit être un nombre (ex: 80).";
+            } elseif ((float)$surface < self::SURFACE_MIN) {
+                $errors['surface'] = "La surface doit être d'au moins " . self::SURFACE_MIN . " m².";
+            } elseif ((float)$surface > self::SURFACE_MAX) {
+                $errors['surface'] = "La surface ne peut pas dépasser " . self::SURFACE_MAX . " m².";
+            }
+
+            // Valeur du bien (optionnelle mais recommandée)
+            if ($valeur_bien !== '') {
+                if (!is_numeric($valeur_bien)) {
+                    $errors['valeur_bien'] = "La valeur du bien doit être un nombre.";
+                } elseif ((float)$valeur_bien <= 0) {
+                    $errors['valeur_bien'] = "La valeur du bien doit être supérieure à 0.";
+                } elseif ((float)$valeur_bien > self::VALEUR_BIEN_MAX) {
+                    $errors['valeur_bien'] = "La valeur est trop élevée (maximum " . number_format(self::VALEUR_BIEN_MAX, 0, ',', ' ') . " DT).";
+                }
+            }
+
+            // Ville
+            if ($ville === '') {
+                $errors['ville'] = "La ville est obligatoire.";
+            } elseif (mb_strlen($ville) < 2) {
+                $errors['ville'] = "La ville doit contenir au moins 2 caractères.";
+            } elseif (!preg_match("/^[a-zA-ZÀ-ÿ\s'-]+$/u", $ville)) {
+                $errors['ville'] = "La ville ne doit contenir que des lettres.";
+            }
+
+            // Adresse
+            if ($adresse === '') {
+                $errors['adresse'] = "L'adresse est obligatoire.";
+            } elseif (mb_strlen($adresse) < 5) {
+                $errors['adresse'] = "L'adresse doit contenir au moins 5 caractères.";
+            }
+
+            // Statut occupation
+            if ($statut_occ === '') {
+                $errors['proprietaire_locataire'] = "Veuillez préciser si vous êtes propriétaire ou locataire.";
+            } elseif (!in_array($statut_occ, ['proprietaire', 'locataire'], true)) {
+                $errors['proprietaire_locataire'] = "Statut invalide (propriétaire ou locataire).";
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        // ❤️ SECTION SANTÉ
+        // ═══════════════════════════════════════════════════════════
+        if ($type === 'sante') {
+            $age              = trim($data['age'] ?? '');
+            $situation        = trim($data['situation_familiale'] ?? '');
+            $nb_benef         = trim($data['nombre_beneficiaires'] ?? '');
+            $couverture       = trim($data['couverture_souhaitee'] ?? '');
+            $profession       = trim($data['profession'] ?? '');
+
+            // Âge
+            if ($age === '') {
+                $errors['age'] = "L'âge est obligatoire.";
+            } elseif (!ctype_digit($age)) {
+                $errors['age'] = "L'âge doit être un nombre entier.";
+            } elseif ((int)$age < self::AGE_MIN) {
+                $errors['age'] = "L'âge ne peut pas être négatif.";
+            } elseif ((int)$age > self::AGE_MAX) {
+                $errors['age'] = "L'âge ne peut pas dépasser " . self::AGE_MAX . " ans.";
+            } elseif ((int)$age < 18) {
+                $errors['age'] = "Vous devez être majeur (18 ans minimum) pour souscrire.";
+            }
+
+            // Situation familiale
+            if ($situation === '') {
+                $errors['situation_familiale'] = "La situation familiale est obligatoire (Célibataire, Marié, Divorcé, Veuf).";
+            }
+
+            // Nombre de bénéficiaires
+            if ($nb_benef !== '') {
+                if (!ctype_digit($nb_benef)) {
+                    $errors['nombre_beneficiaires'] = "Le nombre de bénéficiaires doit être un nombre entier.";
+                } elseif ((int)$nb_benef < 1) {
+                    $errors['nombre_beneficiaires'] = "Au moins 1 bénéficiaire est requis.";
+                } elseif ((int)$nb_benef > 20) {
+                    $errors['nombre_beneficiaires'] = "Le nombre de bénéficiaires ne peut pas dépasser 20.";
+                }
+            }
+
+            // Couverture
+            if ($couverture === '') {
+                $errors['couverture_souhaitee'] = "Veuillez choisir un niveau de couverture (Basique, Standard, Premium).";
+            }
+
+            // Profession
+            if ($profession !== '' && mb_strlen($profession) > 100) {
+                $errors['profession'] = "La profession ne peut pas dépasser 100 caractères.";
+            }
+        }
+
+        return $errors;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // VALIDATION — modification (admin)
+    // ═══════════════════════════════════════════════════════════════
+
+    private function validerModification(array $data): array
+    {
+        $errors = [];
+
+        $statut         = trim((string)($data['statut']         ?? ''));
+        $montant_estime = trim((string)($data['montant_estime'] ?? ''));
+        $reponse_admin  = trim((string)($data['reponse_admin']  ?? ''));
+
+        // Statut
+        if ($statut === '') {
+            $errors['statut'] = "Le statut est obligatoire.";
+        } elseif (!in_array($statut, self::STATUTS_VALIDES, true)) {
+            $errors['statut'] = "Statut invalide. Valeurs acceptées : " . implode(', ', self::STATUTS_VALIDES) . ".";
+        }
+
+        // Montant estimé
+        if ($montant_estime !== '') {
+            if (!is_numeric($montant_estime)) {
+                $errors['montant_estime'] = "Le montant estimé doit être un nombre valide (ex: 1500.000).";
+            } elseif ((float)$montant_estime < 0) {
+                $errors['montant_estime'] = "Le montant ne peut pas être négatif.";
+            } elseif ((float)$montant_estime > self::VALEUR_BIEN_MAX) {
+                $errors['montant_estime'] = "Le montant est trop élevé (maximum " . number_format(self::VALEUR_BIEN_MAX, 0, ',', ' ') . " DT).";
+            }
+        }
+
+        // Réponse admin
+        if ($reponse_admin !== '' && mb_strlen($reponse_admin) > 1000) {
+            $errors['reponse_admin'] = "La réponse ne peut pas dépasser 1000 caractères (actuellement : " . mb_strlen($reponse_admin) . ").";
+        }
+
+        return $errors;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // INSERTION DES DÉTAILS PAR TYPE
+    // ═══════════════════════════════════════════════════════════════
+
+    private function insererDetails(PDO $db, int $id_devis, string $type, array $post): void
+    {
+        if ($type === 'auto') {
+            $db->prepare("
+                INSERT INTO devis_auto
+                    (id_devis, marque, modele, annee, immatriculation, puissance, carburant, usage_vehicule)
+                VALUES
+                    (:id_devis, :marque, :modele, :annee, :immatriculation, :puissance, :carburant, :usage_vehicule)
+            ")->execute([
+                ':id_devis'        => $id_devis,
+                ':marque'          => trim($post['marque'] ?? ''),
+                ':modele'          => trim($post['modele'] ?? ''),
+                ':annee'           => !empty($post['annee']) ? (int)$post['annee'] : null,
+                ':immatriculation' => strtoupper(trim($post['immatriculation'] ?? '')),
+                ':puissance'       => !empty($post['puissance']) ? (int)$post['puissance'] : null,
+                ':carburant'       => trim($post['carburant'] ?? ''),
+                ':usage_vehicule'  => trim($post['usage_vehicule'] ?? ''),
+            ]);
+
+        } elseif ($type === 'habitation') {
+            $db->prepare("
+                INSERT INTO devis_habitation
+                    (id_devis, type_logement, surface, valeur_bien, ville, adresse, proprietaire_locataire)
+                VALUES
+                    (:id_devis, :type_logement, :surface, :valeur_bien, :ville, :adresse, :proprietaire_locataire)
+            ")->execute([
+                ':id_devis'                 => $id_devis,
+                ':type_logement'            => trim($post['type_logement'] ?? $post['type_habitation'] ?? ''),
+                ':surface'                  => isset($post['surface']) && $post['surface'] !== ''
+                    ? (float)$post['surface']
+                    : (isset($post['superficie']) && $post['superficie'] !== '' ? (float)$post['superficie'] : null),
+                ':valeur_bien'              => isset($post['valeur_bien']) && $post['valeur_bien'] !== ''
+                    ? round((float)$post['valeur_bien'], 3) : null,
+                ':ville'                    => ucfirst(strtolower(trim($post['ville'] ?? ''))),
+                ':adresse'                  => trim($post['adresse'] ?? ''),
+                ':proprietaire_locataire'   => trim($post['proprietaire_locataire'] ?? $post['statut_occupation'] ?? ''),
+            ]);
+
+        } elseif ($type === 'sante') {
+            $db->prepare("
+                INSERT INTO devis_sante
+                    (id_devis, age, situation_familiale, nombre_beneficiaires, antecedents_medicaux, couverture_souhaitee, profession)
+                VALUES
+                    (:id_devis, :age, :situation_familiale, :nombre_beneficiaires, :antecedents_medicaux, :couverture_souhaitee, :profession)
+            ")->execute([
+                ':id_devis'               => $id_devis,
+                ':age'                    => !empty($post['age']) ? (int)$post['age'] : null,
+                ':situation_familiale'    => trim($post['situation_familiale']    ?? ''),
+                ':nombre_beneficiaires'   => !empty($post['nombre_beneficiaires']) ? (int)$post['nombre_beneficiaires'] : 1,
+                ':antecedents_medicaux'   => trim($post['antecedents_medicaux']   ?? ''),
+                ':couverture_souhaitee'   => trim($post['couverture_souhaitee']   ?? ''),
+                ':profession'             => trim($post['profession']             ?? ''),
+            ]);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // CHARGER LES DÉTAILS D'UN DEVIS
+    // ═══════════════════════════════════════════════════════════════
+
+    private function chargerDetails(PDO $db, int $id_devis, string $type): ?array
+    {
+        $tables = [
+            'auto'       => 'devis_auto',
+            'habitation' => 'devis_habitation',
+            'sante'      => 'devis_sante',
+        ];
+
+        if (!isset($tables[$type])) return null;
+
+        $stmt = $db->prepare("SELECT * FROM {$tables[$type]} WHERE id_devis = ?");
+        $stmt->execute([$id_devis]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // CHARGER LES OFFRES PAR TYPE
+    // ═══════════════════════════════════════════════════════════════
+
+    private function chargerOffresParType(): array
+    {
+        $offres = ['auto' => [], 'habitation' => [], 'sante' => []];
+
+        try {
+            $db   = config::getConnexion();
+            $stmt = $db->query("
+                SELECT id_offre, nom_offre, type_offre, prix_mensuel, prix_annuel, couverture
+                FROM offre
+                WHERE statut = 'active'
+                ORDER BY type_offre, prix_annuel ASC
+            ");
+            foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $o) {
+                if (isset($offres[$o['type_offre']])) {
+                    $offres[$o['type_offre']][] = $o;
+                }
+            }
+        } catch (Exception $e) {
+            // Silencieux — formulaire affiché sans offres
+        }
+
+        return $offres;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // SANITIZE POST
+    // ═══════════════════════════════════════════════════════════════
+
+    private function sanitizePost(array $post): array
+    {
+        return array_map(
+            fn($v) => htmlspecialchars(trim((string)($v ?? '')), ENT_QUOTES, 'UTF-8'),
+            $post
+        );
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROUTEUR
+// ═══════════════════════════════════════════════════════════════
+
+$controller = new DevisController();
+$action     = $_GET['action'] ?? 'index';
+
+switch ($action) {
+    case 'ajouter':   $controller->ajouter();   break;
+    case 'details':   $controller->details();   break;
+    case 'modifier':  $controller->modifier();  break;
+    case 'supprimer': $controller->supprimer(); break;
+    default:          $controller->index();     break;
+}
