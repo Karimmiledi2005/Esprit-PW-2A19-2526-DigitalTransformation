@@ -15,6 +15,7 @@ foreach ($traitements as $t) {
         'montant_indemnise' => $t->getMontantIndemnise(),
         'statut' => $t->getStatut(),
         'date_traitement' => $t->getDateTraitement(),
+        'message_agent' => $t->getMessageAgent(),
     ];
 }
 

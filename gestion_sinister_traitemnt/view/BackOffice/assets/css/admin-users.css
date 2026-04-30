@@ -320,6 +320,72 @@ select.form-control option { background: #0d2845; }
 .page-breadcrumb span { color: var(--accent); }
 .page-breadcrumb a { color: inherit; text-decoration: none; }
 
+/* ===== SORTABLE TABLE HEADERS ===== */
+thead th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 28px;
+    transition: color 0.2s ease, background 0.2s ease;
+}
+thead th.sortable:hover {
+    color: var(--accent);
+    background: rgba(0,180,216,0.06);
+}
+thead th.sortable::after {
+    content: '\2195';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    opacity: 0.35;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+thead th.sortable:hover::after {
+    opacity: 0.7;
+}
+thead th.sortable.sort-asc,
+thead th.sortable.sort-desc {
+    color: var(--accent);
+    background: rgba(0,180,216,0.06);
+    border-bottom-color: var(--accent);
+}
+thead th.sortable.sort-asc::after {
+    content: '\2191';
+    opacity: 1;
+    color: var(--accent);
+}
+thead th.sortable.sort-desc::after {
+    content: '\2193';
+    opacity: 1;
+    color: var(--accent);
+}
+
+/* Sort indicator pill in toolbar */
+.sort-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(0,180,216,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(0,180,216,0.25);
+    cursor: pointer;
+    transition: var(--transition);
+    white-space: nowrap;
+}
+.sort-indicator:hover {
+    background: rgba(0,180,216,0.2);
+    border-color: rgba(0,180,216,0.4);
+}
+.sort-indicator i {
+    font-size: 10px;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 768px) {

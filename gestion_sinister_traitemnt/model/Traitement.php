@@ -9,6 +9,7 @@ class Traitement {
     private $montant_indemnise;
     private $statut;
     private $date_traitement;
+    private $message_agent;
 
     // Constructor
     public function __construct($id_sinistre, $id_user, $nom_agent, $decision, $montant_indemnise = null) {
@@ -28,6 +29,7 @@ class Traitement {
     public function getMontantIndemnise() { return $this->montant_indemnise; }
     public function getStatut() { return $this->statut; }
     public function getDateTraitement() { return $this->date_traitement; }
+    public function getMessageAgent() { return $this->message_agent; }
 
     // SETTERS
     public function setIdTraitement($id) { $this->id_traitement = $id; }
@@ -38,4 +40,5 @@ class Traitement {
     public function setMontantIndemnise($montant) { $this->montant_indemnise = $montant; }
     public function setStatut($statut) { $this->statut = $statut; }
     public function setDateTraitement($date) { $this->date_traitement = $date; }
+    public function setMessageAgent($msg) { $this->message_agent = $msg; }
 }

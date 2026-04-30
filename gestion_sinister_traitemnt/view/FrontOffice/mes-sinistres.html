@@ -503,7 +503,17 @@ async function selectSinistre(id) {
         const trj  = await tr.json();
         const DL   = { en_attente:'En attente', refuse:'Refusé', rembourse:'Remboursé' };
         if (trj.success && trj.data.length) {
-            traitHTML = trj.data.map((t, i) => `
+            traitHTML = trj.data.map((t, i) => {
+                let bodyContent = '';
+                if (t.montant_indemnise) {
+                    bodyContent += `<div class="traitement-row success-text"><i class="bi bi-currency-exchange"></i><span>Montant : <strong>${parseFloat(t.montant_indemnise).toLocaleString('fr-FR')} DT</strong></span></div>`;
+                }
+                if (t.message_agent) {
+                    bodyContent += `<div class="traitement-row" style="margin-top:4px;"><i class="bi bi-chat-left-text" style="color:var(--text-secondary);"></i><span style="font-style:italic;">"${t.message_agent}"</span></div>`;
+                }
+                let bodyWrap = bodyContent ? `<div class="traitement-body">${bodyContent}</div>` : '';
+
+                return `
                 <div class="traitement-item ${t.montant_indemnise ? 'traitement-final' : ''}">
                     <div class="traitement-header">
                         <div class="traitement-step">
@@ -512,8 +522,9 @@ async function selectSinistre(id) {
                         </div>
                         <span class="traitement-date">${fmt(t.date_traitement)}</span>
                     </div>
-                    ${t.montant_indemnise ? `<div class="traitement-body"><div class="traitement-row success-text"><i class="bi bi-currency-exchange"></i><span>Montant : <strong>${parseFloat(t.montant_indemnise).toLocaleString('fr-FR')} DT</strong></span></div></div>` : ''}
-                </div>`).join('');
+                    ${bodyWrap}
+                </div>`;
+            }).join('');
         }
     } catch(e) {}
 

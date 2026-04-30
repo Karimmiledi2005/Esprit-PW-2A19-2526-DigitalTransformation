@@ -11,6 +11,10 @@ let traitements = [];
 let currentPage = 1, editingId = null, deletingId = null;
 const perPage = 8;
 
+// ── Sort state ───────────────────────────────────────────────────────────────
+var sortColumn = null;    // 'id', 'sinistre', 'date', 'agent', 'decision', 'montant'
+var sortDirection = null; // 'asc' or 'desc'
+
 const DECISION_LABELS = { en_attente:'En attente', refuse:'Refusé', rembourse:'Remboursé' };
 const DECISION_COLORS = { en_attente:'badge-agent', refuse:'badge-admin', rembourse:'badge-actif' };
 
@@ -42,14 +46,15 @@ async function loadTraitements() {
     if (json.success) {
       traitements = json.data.map(function(t) {
         return {
-          id:       t.id_traitement,
-          sinistre: t.id_sinistre,
-          sinType:  t.sinistre_type || '—',
-          date:     t.date_traitement,
-          agent:    t.agent_nom || ('Agent #' + t.id_user),
-          decision: t.decision,
-          montant:  t.montant_indemnise !== null ? parseFloat(t.montant_indemnise) : null,
-          statut:   t.statut,
+          id:            t.id_traitement,
+          sinistre:      t.id_sinistre,
+          sinType:       t.sinistre_type || '—',
+          date:          t.date_traitement,
+          agent:         t.nom_agent,
+          decision:      t.decision,
+          message_agent: t.message_agent,
+          montant:       t.montant_indemnise !== null ? parseFloat(t.montant_indemnise) : null,
+          statut:        t.statut,
         };
       });
       currentPage = 1;
@@ -67,20 +72,68 @@ function getFiltered() {
   var q   = document.getElementById('searchInput').value.toLowerCase();
   var dec = document.getElementById('filterDecision').value;
   var mon = document.getElementById('filterMontant').value;
-  return traitements.filter(function(t) {
-    var mQ = !q   || String(t.sinistre).includes(q) || t.agent.toLowerCase().includes(q);
+  var filtered = traitements.filter(function(t) {
+    var mQ = !q   || String(t.sinistre).includes(q) || String(t.agent||'').toLowerCase().includes(q) || String(t.decision||'').toLowerCase().includes(q);
     var mD = !dec || t.decision === dec;
-    var mM = !mon || (mon === 'avec' ? t.montant !== null : t.montant === null);
+    var mM = !mon || (mon === 'avec' ? (t.montant !== null && t.montant > 0) : (t.montant === null || t.montant === 0));
     return mQ && mD && mM;
   });
+
+  // ── Apply sort ──
+  if (sortColumn && sortDirection) {
+    filtered.sort(function(a, b) {
+      var valA, valB;
+      switch(sortColumn) {
+        case 'id':        valA = a.id;        valB = b.id;        break;
+        case 'sinistre':  valA = a.sinistre;  valB = b.sinistre;  break;
+        case 'date':      valA = a.date||'';  valB = b.date||'';  break;
+        case 'agent':     valA = (a.agent||'').toLowerCase();     valB = (b.agent||'').toLowerCase();     break;
+        case 'decision':  valA = (a.decision||'').toLowerCase();  valB = (b.decision||'').toLowerCase();  break;
+        case 'montant':   valA = a.montant !== null ? a.montant : -1;  valB = b.montant !== null ? b.montant : -1;  break;
+        default:          return 0;
+      }
+      var cmp = 0;
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        cmp = valA - valB;
+      } else {
+        cmp = String(valA).localeCompare(String(valB), 'fr');
+      }
+      return sortDirection === 'desc' ? -cmp : cmp;
+    });
+  }
+
+  return filtered;
 }
 
 function resetFilters() {
   ['searchInput','filterDecision','filterMontant'].forEach(function(id) {
     document.getElementById(id).value = '';
   });
+  sortColumn = null; sortDirection = null;
   currentPage = 1;
   render();
+}
+
+// ── Sort toggle ──────────────────────────────────────────────────────────────
+function toggleSort(col) {
+  if (sortColumn === col) {
+    if (sortDirection === 'asc')       sortDirection = 'desc';
+    else if (sortDirection === 'desc') { sortColumn = null; sortDirection = null; }
+  } else {
+    sortColumn = col;
+    sortDirection = 'asc';
+  }
+  currentPage = 1;
+  render();
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll('thead th.sortable').forEach(function(th) {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.sort === sortColumn) {
+      th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+  });
 }
 
 // ── Render table ─────────────────────────────────────────────────────────────
@@ -132,6 +185,7 @@ function render() {
   document.getElementById('paginationBtns').innerHTML = btnHtml;
 
   updateStats();
+  updateSortHeaders();
 }
 
 function goPage(p) { currentPage = p; render(); }
@@ -141,7 +195,12 @@ function updateStats() {
   var total = traitements.filter(function(t){ return t.montant !== null; })
                          .reduce(function(s,t){ return s + t.montant; }, 0);
   document.getElementById('statMontant').textContent = total.toLocaleString('fr-FR');
-  document.getElementById('statSinistres').textContent = new Set(traitements.map(function(t){ return t.sinistre; })).size;
+  
+  var rembourses = traitements.filter(function(t){ return t.decision === 'rembourse'; }).length;
+  document.getElementById('statRembourses').textContent = rembourses;
+
+  var refuses = traitements.filter(function(t){ return t.decision === 'refuse'; }).length;
+  document.getElementById('statRefuses').textContent = refuses;
 }
 
 // ── Form helpers ─────────────────────────────────────────────────────────────
@@ -151,7 +210,7 @@ function openCreateModal() {
   editingId = null;
   document.getElementById('modalFormTitle').innerHTML = '<i class="bi bi-plus-circle"></i> Ajouter un traitement';
   document.getElementById('btnSave').innerHTML = '<i class="bi bi-save"></i> Enregistrer';
-  ['fSinistre','fDate','fAgent','fMontant'].forEach(function(id){ document.getElementById(id).value = ''; });
+  ['fSinistre','fDate','fAgent','fMontant','fMessage'].forEach(function(id){ document.getElementById(id).value = ''; });
   document.getElementById('fDecision').value = '';
   document.getElementById('fStatut').value   = 'en_cours';
   document.getElementById('fDate').value     = new Date().toISOString().split('T')[0];
@@ -170,6 +229,7 @@ function openEditModal(id) {
   document.getElementById('fDate').value     = t.date;
   document.getElementById('fAgent').value    = t.agent;
   document.getElementById('fDecision').value = t.decision;
+  document.getElementById('fMessage').value  = t.message_agent || '';
   document.getElementById('fMontant').value  = t.montant !== null ? t.montant : '';
   document.getElementById('fStatut').value   = t.statut || 'en_cours';
   document.getElementById('sinistrePreview').style.display = 'none';
@@ -202,14 +262,14 @@ async function saveTraitement() {
   clearErr('fAgent','errAgent');
 
   // 4. Décision
-  var decision = document.getElementById('fDecision').value;
-  if (!decision) { showErr('fDecision','errDecision','Choisissez une décision.'); ok = false; }
+  var decVal = document.getElementById('fDecision').value;
+  if (!decVal) { showErr('fDecision','errDecision','Choisissez une décision.'); ok = false; }
   else clearErr('fDecision','errDecision');
 
   // 5. Montant (required if rembourse)
   var montantV = document.getElementById('fMontant').value.trim();
   var montant  = montantV ? parseFloat(montantV) : null;
-  if (decision === 'rembourse' && !montantV) {
+  if (decVal === 'rembourse' && !montantV) {
     showErr('fMontant','errMontant','Le montant est obligatoire pour un remboursement.');
     ok = false;
   } else if (montantV && (isNaN(montant) || montant < 0)) {
@@ -221,18 +281,20 @@ async function saveTraitement() {
 
   if (!ok) return;
 
-  var sinistre = document.getElementById('fSinistre').value.trim();
-  var statut   = document.getElementById('fStatut').value;
-
   var btn  = document.getElementById('btnSave');
   var orig = btn.innerHTML;
   btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Enregistrement...';
   btn.disabled  = true;
 
-  var agent  = document.getElementById('fAgent').value.trim();
+  var sinistre = document.getElementById('fSinistre').value.trim();
+  var agent    = document.getElementById('fAgent').value.trim();
+  var message  = document.getElementById('fMessage').value.trim();
+  var statut   = document.getElementById('fStatut').value;
+
   var params = 'id_sinistre=' + encodeURIComponent(sinistre) +
                '&nom_agent='  + encodeURIComponent(agent) +
-               '&decision='   + encodeURIComponent(decision) +
+               '&decision='   + encodeURIComponent(decVal) +
+               '&message_agent=' + encodeURIComponent(message) +
                '&montant='    + encodeURIComponent(montantV) +
                '&statut='     + encodeURIComponent(statut);
   if (editingId) params += '&id=' + editingId;

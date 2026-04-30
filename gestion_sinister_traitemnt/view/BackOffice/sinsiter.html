@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/admin-users.css">
     <script src="assets/js/validation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
   <style>
     /* ── Status select inline ── */
@@ -213,6 +214,18 @@
         </div>
       </div>
 
+      <!-- CHART CARD -->
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="bi bi-graph-up"></i> Évolution des Sinistres
+          </div>
+        </div>
+        <div class="card-body" style="height: 300px; padding: 20px;">
+          <canvas id="sinistresChart"></canvas>
+        </div>
+      </div>
+
       <!-- TABLE CARD -->
       <div class="card">
         <div class="card-header">
@@ -256,12 +269,12 @@
           <table>
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Contrat</th>
-                <th>Type</th>
-                <th>Client</th>
-                <th>Date</th>
-                <th>Statut</th>
+                <th class="sortable" data-sort="id" onclick="toggleSort('id')">ID</th>
+                <th class="sortable" data-sort="contrat" onclick="toggleSort('contrat')">Contrat</th>
+                <th class="sortable" data-sort="type" onclick="toggleSort('type')">Type</th>
+                <th class="sortable" data-sort="client" onclick="toggleSort('client')">Client</th>
+                <th class="sortable" data-sort="date" onclick="toggleSort('date')">Date</th>
+                <th class="sortable" data-sort="statut" onclick="toggleSort('statut')">Statut</th>
                 <th>Actions</th>
               </tr>
             </thead>

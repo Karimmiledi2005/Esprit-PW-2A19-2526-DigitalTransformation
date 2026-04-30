@@ -29,7 +29,7 @@ class TraitementController
     public function getAll(): array
     {
         $stmt = $this->db->query("
-            SELECT t.id_traitement, t.decision, t.montant_indemnise, t.statut, t.date_traitement,
+            SELECT t.id_traitement, t.decision, t.montant_indemnise, t.statut, t.date_traitement, t.message_agent,
                    t.id_sinistre, t.id_user,
                    COALESCE(t.nom_agent, CONCAT(u.prenom,' ',u.nom), CONCAT('Agent #', t.id_user)) AS agent_nom,
                    s.type AS sinistre_type
@@ -45,6 +45,7 @@ class TraitementController
             $traitement->setMontantIndemnise($row['montant_indemnise']);
             $traitement->setStatut($row['statut']);
             $traitement->setDateTraitement($row['date_traitement']);
+            $traitement->setMessageAgent($row['message_agent']);
             $traitements[] = $traitement;
         }
         return $traitements;
@@ -67,6 +68,7 @@ class TraitementController
             $traitement->setMontantIndemnise($row['montant_indemnise']);
             $traitement->setStatut($row['statut']);
             $traitement->setDateTraitement($row['date_traitement']);
+            $traitement->setMessageAgent($row['message_agent']);
             $traitements[] = $traitement;
         }
         return $traitements;
@@ -87,6 +89,7 @@ class TraitementController
         $montantRaw = isset($data['montant']) ? trim($data['montant']) : '';
         $montant    = ($montantRaw !== '' && is_numeric($montantRaw)) ? (float)$montantRaw : null;
         $statut     = $data['statut'] ?? 'en_cours';
+        $message    = trim($data['message_agent'] ?? '');
 
         if (!$idSinistre) return ['success' => false, 'message' => 'ID sinistre requis.'];
         if (!$decision) return ['success' => false, 'message' => 'Decision requise.'];
@@ -95,8 +98,8 @@ class TraitementController
         }
 
         $stmt = $this->db->prepare("
-            INSERT INTO traitement (id_sinistre, id_user, nom_agent, decision, montant_indemnise, statut, date_traitement)
-            VALUES (:id_sinistre, :id_user, :nom_agent, :decision, :montant, :statut, CURDATE())
+            INSERT INTO traitement (id_sinistre, id_user, nom_agent, decision, montant_indemnise, statut, date_traitement, message_agent)
+            VALUES (:id_sinistre, :id_user, :nom_agent, :decision, :montant, :statut, CURDATE(), :message_agent)
         ");
         $stmt->execute([
             ':id_sinistre' => $idSinistre,
@@ -105,6 +108,7 @@ class TraitementController
             ':decision'    => $decision,
             ':montant'     => $montant,
             ':statut'      => $statut,
+            ':message_agent'=> $message ?: null,
         ]);
 
         $id = (int)$this->db->lastInsertId();
@@ -125,17 +129,19 @@ class TraitementController
         
         $montantRaw = isset($data['montant']) ? trim($data['montant']) : '';
         $montant    = ($montantRaw !== '' && is_numeric($montantRaw)) ? (float)$montantRaw : null;
+        $message    = trim($data['message_agent'] ?? '');
 
         $stmt = $this->db->prepare("
-            UPDATE traitement SET nom_agent=:nom_agent, decision=:decision, montant_indemnise=:montant, statut=:statut
+            UPDATE traitement SET nom_agent=:nom_agent, decision=:decision, montant_indemnise=:montant, statut=:statut, message_agent=:message_agent
             WHERE id_traitement=:id
         ");
         $stmt->execute([
-            ':nom_agent' => trim($data['nom_agent'] ?? ''),
-            ':decision'  => trim($data['decision']  ?? ''),
-            ':montant'   => $montant,
-            ':statut'    => $data['statut'] ?? 'en_cours',
-            ':id'        => $id,
+            ':nom_agent'     => trim($data['nom_agent'] ?? ''),
+            ':decision'      => trim($data['decision']  ?? ''),
+            ':montant'       => $montant,
+            ':statut'        => $data['statut'] ?? 'en_cours',
+            ':message_agent' => $message ?: null,
+            ':id'            => $id,
         ]);
 
         return ['success' => true, 'message' => 'Traitement mis a jour.'];

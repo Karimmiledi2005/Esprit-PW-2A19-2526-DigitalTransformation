@@ -10,6 +10,10 @@ let sinistres = [];   // chargé depuis la BDD
 let nextNum = 1000, currentPage = 1, deletingId = null;
 const perPage = 8;
 
+// ── Sort state ───────────────────────────────────────────────────────────────
+let sortColumn = null;   // 'id', 'contrat', 'type', 'client', 'date', 'statut'
+let sortDirection = null; // 'asc' or 'desc'
+
 const STATUT_LABELS = { en_attente:'En attente', rembourse:'Remboursé', refuse:'Refusé' };
 const STATUT_BADGE  = { en_attente:'badge-agent', rembourse:'badge-actif', refuse:'badge-admin' };
 const TYPE_ICONS    = { 'Accident auto':'bi-car-front','Incendie':'bi-fire','Vol':'bi-lock','Degat des eaux':'bi-droplet' };
@@ -31,11 +35,80 @@ async function loadSinistres() {
             }));
             currentPage = 1;
             render();
+            updateChart();
         } else {
             showToast('Erreur chargement: ' + json.message, 'danger');
         }
     } catch(e) {
         showToast('Impossible de contacter le serveur PHP.', 'danger');
+    }
+}
+
+// ── Chart.js Integration ─────────────────────────────────────────────────────
+let sinistresChart = null;
+
+function updateChart() {
+    const ctx = document.getElementById('sinistresChart');
+    if (!ctx) return;
+
+    // Group by month (YYYY-MM)
+    const counts = {};
+    sinistres.forEach(s => {
+        if (!s.date) return;
+        const month = s.date.substring(0, 7);
+        counts[month] = (counts[month] || 0) + 1;
+    });
+
+    // Sort months chronologically
+    const labels = Object.keys(counts).sort();
+    const data = labels.map(label => counts[label]);
+
+    // Format labels nicely (e.g. "Oct 2023")
+    const niceLabels = labels.map(label => {
+        const d = new Date(label + '-01');
+        return d.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+    });
+
+    if (sinistresChart) {
+        sinistresChart.data.labels = niceLabels;
+        sinistresChart.data.datasets[0].data = data;
+        sinistresChart.update();
+    } else {
+        sinistresChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: niceLabels,
+                datasets: [{
+                    label: 'Sinistres déclarés',
+                    data: data,
+                    borderColor: '#00b4d8',
+                    backgroundColor: 'rgba(0, 180, 216, 0.15)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true,
+                    pointBackgroundColor: '#0077b6',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                    x: { grid: { display: false } }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(10, 15, 30, 0.9)',
+                        titleFont: { size: 13, family: "'Inter', sans-serif" },
+                        bodyFont: { size: 14, family: "'Inter', sans-serif" },
+                        padding: 12,
+                        displayColors: false
+                    }
+                }
+            }
+        });
     }
 }
 
@@ -99,17 +172,65 @@ function getFiltered() {
   const stat = document.getElementById('filterStatut').value;
   const type = document.getElementById('filterType').value;
   const date = document.getElementById('filterDate').value;
-  return sinistres.filter(s =>
-    (!q    || String(s.id).includes(q) || s.contrat.toLowerCase().includes(q) || s.type.toLowerCase().includes(q) || (s.client||'').toLowerCase().includes(q)) &&
+  var filtered = sinistres.filter(s =>
+    (!q    || String(s.id).includes(q) || String(s.contrat||'').toLowerCase().includes(q) || String(s.type||'').toLowerCase().includes(q) || String(s.client||'').toLowerCase().includes(q)) &&
     (!stat || s.statut === stat) &&
     (!type || s.type === type) &&
     (!date || s.date === date)
   );
+
+  // ── Apply sort ──
+  if (sortColumn && sortDirection) {
+    filtered.sort(function(a, b) {
+      var valA, valB;
+      switch(sortColumn) {
+        case 'id':      valA = a.id;      valB = b.id;      break;
+        case 'contrat': valA = (a.contrat||'').toLowerCase(); valB = (b.contrat||'').toLowerCase(); break;
+        case 'type':    valA = (a.type||'').toLowerCase();    valB = (b.type||'').toLowerCase();    break;
+        case 'client':  valA = (a.client||'').toLowerCase();  valB = (b.client||'').toLowerCase();  break;
+        case 'date':    valA = a.date||'';  valB = b.date||'';  break;
+        case 'statut':  valA = (a.statut||'').toLowerCase();  valB = (b.statut||'').toLowerCase();  break;
+        default:        return 0;
+      }
+      var cmp = 0;
+      if (typeof valA === 'number' && typeof valB === 'number') {
+        cmp = valA - valB;
+      } else {
+        cmp = String(valA).localeCompare(String(valB), 'fr');
+      }
+      return sortDirection === 'desc' ? -cmp : cmp;
+    });
+  }
+
+  return filtered;
 }
 
 function resetFilters(){
   ['searchInput','filterStatut','filterType','filterDate'].forEach(id=>document.getElementById(id).value='');
+  sortColumn = null; sortDirection = null;
   currentPage=1; render();
+}
+
+// ── Sort toggle ──────────────────────────────────────────────────────────────
+function toggleSort(col) {
+  if (sortColumn === col) {
+    if (sortDirection === 'asc')       sortDirection = 'desc';
+    else if (sortDirection === 'desc') { sortColumn = null; sortDirection = null; }
+  } else {
+    sortColumn = col;
+    sortDirection = 'asc';
+  }
+  currentPage = 1;
+  render();
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll('thead th.sortable').forEach(function(th) {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.sort === sortColumn) {
+      th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+  });
 }
 
 function render() {
@@ -158,6 +279,7 @@ function render() {
     <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=pages?'disabled':''}><i class="bi bi-chevron-right"></i></button>`;
 
   updateStats();
+  updateSortHeaders();
 }
 
 function goPage(p){currentPage=p;render();}
