@@ -330,3 +330,65 @@ select.form-control option { background: #0d2845; }
 }
 @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr; } }
 
+
+/* ============================================================
+   BADGES FILTRES ACTIFS
+   ============================================================ */
+#activeBadges {
+    min-height: 28px;
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+.active-filter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 180, 216, 0.12);
+    border: 1px solid rgba(0, 180, 216, 0.35);
+    color: var(--accent);
+    border-radius: 20px;
+    padding: 3px 10px 3px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    animation: scaleIn 0.18s ease-out;
+}
+.active-filter-badge button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    padding: 0 2px;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+.active-filter-badge button:hover { opacity: 1; }
+
+/* ============================================================
+   BOUTONS PÉRIODE STATS
+   ============================================================ */
+.period-btn {
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+    border-radius: 20px !important;
+    transition: all 0.2s ease;
+}
+.period-btn.active {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #fff !important;
+}
+
+/* DATE INPUTS dans toolbar */
+input[type="date"].filter-select {
+    color: var(--text-primary);
+    min-width: 130px;
+}
+input[type="date"].filter-select::-webkit-calendar-picker-indicator {
+    filter: invert(1) opacity(0.5);
+    cursor: pointer;
+}

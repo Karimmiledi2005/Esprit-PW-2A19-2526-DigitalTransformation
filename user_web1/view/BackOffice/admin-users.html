@@ -118,20 +118,30 @@
             </div>
 
             <!-- STATS -->
+            <!-- Filtre période pour les stats -->
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+                <span style="font-size:12px; color:var(--text-secondary);"><i class="bi bi-calendar-range"></i> Période :</span>
+                <button class="btn btn-outline btn-sm period-btn active" data-period="all" onclick="setPeriod(this,'all')">Tout</button>
+                <button class="btn btn-outline btn-sm period-btn" data-period="7"   onclick="setPeriod(this,'7')">7 jours</button>
+                <button class="btn btn-outline btn-sm period-btn" data-period="30"  onclick="setPeriod(this,'30')">30 jours</button>
+                <button class="btn btn-outline btn-sm period-btn" data-period="90"  onclick="setPeriod(this,'90')">3 mois</button>
+                <button class="btn btn-outline btn-sm period-btn" data-period="365" onclick="setPeriod(this,'365')">1 an</button>
+                <span id="statsPeriodLabel" style="font-size:11px; color:var(--text-secondary); margin-left:4px;"></span>
+            </div>
             <div class="stats-grid">
 
                 <div class="stat-card blue">
                     <div class="stat-icon"><i class="bi bi-people"></i></div>
                     <div class="stat-value" id="totalUsers">0</div>
                     <div class="stat-label">Total utilisateurs</div>
-                    <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> +3 ce mois</div>
+                    <div class="stat-trend trend-up" id="trendNewMonth"><i class="bi bi-arrow-up"></i> <span id="newThisMonth">0</span> ce mois</div>
                 </div>
 
                 <div class="stat-card green">
                     <div class="stat-icon"><i class="bi bi-person-check"></i></div>
                     <div class="stat-value" id="actifs">0</div>
                     <div class="stat-label">Comptes actifs</div>
-                    <div class="stat-trend trend-up"><i class="bi bi-check-circle"></i> 83%</div>
+                    <div class="stat-trend trend-up"><i class="bi bi-check-circle"></i> <span id="tauxActifs">0</span>%</div>
                 </div>
 
                 <div class="stat-card gold">
@@ -170,18 +180,31 @@
                         </div>
                         <select class="filter-select" id="filterRole" autocomplete="off">
                             <option value="">Tous les rôles</option>
-                            <option value="ADMIN">Admin</option>
-                            <option value="AGENT">Agent</option>
-                            <option value="CLIENT">Client</option>
+                            <option value="admin">Admin</option>
+                            <option value="agent">Agent</option>
+                            <option value="client">Client</option>
                         </select>
                         <select class="filter-select" id="filterStatut" autocomplete="off">
                             <option value="">Tous les statuts</option>
                             <option value="actif">Actif</option>
                             <option value="bloque">Bloqué</option>
                         </select>
+                        <select class="filter-select" id="filterOrderBy" autocomplete="off">
+                            <option value="date_desc">Date ↓</option>
+                            <option value="date_asc">Date ↑</option>
+                            <option value="nom_asc">Nom A→Z</option>
+                            <option value="nom_desc">Nom Z→A</option>
+                        </select>
+                        <!-- Filtre période stats -->
+                        <input type="date" class="filter-select" id="filterDateFrom" title="Inscrit depuis" autocomplete="off" style="cursor:pointer;">
+                        <input type="date" class="filter-select" id="filterDateTo" title="Inscrit jusqu'à" autocomplete="off" style="cursor:pointer;">
                         <button class="btn btn-outline btn-sm" onclick="resetFilters()">
                             <i class="bi bi-x-circle"></i> Réinitialiser
                         </button>
+                    </div>
+                    <!-- Badges filtres actifs -->
+                    <div id="activeBadges" style="display:none; margin-top:10px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+                        <span style="font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.6px;">Filtres actifs :</span>
                     </div>
                 </div>
 
@@ -201,7 +224,6 @@
                             </tr>
                         </thead>
                         <tbody id="usersBody">
-                            <!-- Généré par JS -->
                         </tbody>
                     </table>
                 </div>
@@ -350,49 +372,162 @@
 
 <script src="assets/js/main.js"></script>
 <script>
-// =============================================
-// =============================================
-//  Données chargées depuis la base de données
-// =============================================
 let users = [];
-let nextId = 1;
 let currentPage = 1;
-const perPage = 6;
+const perPage = 10;
 let editingId = null;
 let deletingId = null;
 let viewingId = null;
+let totalUsers = 0;
+let totalPages = 1;
+let orderTimeout = null;
+let searchTimeout = null;
+let currentPeriodDays = null; // null = tout
 
 // ===== DATE TOPBAR =====
 const now = new Date();
 document.getElementById('topbarDate').textContent =
     now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
-// ===== FILTRAGE =====
-function getFiltered() {
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    const role   = document.getElementById('filterRole').value;
-    const statut = document.getElementById('filterStatut').value;
-    return users.filter(u => {
-        const txt = `${u.nom} ${u.prenom} ${u.email} ${u.cin}`.toLowerCase();
-        return (!search || txt.includes(search))
-            && (!role   || u.role === role)
-            && (!statut || u.statut === statut);
+// ============================================================
+// FILTRE PÉRIODE STATS
+// ============================================================
+function setPeriod(btn, period) {
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPeriodDays = period === 'all' ? null : parseInt(period);
+    const label = document.getElementById('statsPeriodLabel');
+    label.textContent = period === 'all' ? '' : `(${btn.textContent.trim()})`;
+    loadStats();
+}
+
+// ============================================================
+// BADGES FILTRES ACTIFS
+// ============================================================
+function updateBadges() {
+    const container = document.getElementById('activeBadges');
+    const search    = document.getElementById('searchInput').value.trim();
+    const role      = document.getElementById('filterRole').value;
+    const statut    = document.getElementById('filterStatut').value;
+    const dateFrom  = document.getElementById('filterDateFrom').value;
+    const dateTo    = document.getElementById('filterDateTo').value;
+
+    const badges = [];
+    if (search)   badges.push({ label: `Recherche : "${search}"`,  field: 'searchInput',    clear: () => { document.getElementById('searchInput').value = ''; } });
+    if (role)     badges.push({ label: `Rôle : ${role}`,           field: 'filterRole',     clear: () => { document.getElementById('filterRole').value = ''; } });
+    if (statut)   badges.push({ label: `Statut : ${statut}`,       field: 'filterStatut',   clear: () => { document.getElementById('filterStatut').value = ''; } });
+    if (dateFrom) badges.push({ label: `Depuis : ${dateFrom}`,     field: 'filterDateFrom', clear: () => { document.getElementById('filterDateFrom').value = ''; } });
+    if (dateTo)   badges.push({ label: `Jusqu'à : ${dateTo}`,    field: 'filterDateTo',   clear: () => { document.getElementById('filterDateTo').value = ''; } });
+
+    if (badges.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    container.style.display = 'flex';
+    // Keep the label span, rebuild the rest
+    const labelSpan = container.querySelector('span');
+    container.innerHTML = '';
+    container.appendChild(labelSpan);
+
+    badges.forEach(b => {
+        const badge = document.createElement('span');
+        badge.className = 'active-filter-badge';
+        badge.innerHTML = `${b.label} <button onclick="removeBadge('${b.field}')" title="Supprimer ce filtre">&times;</button>`;
+        container.appendChild(badge);
     });
 }
 
-function resetFilters() {
-    document.getElementById('searchInput').value = '';
-    document.getElementById('filterRole').value = '';
-    document.getElementById('filterStatut').value = '';
+function removeBadge(fieldId) {
+    document.getElementById(fieldId).value = '';
     currentPage = 1;
-    render();
+    updateBadges();
+    loadUsers();
 }
 
-// ===== RENDER TABLE =====
+// ============================================================
+// CHARGEMENT SERVEUR (recherche avancée)
+// ============================================================
+function loadUsers() {
+    const search   = document.getElementById('searchInput').value.trim();
+    const role     = document.getElementById('filterRole').value;
+    const statut   = document.getElementById('filterStatut').value;
+    const orderBy  = document.getElementById('filterOrderBy').value;
+    const dateFrom = document.getElementById('filterDateFrom').value;
+    const dateTo   = document.getElementById('filterDateTo').value;
+
+    updateBadges();
+
+    const params = new URLSearchParams({
+        page: currentPage,
+        per_page: perPage,
+        order_by: orderBy,
+    });
+    if (search)   params.set('keyword',   search);
+    if (role)     params.set('role',      role);
+    if (statut)   params.set('statut',    statut);
+    if (dateFrom) params.set('date_from', dateFrom);
+    if (dateTo)   params.set('date_to',   dateTo);
+
+    const tbody = document.getElementById('usersBody');
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;"><div class="loading-spinner" style="width:30px;height:30px;border-width:3px;margin:0 auto;"></div><div style="margin-top:12px;color:var(--text-secondary);font-size:13px;">Recherche...</div></td></tr>`;
+
+    fetch(`search_users.php?${params.toString()}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                users = data.data.map(u => ({
+                    id:            u.id_user,
+                    nom:           u.nom,
+                    prenom:        u.prenom,
+                    email:         u.email,
+                    tel:           u.telephone    || '—',
+                    cin:           u.cin          || '—',
+                    role:          (u.role || 'client').toLowerCase(),
+                    statut:        (u.statut || 'actif').toLowerCase(),
+                    created:       u.date_creation || '—',
+                    avatar:        u.avatar       || null,
+                    niveau_acces:  u.niveau_acces  ?? null,
+                    agence:        u.agence        || null,
+                    salaire:       u.salaire       || null,
+                    numero_client: u.numero_client || null
+                }));
+                totalUsers = data.total;
+                totalPages = data.total_pages || 1;
+                if (currentPage > totalPages) currentPage = totalPages;
+                render();
+                loadStats();
+            } else {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary)"><i class="bi bi-exclamation-triangle" style="font-size:24px;display:block;margin-bottom:8px;color:var(--danger)"></i>${data.message || 'Erreur'}</td></tr>`;
+            }
+        })
+        .catch(err => {
+            console.error('Erreur réseau:', err);
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary)"><i class="bi bi-wifi-off" style="font-size:24px;display:block;margin-bottom:8px"></i>Erreur de connexion</td></tr>`;
+        });
+}
+
+// ===== FILTRAGE SERVEUR =====
+function getFiltered() { return users; }
+
+function resetFilters() {
+    document.getElementById('searchInput').value   = '';
+    document.getElementById('filterRole').value    = '';
+    document.getElementById('filterStatut').value  = '';
+    document.getElementById('filterOrderBy').value = 'date_desc';
+    document.getElementById('filterDateFrom').value = '';
+    document.getElementById('filterDateTo').value   = '';
+    currentPage = 1;
+    updateBadges();
+    loadUsers();
+}
+
+// ============================================================
+// RENDER TABLE
+// ============================================================
 function initials(u) { return (u.prenom[0] + u.nom[0]).toUpperCase(); }
 
 function getAvatarCell(u) {
-    if (u.avatar) {
+    if (u.avatar && u.avatar !== 'default.png') {
         const isValidImage = u.avatar.includes('/') || u.avatar.match(/\.(jpg|jpeg|png|gif|webp)$/i);
         const avatarPath = isValidImage ? (u.avatar.includes('/') ? u.avatar : '../../uploads/avatars/' + u.avatar) : '';
         if (avatarPath) {
@@ -403,23 +538,17 @@ function getAvatarCell(u) {
 }
 
 function roleInfo(u) {
-    if (u.role === 'ADMIN')  return u.niveau_acces  !== null ? `<i class="bi bi-shield-check"></i> Niveau ${u.niveau_acces}` : '—';
-    if (u.role === 'AGENT')  return u.agence ? `<i class="bi bi-building"></i> ${u.agence}${u.salaire ? ' · '+Number(u.salaire).toLocaleString('fr-FR')+' TND' : ''}` : '—';
-    if (u.role === 'CLIENT') return u.numero_client ? `<i class="bi bi-person-badge"></i> ${u.numero_client}` : '—';
+    if (u.role === 'admin')  return u.niveau_acces  !== null ? `<i class="bi bi-shield-check"></i> Niveau ${u.niveau_acces}` : '—';
+    if (u.role === 'agent')  return u.agence ? `<i class="bi bi-building"></i> ${u.agence}${u.salaire ? ' · '+Number(u.salaire).toLocaleString('fr-FR')+' TND' : ''}` : '—';
+    if (u.role === 'client') return u.numero_client ? `<i class="bi bi-person-badge"></i> ${u.numero_client}` : '—';
     return '—';
 }
 
 function render() {
-    const filtered = getFiltered();
-    const total = filtered.length;
-    const pages = Math.ceil(total / perPage) || 1;
-    if (currentPage > pages) currentPage = pages;
-    const slice = filtered.slice((currentPage-1)*perPage, currentPage*perPage);
-
     const tbody = document.getElementById('usersBody');
-    tbody.innerHTML = slice.length === 0
+    tbody.innerHTML = users.length === 0
         ? `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-secondary)"><i class="bi bi-inbox" style="font-size:24px;display:block;margin-bottom:8px"></i>Aucun utilisateur trouvé</td></tr>`
-        : slice.map(u => `
+        : users.map(u => `
         <tr>
             <td>
                 <div class="user-cell">
@@ -432,7 +561,7 @@ function render() {
             </td>
             <td style="color:var(--text-secondary)">${u.cin}</td>
             <td style="color:var(--text-secondary)">${u.tel}</td>
-            <td><span class="badge badge-${u.role.toLowerCase()}">${u.role}</span></td>
+            <td><span class="badge badge-${u.role.toLowerCase()}">${u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span></td>
             <td style="color:var(--text-secondary);font-size:0.85rem">${roleInfo(u)}</td>
             <td><span class="badge badge-${u.statut}">
                 <i class="bi bi-${u.statut === 'actif' ? 'check-circle' : 'slash-circle'}"></i>
@@ -460,95 +589,78 @@ function render() {
         </tr>`).join('');
 
     // Pagination info
+    const total = totalUsers;
     const start = total === 0 ? 0 : (currentPage-1)*perPage + 1;
     const end = Math.min(currentPage*perPage, total);
     document.getElementById('paginationInfo').textContent =
         `Affichage ${start}–${end} sur ${total} utilisateur${total > 1 ? 's' : ''}`;
 
     // Pagination boutons
+    const pages = Math.min(totalPages, 7);
+    let startPage = Math.max(1, currentPage - 3);
+    let endPage = Math.min(totalPages, startPage + pages - 1);
+    if (endPage - startPage < pages - 1) startPage = Math.max(1, endPage - pages + 1);
+
     const btns = document.getElementById('paginationBtns');
     btns.innerHTML = `
         <button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>
             <i class="bi bi-chevron-left"></i>
         </button>
-        ${Array.from({length:pages},(_,i)=>
-            `<button class="page-btn ${i+1===currentPage?'active':''}" onclick="goPage(${i+1})">${i+1}</button>`
-        ).join('')}
-        <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=pages?'disabled':''}>
+        ${Array.from({length: endPage - startPage + 1}, (_, i) => {
+            const p = startPage + i;
+            return `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+        }).join('')}
+        <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>
             <i class="bi bi-chevron-right"></i>
         </button>`;
 }
 
-function goPage(p) { currentPage = p; render(); }
+function goPage(p) { if (p >= 1 && p <= totalPages) { currentPage = p; loadUsers(); } }
 
 function formatDate(d) {
+    if (!d || d === '—') return '—';
     return new Date(d).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' });
 }
 
-// ===== MODAL HELPERS =====
+// ============================================================
+// MODAL HELPERS
+// ============================================================
 function openModal(id) {
-    const modal = document.getElementById(id);
-    modal.classList.add('open');
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.add('active');
     document.body.style.overflow = 'hidden';
-    // Animate modal content
-    const modalContent = modal.querySelector('.modal');
-    if (modalContent) {
-        modalContent.style.animation = 'none';
-        modalContent.offsetHeight; // Trigger reflow
-        modalContent.style.animation = 'scaleIn 0.3s ease-out';
-    }
 }
 function closeModal(id) {
-    const modal = document.getElementById(id);
-    const modalContent = modal.querySelector('.modal');
-    if (modalContent) {
-        modalContent.style.animation = 'fadeIn 0.2s ease-out reverse';
-    }
-    setTimeout(() => {
-        modal.classList.remove('open');
-        document.body.style.overflow = '';
-        if (id === 'modalAdd') resetForm();
-    }, 200);
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('active');
+    document.body.style.overflow = '';
 }
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-overlay.open').forEach(m => {
-            m.classList.remove('open');
-            document.body.style.overflow = '';
-        });
-    }
-});
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', e => {
-        if (e.target === overlay) {
-            overlay.classList.remove('open');
-            document.body.style.overflow = '';
-        }
-    });
-});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { ['modalAdd','modalView','modalDelete'].forEach(closeModal); } });
 
-// ===== RESET FORM =====
+// ============================================================
+// FORM RESET
+// ============================================================
 function resetForm() {
     ['fNom','fPrenom','fEmail','fTel','fCin','fPassword','fNiveau','fAgence','fSalaire','fNumClient'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) { el.value = ''; adminClearError(el); el.disabled = false; }
+        if (el) { el.value = ''; el.classList.remove('input-error','input-valid'); }
+        const err = el && el.parentNode.querySelector('.field-error');
+        if (err) err.remove();
     });
-    // Réinitialiser les champs spécifiques
-    document.getElementById('fNiveau').disabled = true;
-    document.getElementById('fAgence').disabled = true;
-    document.getElementById('fSalaire').disabled = true;
-    document.getElementById('fNumClient').disabled = true;
-    
-    document.getElementById('fRole').value = 'CLIENT';
+    document.getElementById('fRole').value   = 'client';
     document.getElementById('fStatut').value = 'actif';
     document.getElementById('pwdGroup').style.display = '';
     document.getElementById('modalAddTitle').innerHTML = '<i class="bi bi-person-plus"></i> Ajouter un utilisateur';
     document.getElementById('btnSaveUser').innerHTML = '<i class="bi bi-save"></i> Enregistrer';
     editingId = null;
-    toggleRoleFields('CLIENT');
+    toggleRoleFields('client');
 }
 
-// ===== VALIDATION =====
+// ============================================================
+// VALIDATION
+// ============================================================
 const adminRules = {
     nom: {
         validate(v) {
@@ -667,11 +779,9 @@ function validate() {
 document.addEventListener('click', function(e) {
     const target = e.target.closest('.btn');
     if (!target) return;
-    
     const rect = target.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
     const ripple = document.createElement('span');
     ripple.style.cssText = `
         position: absolute;
@@ -689,8 +799,6 @@ document.addEventListener('click', function(e) {
     setTimeout(() => ripple.remove(), 600);
 });
 
-// ===== SAVE (ADD / EDIT) → admin.js =====
-
 // ===== EDIT =====
 function editUser(id) {
     const u = users.find(u => u.id === id);
@@ -703,26 +811,21 @@ function editUser(id) {
     document.getElementById('fCin').value    = u.cin !== '—' ? u.cin : '';
     document.getElementById('fRole').value   = u.role;
     document.getElementById('fStatut').value = u.statut;
-
-    // Champs spécifiques au rôle - les rendre modifiables
     toggleRoleFields(u.role);
-    
-    // Pour ADMIN et AGENT, les champs sont modifiables
-    if (u.role === 'ADMIN') {
+    if (u.role === 'admin') {
         document.getElementById('fNiveau').value = u.niveau_acces ?? 1;
         document.getElementById('fNiveau').disabled = false;
     }
-    if (u.role === 'AGENT') {
+    if (u.role === 'agent') {
         document.getElementById('fAgence').value = u.agence || '';
         document.getElementById('fSalaire').value = u.salaire || '';
         document.getElementById('fAgence').disabled = false;
         document.getElementById('fSalaire').disabled = false;
     }
-    if (u.role === 'CLIENT') {
+    if (u.role === 'client') {
         document.getElementById('fNumClient').value = u.numero_client || '';
         document.getElementById('fNumClient').disabled = true;
     }
-
     document.getElementById('pwdGroup').style.display = 'none';
     document.getElementById('modalAddTitle').innerHTML = '<i class="bi bi-pencil"></i> Modifier lutilisateur';
     document.getElementById('btnSaveUser').innerHTML = '<i class="bi bi-save"></i> Mettre à jour';
@@ -739,13 +842,11 @@ function viewUser(id) {
     const u = users.find(u => u.id === id);
     if (!u) return;
     viewingId = id;
-    
     const isValidImage = u.avatar && (u.avatar.includes('/') || u.avatar.match(/\.(jpg|jpeg|png|gif|webp)$/i));
     const avatarPath = isValidImage ? (u.avatar.includes('/') ? u.avatar : '../../uploads/avatars/' + u.avatar) : '';
     const avatarHtml = avatarPath
         ? `<img src="${avatarPath}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"><div class="user-avatar-sm" style="width:56px;height:56px;font-size:18px;display:none;">${initials(u)}</div>`
         : `<div class="user-avatar-sm" style="width:56px;height:56px;font-size:18px">${initials(u)}</div>`;
-    
     document.getElementById('modalViewBody').innerHTML = `
         <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--glass-border);animation:fadeInDown 0.3s ease-out">
             ${avatarHtml}
@@ -753,13 +854,13 @@ function viewUser(id) {
                 <div style="font-family:var(--font-display);font-size:17px;font-weight:700;color:#fff">${u.prenom} ${u.nom}</div>
                 <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">${u.email}</div>
                 <div style="margin-top:8px;display:flex;gap:8px">
-                    <span class="badge badge-${u.role.toLowerCase()}" style="animation:scaleIn 0.3s ease-out 0.1s both">${u.role}</span>
-                    <span class="badge badge-${u.statut}" style="animation:scaleIn 0.3s ease-out 0.2s both"><i class="bi bi-${u.statut==='actif'?'check-circle':'slash-circle'}"></i> ${u.statut}</span>
+                    <span class="badge badge-${u.role.toLowerCase()}" style="animation:scaleIn 0.3s ease-out 0.1s both">${u.role.charAt(0).toUpperCase() + u.role.slice(1)}</span>
+                    <span class="badge badge-${u.statut}" style="animation:scaleIn 0.3s ease-out 0.2s both"><i class="bi bi-${u.statut==='actif'?'check-circle':'slash-circle'}"></i> ${u.statut.charAt(0).toUpperCase() + u.statut.slice(1)}</span>
                 </div>
             </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-            ${u.role === 'CLIENT' && u.numero_client ? field('bi-person-badge','N° Client',u.numero_client) : ''}
+            ${u.role === 'client' && u.numero_client ? field('bi-person-badge','N° Client',u.numero_client) : ''}
             ${field('bi-phone','Téléphone',u.tel)}
             ${field('bi-card-text','CIN',u.cin || '—')}
             ${field('bi-calendar','Inscrit le',formatDate(u.created))}
@@ -774,10 +875,6 @@ function field(icon, label, val) {
     </div>`;
 }
 
-// ===== BLOQUER / DÉBLOQUER → admin.js =====
-
-// ===== SUPPRIMER → admin.js =====
-
 // ===== TOAST =====
 function showToast(message, type = 'success') {
     const icons = { success:'check-circle', warning:'exclamation-triangle', danger:'x-circle' };
@@ -789,22 +886,27 @@ function showToast(message, type = 'success') {
     setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 3000);
 }
 
-// ===== SEARCH & FILTER LIVE =====
-document.getElementById('searchInput').addEventListener('input', () => { currentPage=1; render(); });
-document.getElementById('filterRole').addEventListener('change', () => { currentPage=1; render(); });
-document.getElementById('filterStatut').addEventListener('change', () => { currentPage=1; render(); });
+// ============================================================
+// SEARCH & FILTER — avec délai automatique 350ms
+// ============================================================
+document.getElementById('searchInput').addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => { currentPage = 1; loadUsers(); }, 350);
+});
+document.getElementById('filterRole').addEventListener('change',      () => { currentPage = 1; loadUsers(); });
+document.getElementById('filterStatut').addEventListener('change',    () => { currentPage = 1; loadUsers(); });
+document.getElementById('filterOrderBy').addEventListener('change',   () => { currentPage = 1; loadUsers(); });
+document.getElementById('filterDateFrom').addEventListener('change',  () => { currentPage = 1; loadUsers(); });
+document.getElementById('filterDateTo').addEventListener('change',    () => { currentPage = 1; loadUsers(); });
 
 // ===== CHAMPS DYNAMIQUES PAR RÔLE =====
 function toggleRoleFields(role) {
-    document.getElementById('roleFieldsAdmin').style.display  = role === 'ADMIN'  ? '' : 'none';
-    document.getElementById('roleFieldsAgent').style.display  = role === 'AGENT'  ? '' : 'none';
-    document.getElementById('roleFieldsClient').style.display = role === 'CLIENT' ? '' : 'none';
-    
-    // ADMIN et AGENT : champs modifiables
-    document.getElementById('fNiveau').disabled = role !== 'ADMIN';
-    document.getElementById('fAgence').disabled = role !== 'AGENT';
-    document.getElementById('fSalaire').disabled = role !== 'AGENT';
-    // CLIENT : numéro auto-généré, non modifiable
+    document.getElementById('roleFieldsAdmin').style.display  = role === 'admin'  ? '' : 'none';
+    document.getElementById('roleFieldsAgent').style.display  = role === 'agent'  ? '' : 'none';
+    document.getElementById('roleFieldsClient').style.display = role === 'client' ? '' : 'none';
+    document.getElementById('fNiveau').disabled = role !== 'admin';
+    document.getElementById('fAgence').disabled = role !== 'agent';
+    document.getElementById('fSalaire').disabled = role !== 'agent';
     document.getElementById('fNumClient').disabled = true;
 }
 
@@ -812,49 +914,7 @@ document.getElementById('fRole').addEventListener('change', function() {
     toggleRoleFields(this.value);
 });
 
-// ===== INIT : chargement depuis la BDD =====
-function loadUsers() {
-    const tbody = document.getElementById('usersBody');
-    tbody.innerHTML = `
-        <tr>
-            <td colspan="8" style="text-align:center;padding:40px;">
-                <div class="loading-spinner" style="width:30px;height:30px;border-width:3px;margin:0 auto;"></div>
-                <div style="margin-top:12px;color:var(--text-secondary);font-size:13px;">Chargement...</div>
-            </td>
-        </tr>`;
-    
-    fetch('get_all_users.php')
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                users = data.users.map(u => ({
-                    id:            u.id_user,
-                    nom:           u.nom,
-                    prenom:        u.prenom,
-                    email:         u.email,
-                    tel:           u.telephone    || '—',
-                    cin:           u.cin          || '—',
-                    role:          (u.role || 'client').toUpperCase(),
-                    statut:        (u.statut || 'actif').toLowerCase(),
-                    created:       u.date_creation ? u.date_creation.split(' ')[0] : '—',
-                    niveau_acces:  u.niveau_acces  ?? null,
-                    agence:        u.agence        || null,
-                    salaire:       u.salaire       || null,
-                    numero_client: u.numero_client || null
-                }));
-                nextId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
-                render();
-            } else {
-                console.error('Erreur chargement users:', data.message);
-                render();
-            }
-        })
-        .catch(err => {
-            console.error('Erreur réseau:', err);
-            render();
-        });
-}
-
+// ===== INIT =====
 loadUsers();
 
 // Charger l'avatar et les infos dans le sidebar

@@ -16,8 +16,8 @@ function saveUserAdd() {
     data.append('statut',    document.getElementById('fStatut').value);
     data.append('password',  document.getElementById('fPassword').value);
 
-    if (role === 'ADMIN')  data.append('niveau_acces',  document.getElementById('fNiveau').value || 1);
-    if (role === 'AGENT')  { data.append('agence', document.getElementById('fAgence').value); data.append('salaire', document.getElementById('fSalaire').value); }
+    if (role === 'admin')  data.append('niveau_acces',  document.getElementById('fNiveau').value || 1);
+    if (role === 'agent')  { data.append('agence', document.getElementById('fAgence').value); data.append('salaire', document.getElementById('fSalaire').value); }
     // CLIENT : numero_client est généré automatiquement côté serveur, ne pas l'envoyer
 
     fetch('admin_add_user.php', { method: 'POST', body: data })
@@ -54,8 +54,8 @@ function saveUser() {
         data.append('role',      role);
         data.append('statut',    document.getElementById('fStatut').value);
 
-        if (role === 'ADMIN')  data.append('niveau_acces',  document.getElementById('fNiveau').value || 1);
-        if (role === 'AGENT')  { data.append('agence', document.getElementById('fAgence').value); data.append('salaire', document.getElementById('fSalaire').value); }
+        if (role === 'admin')  data.append('niveau_acces',  document.getElementById('fNiveau').value || 1);
+        if (role === 'agent')  { data.append('agence', document.getElementById('fAgence').value); data.append('salaire', document.getElementById('fSalaire').value); }
         // CLIENT : numero_client ne peut pas être modifié
 
         fetch('admin_update_user.php', { method: 'POST', body: data })
@@ -73,10 +73,8 @@ function saveUser() {
             })
             .catch(err => { btn.innerHTML = orig; btn.disabled = false; console.error(err); });
     } else {
-        // ADD
-        btn.innerHTML = orig; btn.disabled = false;
         saveUserAdd();
-        loadStats();
+        return;
     }
 }
 
@@ -139,45 +137,64 @@ function confirmDelete() {
         
 }
 function loadStats() {
-    fetch('get_stats.php')
+    // Construire l'URL avec le filtre de période si actif
+    const params = new URLSearchParams();
+    if (typeof currentPeriodDays !== 'undefined' && currentPeriodDays !== null) {
+        params.set('days', currentPeriodDays);
+    }
+    const url = 'get_advanced_stats.php' + (params.toString() ? '?' + params.toString() : '');
+
+    fetch(url)
         .then(res => res.json())
         .then(data => {
             if (!data.success) return;
+            const s = data.data;
 
-            const s = data.stats;
-
-            // Count-up animation for stat values
             function animateValue(id, end, duration = 800) {
                 const el = document.getElementById(id);
                 if (!el) return;
-                const start = 0;
+                const start = parseInt(el.textContent) || 0;
                 const startTime = performance.now();
-                
                 function update(currentTime) {
                     const elapsed = currentTime - startTime;
                     const progress = Math.min(elapsed / duration, 1);
                     const easeOut = 1 - Math.pow(1 - progress, 3);
                     const current = Math.floor(start + (end - start) * easeOut);
                     el.textContent = current;
-                    
-                    if (progress < 1) {
-                        requestAnimationFrame(update);
-                    }
+                    if (progress < 1) requestAnimationFrame(update);
                 }
                 requestAnimationFrame(update);
             }
 
-            // principales avec animation
             animateValue("totalUsers", s.total);
-            animateValue("actifs", s.actifs);
-            animateValue("bloques", s.bloques);
-            animateValue("agents", s.agents);
+            animateValue("actifs",     s.actifs);
+            animateValue("bloques",    s.bloques);
+            animateValue("agents",     s.agents);
 
-            // bonus (si tu les affiches)
+            // Taux actifs
+            const tauxEl = document.getElementById("tauxActifs");
+            if (tauxEl && s.total > 0) {
+                tauxEl.textContent = Math.round((s.actifs / s.total) * 100);
+            }
+
+            // Nouveaux ce mois
+            const newMonthEl = document.getElementById("newThisMonth");
+            if (newMonthEl && s.new_this_month !== undefined) {
+                newMonthEl.textContent = '+' + s.new_this_month;
+            }
+
+            // Évolution par rapport à la période précédente
+            const trendEl = document.getElementById("trendNewMonth");
+            if (trendEl && s.evolution !== undefined && s.evolution !== null) {
+                const sign = s.evolution >= 0 ? '+' : '';
+                const color = s.evolution >= 0 ? 'var(--success)' : 'var(--danger)';
+                const icon = s.evolution >= 0 ? 'arrow-up' : 'arrow-down';
+                trendEl.innerHTML = `<i class="bi bi-${icon}" style="color:${color}"></i> <span style="color:${color}">${sign}${s.evolution}%</span> vs période préc.`;
+            }
+
             const admins = document.getElementById("admins");
             const clients = document.getElementById("clients");
-
-            if (admins) admins.textContent = s.admins;
+            if (admins)  admins.textContent  = s.admins;
             if (clients) clients.textContent = s.clients;
         })
         .catch(err => console.error(err));
