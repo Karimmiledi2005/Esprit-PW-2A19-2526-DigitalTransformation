@@ -194,48 +194,54 @@ if (!$categorie) {
         <th>Nom formule</th>
         <th>Description</th>
         <th>Prix</th>
+        <th>Franchise</th>
         <th>Niveau</th>
         <th>Actions</th>
     </tr>
 </thead>
                         </thead>
                         <tbody>
-                            <?php if (!empty($formules)) { ?>
-                                <?php foreach ($formules as $f) { ?>
-                                    <tr>
-                                        <td>#<?= (int)$f['id_formule'] ?></td>
-                                        <td><?= htmlspecialchars($f['nom_formule']) ?></td>
-                                        <td><?= htmlspecialchars($f['description_formule'] ?? '—') ?></td>
-                                        <td><?= htmlspecialchars($f['prix_formule'] ?? '0') ?> DT</td>
-                                        <td>
-                                            <div class="actions">
-                                                <a class="btn-soft"
-                                                   href="showFormule.php?id=<?= (int)$f['id_formule'] ?>&id_categorie=<?= (int)$categorie['id_categorie'] ?>">
-                                                    <i class="bi bi-eye"></i>
-                                                </a>
+<?php foreach ($formules as $formule): ?>
+<tr>
+    <td>#<?= $formule['id_formule'] ?></td>
 
-                                                <a class="btn-soft"
-                                                   href="updateFormule.php?id=<?= (int)$f['id_formule'] ?>&id_categorie=<?= (int)$categorie['id_categorie'] ?>">
-                                                    <i class="bi bi-pencil"></i>
-                                                </a>
+    <td><?= htmlspecialchars($formule['nom_formule']) ?></td>
 
-                                                <a class="btn-soft danger"
-                                                   href="deleteFormule.php?id=<?= (int)$f['id_formule'] ?>&id_categorie=<?= (int)$categorie['id_categorie'] ?>"
-                                                   onclick="return confirm('Supprimer cette formule ?');">
-                                                    <i class="bi bi-trash3"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php } ?>
-                            <?php } else { ?>
-                                <tr>
-                                    <td colspan="5" style="text-align:center; padding:20px;">
-                                        Aucune formule liée à cette catégorie
-                                    </td>
-                                </tr>
-                            <?php } ?>
-                        </tbody>
+    <td><?= htmlspecialchars($formule['description_formule']) ?></td>
+
+    <td><?= number_format($formule['prix_formule'], 2) ?> DT</td>
+
+    <td><?= number_format((float)($formule['franchise_formule'] ?? 0), 2) ?> DT</td>
+
+    <td><?= htmlspecialchars($formule['niveau_formule']) ?></td>
+
+    <td>
+    <div class="actions">
+
+        <!-- Voir formule -->
+        <a class="btn-soft"
+           href="showFormule.php?id=<?= (int)$formule['id_formule'] ?>">
+            <i class="bi bi-eye"></i>
+        </a>
+
+        <!-- Modifier formule -->
+        <a class="btn-soft"
+           href="updateFormule.php?id=<?= (int)$formule['id_formule'] ?>">
+            <i class="bi bi-pencil"></i>
+        </a>
+
+        <!-- Supprimer formule -->
+        <a class="btn-soft danger"
+           href="deleteFormule.php?id=<?= (int)$formule['id_formule'] ?>&id_categorie=<?= (int)$categorie['id_categorie'] ?>"
+           onclick="return confirm('Supprimer cette formule ?');">
+            <i class="bi bi-trash3"></i>
+        </a>
+
+    </div>
+</td>
+</tr>
+<?php endforeach; ?>
+</tbody>
                     </table>
                 </div>
             </div>

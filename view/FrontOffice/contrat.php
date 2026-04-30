@@ -360,11 +360,14 @@ function categoryConfig(?string $name): array
                                 </span>
 
                                 <div class="contract-actions">
-                                    <a href="contrat_find.php?id=<?= urlencode((string)$contrat->getIdContrat()) ?>" class="action-btn">
+                                    <a href="contratshow.php?id=<?= urlencode((string)$contrat->getIdContrat()) ?>" class="action-btn">
                                         Voir
                                     </a>
-                                    <a href="#" class="action-btn secondary">
+                                    <a href="contrat_update_client.php?id=<?= urlencode((string)$contrat->getIdContrat()) ?>" class="action-btn secondary">
                                         Modifier
+                                    </a>
+                                    <a href="contratcancel.php?id=<?= urlencode((string)$contrat->getIdContrat()) ?>" class="action-btn secondary" onclick="return confirm('Résilier ce contrat ?')">
+                                        Résilier
                                     </a>
                                 </div>
                             </div>

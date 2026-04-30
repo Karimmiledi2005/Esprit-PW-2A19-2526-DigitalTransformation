@@ -1,227 +1,82 @@
 <?php
 require_once __DIR__ . '/../../controller/ContratController.php';
 
-if (!isset($_GET['id'])) {
-    die("ID contrat manquant.");
-}
-
-$id = (int)$_GET['id'];
+$id = (int)($_GET['id'] ?? 0);
 $contratC = new ContratController();
-$contratData = $contratC->getById($id);
+$contrat = $contratC->getById($id);
+if (!$contrat) die('Contrat introuvable.');
 
-if (!$contratData) {
-    die("Contrat introuvable.");
+$details = [];
+if (!empty($contrat['details_contrat'])) {
+    $decoded = json_decode($contrat['details_contrat'], true);
+    if (is_array($decoded)) $details = $decoded;
 }
+function h($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+function valueDetails($v){ return is_array($v) ? implode(', ', array_map('strval', $v)) : (string)$v; }
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>Détail contrat</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="assets/css/variables.css">
     <link rel="stylesheet" href="assets/css/base.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/admin-users.css">
     <link rel="stylesheet" href="assets/css/contrats.css">
-    <link rel="stylesheet" href="assets/css/forms.css">
 </head>
 <body>
-
-<div class="background"></div>
-<div class="orb orb-1"></div>
-<div class="orb orb-2"></div>
-<div class="orb orb-3"></div>
-
-<div class="layout">
-
-    <aside class="sidebar" id="sidebar">
-        <div class="sidebar-logo">
-            <div class="logo-icon">🛡️</div>
-            <div>
-                <div class="logo-text">Protex</div>
-                <div class="logo-sub">Back-Office</div>
-            </div>
+<div class="content" style="padding:40px;">
+    <div class="page-header-bar">
+        <div>
+            <div class="page-title">Contrat <?= h($contrat['numero_contrat']) ?></div>
+            <div class="page-breadcrumb"><i class="bi bi-house"></i> Contrats <i class="bi bi-chevron-right" style="font-size:10px;"></i> Détail</div>
         </div>
-
-        <div class="sidebar-user">
-            <div class="user-avatar">AD</div>
-            <div>
-                <div class="user-name">Agent Admin</div>
-                <span class="user-role">Administrateur</span>
-            </div>
+        <div style="display:flex;gap:10px;">
+            <a href="contrats_back.php" class="btn btn-outline">← Retour</a>
+            <a href="updateContrat.php?id=<?= (int)$contrat['id_contrat'] ?>" class="btn btn-primary"><i class="bi bi-pencil"></i> Modifier</a>
         </div>
-    </aside>
+    </div>
 
-    <main class="main">
-        <div class="topbar">
-            <div>
-                <div class="topbar-title">Détail du contrat</div>
-                <div class="topbar-sub" id="topbarDate"></div>
-            </div>
+    <div class="card" style="padding:24px;margin-top:20px;">
+        <div class="card-header"><div class="card-title"><i class="bi bi-file-earmark-text"></i> Informations contrat</div></div>
+        <div class="detail-grid" style="padding:20px;">
+            <div class="detail-field"><div class="detail-field-label">N° contrat</div><div class="detail-field-value"><?= h($contrat['numero_contrat']) ?></div></div>
+            <div class="detail-field"><div class="detail-field-label">Catégorie</div><div class="detail-field-value"><?= h($contrat['nom_categorie'] ?? $contrat['type_contrat']) ?></div></div>
+            <div class="detail-field"><div class="detail-field-label">Formule</div><div class="detail-field-value"><?= h($contrat['nom_formule'] ?? $contrat['formule_contrat'] ?? '—') ?></div></div>
+            <div class="detail-field"><div class="detail-field-label">Prime</div><div class="detail-field-value"><?= h($contrat['prime_contrat']) ?> DT</div></div>
+            <div class="detail-field"><div class="detail-field-label">Franchise</div><div class="detail-field-value"><?= h($contrat['franchise_contrat']) ?> DT</div></div>
+            <div class="detail-field"><div class="detail-field-label">Statut</div><div class="detail-field-value"><?= h($contrat['statut_contrat']) ?></div></div>
+            <div class="detail-field"><div class="detail-field-label">Date début</div><div class="detail-field-value"><?= h($contrat['date_debut_contrat']) ?></div></div>
+            <div class="detail-field"><div class="detail-field-label">Date fin</div><div class="detail-field-value"><?= h($contrat['date_fin_contrat']) ?></div></div>
+            <div class="detail-field"><div class="detail-field-label">Client</div><div class="detail-field-value"><?= h(trim(($contrat['prenom'] ?? '').' '.($contrat['nom'] ?? '')) ?: ('ID '.$contrat['id_client'])) ?></div></div>
+            <div class="detail-field"><div class="detail-field-label">Email</div><div class="detail-field-value"><?= h($contrat['email'] ?? '—') ?></div></div>
         </div>
+    </div>
 
-        <div class="content">
-            <div class="page-header-bar">
-                <div>
-                    <div class="page-title">Contrat #<?= (int)$contratData['id_contrat'] ?></div>
-                    <div class="page-breadcrumb">
-                        <i class="bi bi-house"></i>
-                        <a href="#">Accueil</a>
-                        <i class="bi bi-chevron-right" style="font-size:10px;"></i>
-                        <a href="contrats_back.php">Contrats</a>
-                        <i class="bi bi-chevron-right" style="font-size:10px;"></i>
-                        <span>Détail #<?= (int)$contratData['id_contrat'] ?></span>
+    <div class="card" style="padding:24px;margin-top:20px;">
+        <div class="card-header"><div class="card-title"><i class="bi bi-list-check"></i> Informations remplies par le client</div></div>
+        <?php if (empty($details)): ?>
+            <div style="padding:20px;color:var(--text-secondary);">Aucun détail spécifique enregistré.</div>
+        <?php else: ?>
+            <div class="detail-grid" style="padding:20px;">
+                <?php foreach ($details as $key => $value): ?>
+                    <div class="detail-field">
+                        <div class="detail-field-label"><?= h(str_replace('_', ' ', ucfirst($key))) ?></div>
+                        <div class="detail-field-value"><?= h(valueDetails($value)) ?></div>
                     </div>
-                </div>
-                <div>
-                    <a href="updateContrat.php?id=<?= (int)$contratData['id_contrat'] ?>" class="btn btn-secondary">
-                        <i class="bi bi-pencil"></i> Modifier
-                    </a>
-                    <a href="deleteContrat.php?id=<?= (int)$contratData['id_contrat'] ?>" 
-                       class="btn btn-danger" 
-                       onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce contrat ?');">
-                        <i class="bi bi-trash3"></i> Supprimer
-                    </a>
-                </div>
+                <?php endforeach; ?>
             </div>
+        <?php endif; ?>
+    </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Informations générales</div>
-                </div>
-
-                <div style="padding:24px;">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">NUMÉRO DE CONTRAT</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= htmlspecialchars($contratData['numero_contrat']) ?>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">TYPE DE CONTRAT</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= htmlspecialchars($contratData['type_contrat']) ?>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">CATÉGORIE</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= htmlspecialchars($contratData['nom_categorie'] ?? '—') ?>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">STATUT</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <span style="display:inline-block; padding:4px 12px; border-radius:4px; 
-                                           background:<?= $contratData['statut_contrat'] === 'actif' ? '#4CAF50' : ($contratData['statut_contrat'] === 'en attente' ? '#FF9800' : '#f44336') ?>;
-                                           color:white; font-size:12px;">
-                                    <?= htmlspecialchars($contratData['statut_contrat']) ?>
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Informations financières</div>
-                </div>
-
-                <div style="padding:24px;">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">PRIME</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= number_format((float)$contratData['prime_contrat'], 2, ',', ' ') ?> €
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">FRANCHISE</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= number_format((float)$contratData['franchise_contrat'], 2, ',', ' ') ?> €
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Périodes de couverture</div>
-                </div>
-
-                <div style="padding:24px;">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">DATE DE DÉBUT</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= date('d/m/Y', strtotime($contratData['date_debut_contrat'])) ?>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">DATE DE FIN</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= date('d/m/Y', strtotime($contratData['date_fin_contrat'])) ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-title">Informations client</div>
-                </div>
-
-                <div style="padding:24px;">
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">ID CLIENT</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= (int)$contratData['id_client'] ?>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">NOM COMPLET</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= htmlspecialchars(($contratData['prenom'] ?? '') . ' ' . ($contratData['nom'] ?? '')) ?: '—' ?>
-                            </div>
-                        </div>
-
-                        <div>
-                            <div style="color:#999; font-size:12px; margin-bottom:5px;">EMAIL</div>
-                            <div style="font-weight:600; font-size:16px;">
-                                <?= htmlspecialchars($contratData['email'] ?? '—') ?>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top:20px;">
-                <a href="contrats_back.php" class="btn btn-outline">← Retour</a>
-            </div>
-        </div>
-    </main>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+        <a href="statutContrat.php?id=<?= (int)$contrat['id_contrat'] ?>&statut=actif" class="btn btn-primary">Valider</a>
+        <a href="statutContrat.php?id=<?= (int)$contrat['id_contrat'] ?>&statut=refusé" class="btn btn-outline">Refuser</a>
+        <a href="statutContrat.php?id=<?= (int)$contrat['id_contrat'] ?>&statut=résilié" class="btn btn-outline">Résilier</a>
+        <a href="deleteContrat.php?id=<?= (int)$contrat['id_contrat'] ?>" onclick="return confirm('Supprimer ce contrat ?')" class="btn btn-soft danger">Supprimer</a>
+    </div>
 </div>
-
-<script>
-document.getElementById('topbarDate').textContent = new Date().toLocaleDateString('fr-FR', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-});
-</script>
 </body>
 </html>

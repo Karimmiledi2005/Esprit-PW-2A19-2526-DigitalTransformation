@@ -43,8 +43,8 @@ class FormuleController {
     }
 
     public function addFormule($formule) {
-        $sql = "INSERT INTO formule (nom_formule, description_formule, prix_formule, niveau_formule, id_categorie)
-                VALUES (:nom_formule, :description_formule, :prix_formule, :niveau_formule, :id_categorie)";
+        $sql = "INSERT INTO formule (nom_formule, description_formule, prix_formule, franchise_formule, niveau_formule, id_categorie)
+                VALUES (:nom_formule, :description_formule, :prix_formule, :franchise_formule, :niveau_formule, :id_categorie)";
 
         $db = config::getConnexion();
 
@@ -54,6 +54,7 @@ class FormuleController {
                 'nom_formule' => $formule->getNomFormule(),
                 'description_formule' => $formule->getDescriptionFormule(),
                 'prix_formule' => $formule->getPrixFormule(),
+                'franchise_formule' => method_exists($formule, 'getFranchiseFormule') ? $formule->getFranchiseFormule() : 0,
                 'niveau_formule' => $formule->getNiveauFormule(),
                 'id_categorie' => $formule->getIdCategorie()
             ]);
@@ -86,6 +87,7 @@ class FormuleController {
                 SET nom_formule = :nom_formule,
                     description_formule = :description_formule,
                     prix_formule = :prix_formule,
+                    franchise_formule = :franchise_formule,
                     niveau_formule = :niveau_formule,
                     id_categorie = :id_categorie
                 WHERE id_formule = :id";
@@ -99,6 +101,7 @@ class FormuleController {
                 'nom_formule' => $formule->getNomFormule(),
                 'description_formule' => $formule->getDescriptionFormule(),
                 'prix_formule' => $formule->getPrixFormule(),
+                'franchise_formule' => method_exists($formule, 'getFranchiseFormule') ? $formule->getFranchiseFormule() : 0,
                 'niveau_formule' => $formule->getNiveauFormule(),
                 'id_categorie' => $formule->getIdCategorie()
             ]);

@@ -43,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Le plafond est obligatoire.';
     } elseif (!preg_match('/^\d+(\.\d{1,2})?$/', $plafondRaw)) {
         $errors[] = 'Le plafond est invalide.';
-    } elseif ($plafond < 0) {
-        $errors[] = 'Le plafond doit être positif ou nul.';
+    } elseif ($plafond <= 0) {
+        $errors[] = 'Le plafond doit être supérieur à 0.';
     }
 
     if ($idCategorie <= 0) {
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             FROM garantie
             WHERE nom_garantie = :nom_garantie
               AND id_categorie = :id_categorie
-              AND id_formule IS NULL
+
               AND id_garantie != :id_garantie
         ");
         $check->execute([
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         description_garantie = :description_garantie,
                         plafond_couvert_garantie = :plafond_couvert_garantie,
                         id_categorie = :id_categorie,
-                        id_formule = NULL
+
                     WHERE id_garantie = :id_garantie
                 ";
 
@@ -280,8 +280,8 @@ function validatePlafondGarantie() {
         return false;
     }
 
-    if (parseFloat(value) < 0) {
-        setError(input, error, 'Le plafond doit être positif');
+    if (parseFloat(value) <= 0) {
+        setError(input, error, 'Le plafond doit être supérieur à 0');
         return false;
     }
 
@@ -321,13 +321,12 @@ document.addEventListener('DOMContentLoaded', function () {
     categorie.addEventListener('change', validateCategorieGarantie);
 
     form.addEventListener('submit', function(e) {
-        const ok =
-            validateNomGarantie() &&
-            validateDescriptionGarantie() &&
-            validatePlafondGarantie() &&
-            validateCategorieGarantie();
+        const nomOk = validateNomGarantie();
+        const descriptionOk = validateDescriptionGarantie();
+        const plafondOk = validatePlafondGarantie();
+        const categorieOk = validateCategorieGarantie();
 
-        if (!ok) {
+        if (!(nomOk && descriptionOk && plafondOk && categorieOk)) {
             e.preventDefault();
         }
     });

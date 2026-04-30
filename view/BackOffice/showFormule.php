@@ -17,7 +17,15 @@ if (!$formule) {
 
 $db = config::getConnexion();
 
-$sql = "SELECT * FROM garantie WHERE id_formule = :id_formule";
+$sql = "
+    SELECT
+        g.*,
+        fg.niveau_couvert_garantie AS niveau_couvert_garantie
+    FROM formule_garantie fg
+    INNER JOIN garantie g ON g.id_garantie = fg.id_garantie
+    WHERE fg.id_formule = :id_formule
+    ORDER BY g.nom_garantie ASC
+";
 $stmt = $db->prepare($sql);
 $stmt->execute(['id_formule' => $id]);
 $garanties = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -56,6 +64,7 @@ $garanties = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div style="padding:20px;">
             <p><strong>Description :</strong> <?= htmlspecialchars($formule['description_formule']) ?></p>
             <p><strong>Prix :</strong> <?= number_format($formule['prix_formule'], 2) ?> DT</p>
+            <p><strong>Franchise :</strong> <?= number_format((float)($formule['franchise_formule'] ?? 0), 2) ?> DT</p>
             <p><strong>Niveau :</strong> <?= htmlspecialchars($formule['niveau_formule']) ?></p>
         </div>
     </div>

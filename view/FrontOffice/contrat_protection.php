@@ -106,7 +106,6 @@ function garantieStatusTag(string $level): string {
 }
 
 $formuleLevelColumn = getFormulaLevelColumn($db);
-$garantieFormulaColumn = getGarantieFormulaColumn($db);
 
 $categorieStmt = $db->prepare("SELECT * FROM categorie WHERE LOWER(nom_categorie) = 'protection' LIMIT 1");
 $categorieStmt->execute();
@@ -122,23 +121,27 @@ if ($categorie) {
     $stmtFormules->execute(['id_categorie' => $categorie['id_categorie']]);
     $formules = $stmtFormules->fetchAll(PDO::FETCH_ASSOC);
 
-    if ($garantieFormulaColumn !== null) {
-        $sqlGaranties = "
-            SELECT g.*
-            FROM garantie g
-            INNER JOIN formule f ON g.`$garantieFormulaColumn` = f.id_formule
-            WHERE f.id_categorie = :id_categorie
-            ORDER BY f.id_formule ASC, g.id_garantie ASC
-        ";
-        $stmtGaranties = $db->prepare($sqlGaranties);
-        $stmtGaranties->execute(['id_categorie' => $categorie['id_categorie']]);
+    $sqlGaranties = "
+        SELECT
+            fg.id_formule,
+            g.id_garantie,
+            g.nom_garantie,
+            g.description_garantie,
+            g.plafond_couvert_garantie,
+            fg.niveau_couvert_garantie,
+            g.id_categorie
+        FROM formule_garantie fg
+        INNER JOIN garantie g ON g.id_garantie = fg.id_garantie
+        INNER JOIN formule f ON f.id_formule = fg.id_formule
+        WHERE f.id_categorie = :id_categorie
+        ORDER BY f.id_formule ASC, g.id_garantie ASC
+    ";
+    $stmtGaranties = $db->prepare($sqlGaranties);
+    $stmtGaranties->execute(['id_categorie' => $categorie['id_categorie']]);
 
-        foreach ($stmtGaranties->fetchAll(PDO::FETCH_ASSOC) as $garantie) {
-            $formuleId = (int) ($garantie[$garantieFormulaColumn] ?? 0);
-            $garantiesByFormule[$formuleId][] = $garantie;
-        }
-    } else {
-        $schemaMessage = "Pour afficher les garanties par formule, ajoutez une colonne id_formule (ou formule_id) dans la table garantie et liez-la à formule.id_formule.";
+    foreach ($stmtGaranties->fetchAll(PDO::FETCH_ASSOC) as $garantie) {
+        $formuleId = (int) ($garantie['id_formule'] ?? 0);
+        $garantiesByFormule[$formuleId][] = $garantie;
     }
 }
 
@@ -161,119 +164,6 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/client.css">
     <link rel="stylesheet" href="assets/css/contrat.css">
-
-    <style>
-        .protection-hero{
-            background:
-                linear-gradient(135deg, rgba(20,39,56,0.96), rgba(53,92,125,0.92)),
-                url('https://images.unsplash.com/photo-1556741533-f6acd647d2fb?q=80&w=1400&auto=format&fit=crop') center/cover no-repeat;
-        }
-
-        .formules-grid{
-            display:grid;
-            grid-template-columns:repeat(3, minmax(0, 1fr));
-            gap:22px;
-            align-items:stretch;
-        }
-
-        .formule-card{
-            position:relative;
-            display:flex;
-            flex-direction:column;
-            gap:18px;
-            min-height:100%;
-        }
-
-        .formule-desc{
-            min-height:72px;
-        }
-
-        .mini-meta{
-            display:grid;
-            grid-template-columns:repeat(2, minmax(0,1fr));
-            gap:10px;
-        }
-
-        .garantie-list{
-            list-style:none;
-            padding:0;
-            margin:0;
-            display:flex;
-            flex-direction:column;
-            gap:10px;
-            flex:1;
-        }
-
-        .formule-footer{
-            display:flex;
-            flex-direction:column;
-            gap:12px;
-            margin-top:auto;
-        }
-
-        .explication-box{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:22px;
-            margin-top:18px;
-        }
-
-        .info-card{
-            background:#fff;
-            border-radius:22px;
-            border:1px solid rgba(20,39,56,0.08);
-            padding:22px;
-        }
-
-        .info-card h3{
-            margin:0 0 10px;
-            color:#142738;
-            font-size:22px;
-        }
-
-        .info-card p{
-            margin:0;
-            color:#708198;
-            line-height:1.7;
-        }
-
-        .info-steps{
-            display:flex;
-            flex-direction:column;
-            gap:12px;
-        }
-
-        .info-step{
-            display:flex;
-            gap:12px;
-            align-items:flex-start;
-        }
-
-        .info-step span{
-            width:28px;
-            height:28px;
-            border-radius:999px;
-            display:grid;
-            place-items:center;
-            background:rgba(238,88,40,0.12);
-            color:#EE5828;
-            font-weight:800;
-            flex:0 0 28px;
-        }
-
-        .info-step p{
-            margin:0;
-        }
-
-        @media (max-width:1100px){
-            .formules-grid,
-            .explication-box,
-            .form-grid-2,
-            .check-grid{
-                grid-template-columns:1fr;
-            }
-        }
-    </style>
 
 </head>
 <body>
@@ -335,7 +225,7 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
         </div>
     </nav>
 
-    <main class="main auto-wrapper">
+   <main class="main protection-page">
         <div class="page-header">
             <div>
                 <div class="page-title-main">Assurance Protection</div>
@@ -441,7 +331,7 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
                                 </div>
                                 <div class="meta-box">
                                     <span class="meta-label">Prix</span>
-                                    <span class="meta-value"><?= number_format((float) ($formule['prix_formule'] ?? 0), 2, '.', ' ') ?> DT</span>
+                                    <span class="meta-value"><?= number_format((float) ($formule['prix_formule'] ?? 0), 2, '.', ' ') ?> DT/Mois</span>
                                 </div>
                             </div>
 
@@ -512,9 +402,10 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
         </div>
 
         <div class="modal-body">
-            <form id="contratProtectionForm" method="post" action="#">
+            <form id="contratProtectionForm" method="post" action="saveContratClient.php" novalidate>
                 <input type="hidden" name="type_contrat" value="Protection">
                 <input type="hidden" name="id_categorie" value="<?= h($categorie['id_categorie'] ?? '') ?>">
+                <input type="hidden" id="id_formule" name="id_formule">
 
                 <div class="form-section">
                     <h2 class="form-section-title">I - Couvertures souhaitées</h2>
@@ -522,7 +413,7 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
                     <div class="form-grid-1">
                         <div class="form-group">
                             <label for="formule">Formule choisie <span class="req">*</span></label>
-                            <select class="form-select" id="formule" name="formule" onchange="toggleCoveragePanels()" required>
+                            <select class="form-select" id="formule" name="formule" onchange="toggleCoveragePanels(); updateFormuleContractInfo();">
                                 <option value="">— Veuillez choisir une option —</option>
                                 <?php foreach ($formules as $formule): ?>
                                     <option value="<?= h($formule['nom_formule']) ?>"><?= h($formule['nom_formule']) ?></option>
@@ -550,6 +441,9 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
                                             $isDisabled = ($niveauGarantie === 'non disponible');
                                         ?>
                                         <label class="check-item<?= $isFixed ? ' fixed' : '' ?><?= $isDisabled ? ' disabled' : '' ?>">
+                                            <?php if ($isFixed): ?>
+                                                <input type="hidden" name="garanties[]" value="<?= h($garantie['nom_garantie']) ?>">
+                                            <?php endif; ?>
                                             <input
                                                 type="checkbox"
                                                 <?= $isFixed ? 'checked' : '' ?>
@@ -575,25 +469,194 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
+
+
+                    <div class="selected-contract-info" id="selectedContractInfo">
+                        <h3 class="selected-contract-title">Informations du contrat sélectionné</h3>
+                        <div class="form-grid-2 contrat-contract-summary" style="margin-top:0;">
+                            <div class="form-group">
+                                <label for="date_debut_contrat">Date début <span class="req">*</span></label>
+                                <input type="date" class="form-control" id="date_debut_contrat" name="date_debut_contrat">
+                                <div class="error-message" id="error_date_debut_contrat"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="date_fin_contrat">Date fin <span class="req">*</span></label>
+                                <input type="date" class="form-control" id="date_fin_contrat" name="date_fin_contrat">
+                                <small style="display:block;margin-top:6px;color:#7b8798;">Par défaut : après un an. Vous pouvez la modifier.</small>
+                                <div class="error-message" id="error_date_fin_contrat"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="prime_affichee">Prime</label>
+                                <input type="text" class="form-control" id="prime_affichee" readonly placeholder="Automatique selon la formule">
+                                <input type="hidden" id="prime_contrat" name="prime_contrat">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="franchise_affichee">Franchise</label>
+                                <input type="text" class="form-control" id="franchise_affichee" readonly placeholder="Automatique selon la formule">
+                                <input type="hidden" id="franchise_contrat" name="franchise_contrat">
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-section">
-                    <h2 class="form-section-title">II - Informations personnelles</h2>
+                    <h2 class="form-section-title">II - Informations de protection</h2>
 
                     <div class="form-grid-2">
                         <div class="form-group">
+                            <label for="type_protection">Type de protection <span class="req">*</span></label>
+                            <select class="form-select" id="type_protection" name="type_protection">
+                                <option value="">— Veuillez choisir une option —</option>
+                                <option>Protection juridique</option>
+                                <option>Protection financière</option>
+                                <option>Protection identité</option>
+                                <option>Protection achat en ligne</option>
+                            </select>
+                            <div class="error-message" id="error_type_protection"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="niveau_couverture">Niveau de couverture <span class="req">*</span></label>
+                            <select class="form-select" id="niveau_couverture" name="niveau_couverture">
+                                <option value="">— Veuillez choisir une option —</option>
+                                <option>Standard</option>
+                                <option>Avancé</option>
+                                <option>Premium</option>
+                            </select>
+                            <div class="error-message" id="error_niveau_couverture"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="montant_couverture">Montant souhaité (DT)</label>
+                            <input type="text" class="form-control" id="montant_couverture" name="montant_couverture" placeholder="Ex : 5000">
+                            <div class="error-message" id="error_montant_couverture"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="duree_contrat">Durée du contrat</label>
+                            <select class="form-select" id="duree_contrat" name="duree_contrat">
+                                <option value="">— Veuillez choisir une option —</option>
+                                <option>1 an</option>
+                                <option>2 ans</option>
+                                <option>3 ans</option>
+                            </select>
+                            <div class="error-message" id="error_duree_contrat"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="check-item" style="min-height:auto;">
+                                <input type="checkbox" name="couvrir_famille" value="oui">
+                                Couvrir aussi les membres de la famille
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="form-section-title">III - Coordonnées de l’assuré</h2>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="identite">Identité de l’adhérent <span class="req">*</span></label>
+                            <select class="form-select" id="identite" name="identite">
+                                <option value="">— Veuillez choisir une option —</option>
+                                <option>Monsieur</option>
+                                <option>Madame</option>
+                            </select>
+                            <div class="error-message" id="error_identite"></div>
+                        </div>
+
+                        <div class="form-group">
                             <label for="email">E-mail <span class="req">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" value="<?= h($clientEmail) ?>" placeholder="Adresse e-mail">
+                            <input type="text" class="form-control" id="email" name="email" value="<?= h($clientEmail) ?>" placeholder="Adresse e-mail">
+                            <div class="error-message" id="error_email"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="nom">Nom <span class="req">*</span></label>
                             <input type="text" class="form-control" id="nom" name="nom" value="<?= h($clientNom) ?>" placeholder="Nom de famille">
+                            <div class="error-message" id="error_nom"></div>
                         </div>
 
                         <div class="form-group">
                             <label for="prenom">Prénom <span class="req">*</span></label>
                             <input type="text" class="form-control" id="prenom" name="prenom" value="<?= h($clientPrenom) ?>" placeholder="Prénom">
+                            <div class="error-message" id="error_prenom"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="telephone">N° de téléphone <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="telephone" name="telephone" placeholder="Votre numéro de téléphone">
+                            <div class="error-message" id="error_telephone"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="date_naissance">Date de naissance <span class="req">*</span></label>
+                            <input type="date" class="form-control" id="date_naissance" name="date_naissance">
+                            <div class="error-message" id="error_date_naissance"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nationalite">Nationalité <span class="req">*</span></label>
+                            <select class="form-select" id="nationalite" name="nationalite">
+                                <option value="">— Veuillez choisir une option —</option>
+                                <option>Tunisienne</option>
+                                <option>Française</option>
+                                <option>Algérienne</option>
+                                <option>Autre</option>
+                            </select>
+                            <div class="error-message" id="error_nationalite"></div>
+                        </div>
+                            <div id="nationalite_autre_group" class="form-group nationalite-autre-group">
+                                <label for="nationalite_autre">Précisez la nationalité <span class="req">*</span></label>
+                                <input type="text" class="form-control" id="nationalite_autre" name="nationalite_autre" placeholder="Ex : Italienne">
+                                <div class="error-message" id="error_nationalite_autre"></div>
+                            </div>
+
+                        <div class="form-group">
+                            <label for="situation_professionnelle">Situation professionnelle <span class="req">*</span></label>
+                            <select class="form-select" id="situation_professionnelle" name="situation_professionnelle">
+                                <option value="">— Veuillez choisir une option —</option>
+                                <option>Salarié</option>
+                                <option>Étudiant</option>
+                                <option>Fonctionnaire</option>
+                                <option>Indépendant</option>
+                                <option>Retraité</option>
+                                <option>Sans activité</option>
+                            </select>
+                            <div class="error-message" id="error_situation_professionnelle"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="adresse">Adresse personnelle principale <span class="req">*</span></label>
+                            <input type="text" class="form-control" id="adresse" name="adresse" placeholder="Votre adresse personnelle">
+                            <div class="error-message" id="error_adresse"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="situation_matrimoniale">Situation matrimoniale</label>
+                            <select class="form-select" id="situation_matrimoniale" name="situation_matrimoniale">
+                                <option value="">— Veuillez choisir une option —</option>
+                                <option>Célibataire</option>
+                                <option>Marié(e)</option>
+                                <option>Divorcé(e)</option>
+                                <option>Veuf / Veuve</option>
+                            </select>
+                            <div class="error-message" id="error_situation_matrimoniale"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="revenu_annuel">Niveau de revenu annuel brut en Dinars</label>
+                            <select class="form-select" id="revenu_annuel" name="revenu_annuel">
+                                <option value="">— Veuillez choisir une option —</option>
+                                <option>Moins de 10 000 DT</option>
+                                <option>10 000 - 20 000 DT</option>
+                                <option>20 000 - 40 000 DT</option>
+                                <option>Plus de 40 000 DT</option>
+                            </select>
+                            <div class="error-message" id="error_revenu_annuel"></div>
                         </div>
                     </div>
                 </div>
@@ -609,7 +672,16 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
 </div>
 
 <script>
-    const formulaPanels = {
+    
+const formuleMeta = <?= json_encode(array_column(array_map(function($f) {
+    return [
+        'nom' => $f['nom_formule'] ?? '',
+        'id' => $f['id_formule'] ?? '',
+        'prix' => $f['prix_formule'] ?? 0,
+        'franchise' => $f['franchise_formule'] ?? 0,
+    ];
+}, $formules), null, 'nom'), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?>;
+const formulaPanels = {
         <?php foreach ($formules as $formule): ?>
             <?= json_encode($formule['nom_formule']) ?>: <?= json_encode('panel-' . slugify($formule['nom_formule'])) ?>,
         <?php endforeach; ?>
@@ -627,6 +699,23 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
         }
 
         toggleCoveragePanels();
+        setDefaultContractDates();
+        updateFormuleContractInfo();
+
+    setDefaultContractDates();
+    updateFormuleContractInfo();
+
+    const formuleSelectForInfo = getFormuleSelectElement();
+    if (formuleSelectForInfo) {
+        formuleSelectForInfo.addEventListener('change', updateFormuleContractInfo);
+    }
+
+    const currentForm = document.querySelector('form[id^="contrat"]');
+    if (currentForm) {
+        currentForm.addEventListener('submit', function(e) {
+            if (!validateContractDatesBeforeSubmit()) e.preventDefault();
+        });
+    }
     }
 
     function closeProtectionModal() {
@@ -653,7 +742,59 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    
+function getFormuleSelectElement() {
+    return document.getElementById('formule') || document.getElementById('formule_habitation');
+}
+
+function setDefaultContractDates() {
+    const debut = document.getElementById('date_debut_contrat');
+    const fin = document.getElementById('date_fin_contrat');
+    if (!debut || !fin) return;
+    const today = new Date();
+    const todayValue = today.toISOString().slice(0, 10);
+    if (!debut.value) debut.value = todayValue;
+    const nextYear = new Date(today);
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+    if (!fin.value) fin.value = nextYear.toISOString().slice(0, 10);
+}
+
+function updateFormuleContractInfo() {
+    const select = getFormuleSelectElement();
+    const selected = select ? select.value : '';
+    const meta = (typeof formuleMeta !== 'undefined' && formuleMeta[selected]) ? formuleMeta[selected] : null;
+    const idInput = document.getElementById('id_formule');
+    const primeHidden = document.getElementById('prime_contrat');
+    const franchiseHidden = document.getElementById('franchise_contrat');
+    const primeView = document.getElementById('prime_affichee');
+    const franchiseView = document.getElementById('franchise_affichee');
+    if (idInput) idInput.value = meta ? meta.id : '';
+    if (primeHidden) primeHidden.value = meta ? meta.prix : '';
+    if (franchiseHidden) franchiseHidden.value = meta ? meta.franchise : '';
+    if (primeView) primeView.value = meta ? `${parseFloat(meta.prix || 0).toFixed(2)} DT` : '';
+    if (franchiseView) franchiseView.value = meta ? `${parseFloat(meta.franchise || 0).toFixed(2)} DT` : '';
+}
+
+function validateContractDatesBeforeSubmit() {
+    const debut = document.getElementById('date_debut_contrat');
+    const fin = document.getElementById('date_fin_contrat');
+    const errorFin = document.getElementById('error_date_fin_contrat');
+    if (!debut || !fin) return true;
+    if (errorFin) errorFin.textContent = '';
+    if (!debut.value || !fin.value) {
+        if (errorFin) errorFin.textContent = 'Veuillez remplir la date début et la date fin.';
+        return false;
+    }
+    if (fin.value <= debut.value) {
+        if (errorFin) errorFin.textContent = 'La date fin doit être après la date début.';
+        fin.focus();
+        return false;
+    }
+    return true;
+}
+
+
+document.addEventListener('DOMContentLoaded', function () {
         const overlay = document.getElementById('protectionModal');
         if (overlay) {
             overlay.addEventListener('click', function(e) {
@@ -663,6 +804,30 @@ $highlightIndex = count($formules) >= 2 ? 1 : 0;
             });
         }
     });
+</script>
+
+<style>.input-invalid{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.12)!important}.input-valid{border-color:#22c55e!important;box-shadow:0 0 0 3px rgba(34,197,94,.10)!important}.error-message{color:#ef4444;font-size:12px;margin-top:6px;display:block}</style>
+
+<style>
+.input-invalid{border-color:#ef4444!important;box-shadow:0 0 0 3px rgba(239,68,68,.14)!important}.input-valid{border-color:#22c55e!important;box-shadow:0 0 0 3px rgba(34,197,94,.10)!important}.error-message{color:#ef4444;font-size:12px;font-weight:600;margin-top:6px;display:block;line-height:1.35}
+</style>
+<script>
+(function(){
+'use strict';
+const rules={email:/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/,letters:/^[A-Za-zÀ-ÖØ-öø-ÿĀ-ſ\u0600-\u06FF]+(?:[ '\-][A-Za-zÀ-ÖØ-öø-ÿĀ-ſ\u0600-\u06FF]+)*$/u,address:/^[A-Za-zÀ-ÖØ-öø-ÿĀ-ſ\u0600-\u06FF0-9\s,.'°º\-\/]+$/u,immatTN:/^\d{1,4}\s*TUN\s*\d{1,4}$/i,immatAr:/^نت\s*\d{1,6}$/u,immatForeign:/^(?=.*[A-Za-z\u0600-\u06FF])(?=.*\d)[A-Za-z0-9\u0600-\u06FF\-\s]{3,15}$/u};
+function today(){const d=new Date();d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
+function yearsAgo(y){const d=new Date();d.setFullYear(d.getFullYear()-y);d.setHours(0,0,0,0);return d.toISOString().slice(0,10)}
+function num(v){return Number(String(v||'').replace(',', '.').replace(/\s/g,''))}
+function fieldLabel(el){return (el.closest('.form-group,.form-field,div')?.querySelector('label')?.textContent||el.getAttribute('placeholder')||el.name||'Champ').replace('*','').trim()}
+function clearState(el){el.classList.remove('input-invalid','input-valid');let msg=el.parentElement.querySelector(':scope > .error-message');if(msg)msg.remove()}
+function setState(el,msg){clearState(el);if(msg){el.classList.add('input-invalid');const s=document.createElement('span');s.className='error-message';s.textContent=msg;el.parentElement.appendChild(s);return false}el.classList.add('input-valid');return true}
+function visible(el){return !!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)&&el.type!=='hidden'&&!el.disabled&&!el.readOnly}
+function isOptional(el){return ['details_formule','commentaires','commentaire','precision','precisions'].includes(el.name||'')||el.tagName==='TEXTAREA'}
+function validateField(el){if(!visible(el))return true;const name=(el.name||el.id||'').toLowerCase();const label=fieldLabel(el);const value=(el.value||'').trim();if(el.tagName==='SELECT')return setState(el,value?'':'Veuillez choisir une option.');if(!value)return isOptional(el)?(clearState(el),true):setState(el,label+' obligatoire.');if(name.includes('email'))return setState(el,rules.email.test(value)?'':'Email invalide. Exemple : exemple@mail.com');if(name.includes('telephone')||name.includes('tel'))return setState(el,/^\d{8}$/.test(value)?'':'Téléphone invalide : exactement 8 chiffres.');if(name==='nom'||name.includes('[nom]'))return setState(el,rules.letters.test(value)&&value.length>=2?'':'Nom invalide : lettres seulement.');if(name==='prenom'||name.includes('[prenom]'))return setState(el,rules.letters.test(value)&&value.length>=2?'':'Prénom invalide : lettres seulement.');if(name.includes('nationalite_autre'))return setState(el,rules.letters.test(value)&&value.length>=3?'':'Précisez la nationalité avec des lettres seulement.');if(name.includes('adresse'))return setState(el,rules.address.test(value)&&value.length>=5?'':'Adresse invalide : lettres, chiffres et ponctuation simple seulement.');if(name.includes('immatriculation')){const compact=value.replace(/\s+/g,'');return setState(el,(rules.immatTN.test(value)||rules.immatAr.test(compact)||rules.immatForeign.test(value))?'':'Immatriculation invalide. Exemples : 123TUN4567, نت225444, AB-123-CD.')}if(name.includes('date_debut'))return setState(el,value>=today()?'':'La date début ne doit pas être avant aujourd’hui.');if(name.includes('date_fin')){const deb=document.querySelector('[name="date_debut_contrat"],#date_debut');return setState(el,(!deb||!deb.value||value>deb.value)?'':'La date fin doit être après la date début.')}if(name.includes('date_circulation'))return setState(el,(value<=today()&&value>='1980-01-01')?'':'Date de 1er usage invalide : elle ne doit pas dépasser aujourd’hui.');if(name.includes('date_naissance'))return setState(el,(value<=yearsAgo(18)&&value>=yearsAgo(100))?'':'Date naissance invalide : âge entre 18 et 100 ans.');if(name.includes('puissance')){const n=num(value);return setState(el,(Number.isFinite(n)&&n>=1&&n<=45)?'':'Puissance invalide : entre 1 et 45 CV.')}if(name.includes('valeur_venale')){const n=num(value);return setState(el,(Number.isFinite(n)&&n>=1000&&n<=1000000)?'':'Valeur vénale invalide : entre 1 000 et 1 000 000 DT.')}if(name.includes('surface')){const n=num(value);return setState(el,(Number.isFinite(n)&&n>=10&&n<=1000)?'':'Surface invalide : entre 10 et 1000 m².')}if(name.includes('nb_pieces')){const n=num(value);return setState(el,(Number.isInteger(n)&&n>=1&&n<=30)?'':'Nombre de pièces invalide : entre 1 et 30.')}if(name.includes('valeur_biens')){const n=num(value);return setState(el,(Number.isFinite(n)&&n>=500&&n<=2000000)?'':'Valeur des biens invalide.')}if(name.includes('montant_couverture')){const n=num(value);return setState(el,(Number.isFinite(n)&&n>=1000&&n<=1000000)?'':'Montant couverture invalide : entre 1 000 et 1 000 000 DT.')}return setState(el,'')}
+function validateForm(form){let ok=true,first=null;form.querySelectorAll('input,select,textarea').forEach(el=>{if(!validateField(el)){ok=false;if(!first)first=el}});if(!ok&&first){first.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>first.focus(),250)}return ok}
+function toggleNationaliteAutre(){const s=document.querySelector('[name="nationalite"]');const box=document.getElementById('nationaliteAutreBox')||document.querySelector('[name="nationalite_autre"]')?.closest('div');const input=document.querySelector('[name="nationalite_autre"]');if(!s||!input)return;const show=(s.value||'').toLowerCase()==='autre';if(box)box.style.display=show?'':'none';if(!show){input.value='';clearState(input)}}
+document.addEventListener('DOMContentLoaded',function(){const form=document.querySelector('form[id^="contrat"], form[method="post"], form[method="POST"]');if(!form)return;form.setAttribute('novalidate','novalidate');form.querySelectorAll('[required],[min],[max],[pattern]').forEach(el=>{el.removeAttribute('required');el.removeAttribute('min');el.removeAttribute('max');el.removeAttribute('pattern')});toggleNationaliteAutre();const nat=document.querySelector('[name="nationalite"]');if(nat)nat.addEventListener('change',toggleNationaliteAutre);form.querySelectorAll('input,select,textarea').forEach(el=>{el.addEventListener('input',()=>validateField(el));el.addEventListener('change',()=>validateField(el))});form.addEventListener('submit',function(e){if(!validateForm(form)){e.preventDefault();e.stopImmediatePropagation();return false}},true)});
+})();
 </script>
 
 </body>

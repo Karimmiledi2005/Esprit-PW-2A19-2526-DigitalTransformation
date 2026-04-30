@@ -92,15 +92,7 @@ if (!$garantie) {
                     <div class="detail-value"><?= htmlspecialchars($garantie['nom_categorie'] ?? '—') ?></div>
                 </div>
 
-                <div class="detail-box">
-                    <div class="detail-label">Formule</div>
-                    <div class="detail-value"><?= htmlspecialchars($garantie['nom_formule'] ?? '—') ?></div>
-                </div>
 
-                <div class="detail-box">
-                    <div class="detail-label">Niveau lié à la formule</div>
-                    <div class="detail-value"><?= htmlspecialchars($garantie['niveau_couvert_garantie'] ?? '—') ?></div>
-                </div>
             </div>
 
             <div class="modal-footer" style="padding:24px 0 0 0;border-top:none;">

@@ -38,8 +38,8 @@ $categoriesLiees = count(array_unique($categoriesListe));
 <div class="orb orb-3"></div>
 
 <div class="layout">
-    <aside class="sidebar">
-        <div class="sidebar-logo">
+    <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
             <img src="../FrontOffice/logo.png" alt="logo" width="40" height="40">
             <div>
                 <div class="logo-text">Protex</div>
@@ -47,35 +47,74 @@ $categoriesLiees = count(array_unique($categoriesListe));
             </div>
         </div>
 
-        <div class="sidebar-user">
-            <div class="user-avatar">AD</div>
-            <div>
-                <div class="user-name">Admin Protex</div>
-                <span class="user-role">Administrateur</span>
-            </div>
-        </div>
+    <div class="sidebar-user">
+      <div class="user-avatar">AD</div>
+      <div>
+        <div class="user-name">Agent Admin</div>
+        <span class="user-role">Administrateur</span>
+      </div>
+    </div>
 
-        <nav class="sidebar-nav">
-            <div class="nav-section">Principal</div>
-            <a class="nav-item" href="admin.html"><i class="bi bi-grid-1x2"></i> Tableau de bord</a>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <a class="nav-item" href="#">
+        <i class="bi bi-grid-1x2"></i> Tableau de bord
+      </a>
 
-            <div class="nav-section">Gestion</div>
-            <a class="nav-item" href="sinsiter.html"><i class="bi bi-shield-exclamation"></i> Sinistres</a>
-            <a class="nav-item" href="traitement.html"><i class="bi bi-file-earmark-text"></i> Traitements</a>
-            <a class="nav-item" href="admin-users.html"><i class="bi bi-people"></i> Utilisateurs</a>
-            <a class="nav-item" href="contrats_back.php"><i class="bi bi-file-earmark-text"></i> Contrats</a>
-            <a class="nav-item" href="categories_back.php"><i class="bi bi-grid-3x3-gap"></i> Catégories</a>
-            <a class="nav-item active" href="garanties_back.php"><i class="bi bi-shield-check"></i> Garanties</a>
+      <div class="nav-section">Gestion</div>
+      <a class="nav-item" href="admin-users.html">
+        <i class="bi bi-people"></i> Utilisateurs
+        <span class="nav-badge accent">24</span>
+      </a>
 
-            <div class="nav-section">Compte</div>
-            <a class="nav-item" href="adminprofile.html"><i class="bi bi-person-gear"></i> Mon profil</a>
-        </nav>
+      <a class="nav-item" href="sinsiter.html">
+        <i class="bi bi-shield-exclamation"></i> Sinistres
+      </a>
 
-        <div class="sidebar-footer">
-            <a href="connexion.html" class="logout-btn"><i class="bi bi-box-arrow-left"></i> Se déconnecter</a>
-        </div>
-    </aside>
+      <a class="nav-item" href="traitement.html">
+        <i class="bi bi-file-earmark-text"></i> Traitements
+      </a>
 
+      <a class="nav-item" href="contrats_back.php">
+        <i class="bi bi-file-earmark-text"></i> Contrats
+      </a>
+
+      <a class="nav-item" href="categories_back.php">
+        <i class="bi bi-grid-3x3-gap"></i> Catégories
+      </a>
+
+      <a class="nav-item active" href="garanties_back.php">
+        <i class="bi bi-shield-check"></i> Garanties
+      </a>
+
+      <a class="nav-item" href="paiements_back.html">
+        <i class="bi bi-credit-card"></i> Paiements
+      </a>
+
+      <a class="nav-item" href="offres_back.html">
+        <i class="bi bi-tags"></i> Offres
+      </a>
+
+      <a class="nav-item" href="admin-reclamations.html">
+        <i class="bi bi-chat-dots"></i> Réclamations
+      </a>
+
+      <a class="nav-item" href="admin-agences.html">
+        <i class="bi bi-geo-alt"></i> Agences
+      </a>
+
+      <div class="nav-section">Compte</div>
+      <a class="nav-item" href="adminprofile.html">
+        <i class="bi bi-person-gear"></i> Mon profil
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="#" class="logout-btn">
+        <i class="bi bi-box-arrow-left"></i> Se déconnecter
+      </a>
+    </div>
+  </aside>
     <main class="main">
         <div class="topbar">
             <div>
@@ -146,7 +185,6 @@ $categoriesLiees = count(array_unique($categoriesListe));
                             <tr>
                                 <th>Garantie</th>
                                 <th>Catégorie</th>
-                                <th>Plafond</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -156,7 +194,6 @@ $categoriesLiees = count(array_unique($categoriesListe));
                                     $nom = $garantie->getNomGarantie();
                                     $description = $garantie->getDescriptionGarantie();
                                     $categorie = $garantie->getNomCategorie() ?? '—';
-                                    $plafond = $garantie->getPlafondCouvertGarantie();
                                 ?>
                                 <tr data-name="<?= strtolower(htmlspecialchars($nom)) ?>"
                                     data-category="<?= htmlspecialchars($categorie) ?>">
@@ -170,7 +207,6 @@ $categoriesLiees = count(array_unique($categoriesListe));
                                             <?= htmlspecialchars($categorie) ?>
                                         </span>
                                     </td>
-                                    <td style="color:#fff; font-weight:600;"><?= number_format((float)$plafond, 2, '.', ' ') ?> DT</td>
                                     <td>
                                         <div class="actions">
                                             <a class="btn-soft" title="Voir" href="showGarantie.php?id=<?= $garantie->getIdGarantie() ?>">

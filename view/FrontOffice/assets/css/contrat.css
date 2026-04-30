@@ -1699,3 +1699,79 @@
 .guarantees-list {
     flex: 1;
 }
+/* ================= PROTECTION PAGE COLORS ================= */
+
+.protection-page .formula-card {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(238, 88, 40, 0.18);
+    box-shadow: 0 18px 45px rgba(20, 39, 56, 0.12);
+}
+
+.protection-page .formula-card:hover {
+    border-color: #EE5828;
+    box-shadow: 0 22px 55px rgba(238, 88, 40, 0.18);
+}
+
+.protection-page .formula-title {
+    color: #142738;
+}
+
+.protection-page .formula-price {
+    color: #EE5828;
+}
+
+.protection-page .formula-badge {
+    background: linear-gradient(135deg, #EE5828, #ff8a4c);
+    color: white;
+}
+
+.protection-page .guarantee-item i.bi-check-circle-fill {
+    color: #4CAF50;
+}
+
+.protection-page .guarantee-item i.bi-plus-circle {
+    color: #EE5828;
+}
+
+.protection-page .guarantee-item i.bi-x-circle {
+    color: #999;
+}
+.show-card{
+    max-width: 1050px;
+    margin: 25px auto;
+    padding: 28px;
+}
+
+.show-header h1{
+    color: #0b1f3a;
+    font-size: 30px;
+}
+
+.info-grid{
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+}
+
+.details-grid{
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+}
+
+.info-box{
+    min-height: 72px;
+    padding: 14px 16px;
+}
+
+.info-box span{
+    font-size: 12px;
+}
+
+.info-box strong{
+    font-size: 16px;
+}
+
+.section-title{
+    color: #0b1f3a;
+    font-size: 24px;
+    margin: 24px 0 16px;
+}

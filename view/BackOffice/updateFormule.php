@@ -30,6 +30,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $description = trim($_POST["description_formule"] ?? "");
     $prixRaw = trim($_POST["prix_formule"] ?? "");
     $prix = is_numeric($prixRaw) ? (float)$prixRaw : -1;
+    $franchiseRaw = trim($_POST["franchise_formule"] ?? "");
+    $franchise = is_numeric($franchiseRaw) ? (float)$franchiseRaw : -1;
     $niveau = trim($_POST["niveau_formule"] ?? "");
     $currentCategorie = isset($_POST["id_categorie"]) ? (int)$_POST["id_categorie"] : $currentCategorie;
 
@@ -52,8 +54,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errors[] = 'Le prix est obligatoire.';
     } elseif (!preg_match('/^\d+(\.\d{1,2})?$/', $prixRaw)) {
         $errors[] = 'Le prix est invalide.';
-    } elseif ($prix < 0) {
-        $errors[] = 'Le prix doit être positif.';
+    } elseif ($prix <= 0) {
+        $errors[] = 'Le prix doit être supérieur à 0.';
+    }
+
+    if ($franchiseRaw === '') {
+        $errors[] = 'La franchise est obligatoire.';
+    } elseif (!preg_match('/^\d+(\.\d{1,2})?$/', $franchiseRaw)) {
+        $errors[] = 'La franchise est invalide.';
+    } elseif ($franchise <= 0) {
+        $errors[] = 'La franchise doit être supérieure à 0.';
     }
 
     if ($niveau === '') {
@@ -64,6 +74,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errors[] = 'La catégorie est invalide.';
     }
 
+    // Contrôle anti-doublon dans la même catégorie, en excluant la formule actuelle
+    if (empty($errors)) {
+        $checkDoublon = $db->prepare("
+            SELECT nom_formule, description_formule, prix_formule
+            FROM formule
+            WHERE id_categorie = :id_categorie
+              AND id_formule != :id_formule
+              AND (LOWER(nom_formule) = LOWER(:nom_formule)
+                   OR LOWER(description_formule) = LOWER(:description_formule)
+                   OR prix_formule = :prix_formule)
+            LIMIT 1
+        ");
+        $checkDoublon->execute([
+            'id_categorie' => $currentCategorie,
+            'id_formule' => $id,
+            'nom_formule' => $nom,
+            'description_formule' => $description,
+            'prix_formule' => $prix
+        ]);
+        $doublon = $checkDoublon->fetch(PDO::FETCH_ASSOC);
+
+        if ($doublon) {
+            if (mb_strtolower($doublon['nom_formule']) === mb_strtolower($nom)) {
+                $errors[] = 'Une formule avec ce nom existe déjà dans cette catégorie.';
+            }
+            if (mb_strtolower($doublon['description_formule']) === mb_strtolower($description)) {
+                $errors[] = 'Une formule avec cette description existe déjà dans cette catégorie.';
+            }
+            if ((float)$doublon['prix_formule'] === (float)$prix) {
+                $errors[] = 'Une formule avec ce prix existe déjà dans cette catégorie.';
+            }
+        }
+    }
+
     if (empty($garantiesChoisies) || !is_array($garantiesChoisies)) {
         $errors[] = 'Choisis au moins une garantie.';
     }
@@ -72,41 +116,46 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         try {
             $db->beginTransaction();
 
-            $formule = new Formule($nom, $description, $prix, $niveau, $currentCategorie);
+            $stmtUpdateFormule = $db->prepare("
+                UPDATE formule
+                SET nom_formule = :nom_formule,
+                    description_formule = :description_formule,
+                    prix_formule = :prix_formule,
+                    franchise_formule = :franchise_formule,
+                    niveau_formule = :niveau_formule,
+                    id_categorie = :id_categorie
+                WHERE id_formule = :id_formule
+            " );
 
-            if (method_exists($formuleC, 'updateFormule')) {
-                $formuleC->updateFormule($id, $formule);
-            } else {
-                $formuleC->update($id, $formule);
-            }
+            $stmtUpdateFormule->execute([
+                'nom_formule' => $nom,
+                'description_formule' => $description,
+                'prix_formule' => $prix,
+                'franchise_formule' => $franchise,
+                'niveau_formule' => $niveau,
+                'id_categorie' => $currentCategorie,
+                'id_formule' => $id
+            ]);
 
-            $deleteStmt = $db->prepare("DELETE FROM garantie WHERE id_formule = :id_formule");
+            $deleteStmt = $db->prepare("DELETE FROM formule_garantie WHERE id_formule = :id_formule");
             $deleteStmt->execute(['id_formule' => $id]);
 
-            $stmtSource = $db->prepare("
-                SELECT nom_garantie, description_garantie, plafond_couvert_garantie, id_categorie
+            $stmtCheckGarantie = $db->prepare("
+                SELECT COUNT(*)
                 FROM garantie
                 WHERE id_garantie = :id_garantie
                   AND id_categorie = :id_categorie
-                  AND id_formule IS NULL
-                LIMIT 1
             ");
 
-            $stmtInsertGarantie = $db->prepare("
-                INSERT INTO garantie (
-                    nom_garantie,
-                    description_garantie,
-                    plafond_couvert_garantie,
-                    niveau_couvert_garantie,
+            $stmtLinkGarantie = $db->prepare("
+                INSERT INTO formule_garantie (
                     id_formule,
-                    id_categorie
+                    id_garantie,
+                    niveau_couvert_garantie
                 ) VALUES (
-                    :nom_garantie,
-                    :description_garantie,
-                    :plafond_couvert_garantie,
-                    :niveau_couvert_garantie,
                     :id_formule,
-                    :id_categorie
+                    :id_garantie,
+                    :niveau_couvert_garantie
                 )
             ");
 
@@ -118,20 +167,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     $niveauGarantie = 'basique';
                 }
 
-                $stmtSource->execute([
+                $stmtCheckGarantie->execute([
                     'id_garantie' => $idGarantieSource,
                     'id_categorie' => $currentCategorie
                 ]);
-                $source = $stmtSource->fetch(PDO::FETCH_ASSOC);
 
-                if ($source) {
-                    $stmtInsertGarantie->execute([
-                        'nom_garantie' => $source['nom_garantie'],
-                        'description_garantie' => $source['description_garantie'],
-                        'plafond_couvert_garantie' => $source['plafond_couvert_garantie'],
-                        'niveau_couvert_garantie' => $niveauGarantie,
+                if ((int)$stmtCheckGarantie->fetchColumn() > 0) {
+                    $stmtLinkGarantie->execute([
                         'id_formule' => $id,
-                        'id_categorie' => $source['id_categorie']
+                        'id_garantie' => $idGarantieSource,
+                        'niveau_couvert_garantie' => $niveauGarantie
                     ]);
                 }
             }
@@ -155,7 +200,6 @@ try {
         SELECT id_garantie, nom_garantie, description_garantie, plafond_couvert_garantie
         FROM garantie
         WHERE id_categorie = :id_categorie
-          AND id_formule IS NULL
         ORDER BY nom_garantie ASC
     ");
     $stmtCatalogue->execute(['id_categorie' => $currentCategorie]);
@@ -171,6 +215,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $currentNom = $_POST['nom_formule'] ?? '';
     $currentDescription = $_POST['description_formule'] ?? '';
     $currentPrix = $_POST['prix_formule'] ?? '0';
+    $currentFranchise = $_POST['franchise_formule'] ?? '0';
     $currentNiveau = $_POST['niveau_formule'] ?? '';
     $selectedGaranties = array_map('strval', $_POST['garanties'] ?? []);
     $selectedLevels = $_POST['niveau_garantie'] ?? [];
@@ -178,26 +223,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $currentNom = $formuleData['nom_formule'] ?? '';
     $currentDescription = $formuleData['description_formule'] ?? '';
     $currentPrix = $formuleData['prix_formule'] ?? '0';
+    $currentFranchise = $formuleData['franchise_formule'] ?? '0';
     $currentNiveau = $formuleData['niveau_formule'] ?? '';
 
     $stmtLinked = $db->prepare("
-        SELECT nom_garantie, niveau_couvert_garantie
-        FROM garantie
+        SELECT id_garantie, niveau_couvert_garantie
+        FROM formule_garantie
         WHERE id_formule = :id_formule
     ");
     $stmtLinked->execute(['id_formule' => $id]);
     $linked = $stmtLinked->fetchAll(PDO::FETCH_ASSOC);
 
-    $mapByName = [];
     foreach ($linked as $item) {
-        $mapByName[$item['nom_garantie']] = $item['niveau_couvert_garantie'] ?? 'basique';
-    }
-
-    foreach ($garantiesCatalogue as $g) {
-        if (isset($mapByName[$g['nom_garantie']])) {
-            $selectedGaranties[] = (string)$g['id_garantie'];
-            $selectedLevels[$g['id_garantie']] = $mapByName[$g['nom_garantie']];
-        }
+        $selectedGaranties[] = (string)$item['id_garantie'];
+        $selectedLevels[(int)$item['id_garantie']] = $item['niveau_couvert_garantie'] ?? 'basique';
     }
 }
 ?>
@@ -249,6 +288,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .garantie-level {
             min-width: 220px;
         }
+
+        #prix_formule,
+        input[name="prix_formule"],
+        #franchise_formule,
+        input[name="franchise_formule"] {
+            background: rgba(255,255,255,.05) !important;
+            color: #fff !important;
+            border: 1px solid rgba(255,255,255,.12) !important;
+            box-shadow: none !important;
+        }
+        #prix_formule::placeholder,
+        #franchise_formule::placeholder {
+            color: rgba(255,255,255,.45) !important;
+        }
+        #prix_formule.input-invalid,
+        #franchise_formule.input-invalid {
+            border-color: red !important;
+        }
+        #prix_formule.input-valid,
+        #franchise_formule.input-valid {
+            border-color: green !important;
+        }
     </style>
 </head>
 <body>
@@ -283,12 +344,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
             <div class="form-group">
                 <label>PRIX <span style="color:red;">*</span></label>
-                <input type="text" id="prix_formule" class="form-control" name="prix_formule"
+                <input type="text" inputmode="decimal" id="prix_formule" class="form-control" name="prix_formule"
                        value="<?= htmlspecialchars((string)$currentPrix) ?>">
                 <div id="error_prix_formule" class="field-error"></div>
             </div>
 
             <div class="form-group">
+                <label>FRANCHISE <span style="color:red;">*</span></label>
+                <input type="text" inputmode="decimal" id="franchise_formule" class="form-control" name="franchise_formule"
+                       value="<?= htmlspecialchars((string)$currentFranchise) ?>">
+                <div id="error_franchise_formule" class="field-error"></div>
+            </div>
+
                 <label>NIVEAU <span style="color:red;">*</span></label>
                 <select class="form-control" id="niveau_formule" name="niveau_formule">
                     <option value="">-- Sélectionner un niveau --</option>
@@ -404,7 +471,16 @@ function validatePrixFormule() {
     const value = input.value.trim();
     if (value === '') return setError(input, error, 'Prix obligatoire'), false;
     if (!/^\d+(\.\d{1,2})?$/.test(value)) return setError(input, error, 'Prix invalide'), false;
-    if (parseFloat(value) < 0) return setError(input, error, 'Le prix doit être positif'), false;
+    if (parseFloat(value) <= 0) return setError(input, error, 'Le prix doit être supérieur à 0'), false;
+    return setSuccess(input, error), true;
+}
+function validateFranchiseFormule() {
+    const input = document.getElementById('franchise_formule');
+    const error = document.getElementById('error_franchise_formule');
+    const value = input.value.trim();
+    if (value === '') return setError(input, error, 'Franchise obligatoire'), false;
+    if (!/^\d+(\.\d{1,2})?$/.test(value)) return setError(input, error, 'Franchise invalide'), false;
+    if (parseFloat(value) <= 0) return setError(input, error, 'La franchise doit être supérieure à 0'), false;
     return setSuccess(input, error), true;
 }
 function validateNiveauFormule() {
@@ -434,28 +510,27 @@ document.addEventListener('DOMContentLoaded', function () {
     const nom = document.getElementById('nom_formule');
     const desc = document.getElementById('description_formule');
     const prix = document.getElementById('prix_formule');
+    const franchise = document.getElementById('franchise_formule');
     const niveau = document.getElementById('niveau_formule');
     const categorie = document.getElementById('id_categorie');
-
     nom.addEventListener('keypress', blockNumbersForText);
     desc.addEventListener('keypress', blockNumbersForText);
     nom.addEventListener('paste', blockPasteNumbers);
     desc.addEventListener('paste', blockPasteNumbers);
-
     nom.addEventListener('input', validateNomFormule);
     desc.addEventListener('input', validateDescriptionFormule);
     prix.addEventListener('input', validatePrixFormule);
+    franchise.addEventListener('input', validateFranchiseFormule);
     niveau.addEventListener('change', validateNiveauFormule);
     categorie.addEventListener('change', validateCategorieFormule);
-
     document.querySelectorAll('.garantie-checkbox').forEach(cb => {
         cb.addEventListener('change', validateGarantiesSelection);
     });
-
     form.addEventListener('submit', function(e) {
         const ok = validateNomFormule() &&
                    validateDescriptionFormule() &&
                    validatePrixFormule() &&
+                   validateFranchiseFormule() &&
                    validateNiveauFormule() &&
                    validateCategorieFormule() &&
                    validateGarantiesSelection();

@@ -46,12 +46,12 @@ foreach ($contrats as $contrat) {
 
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">🛡️</div>
-      <div>
-        <div class="logo-text">Protex</div>
-        <div class="logo-sub">Back-Office</div>
-      </div>
-    </div>
+            <img src="../FrontOffice/logo.png" alt="logo" width="40" height="40">
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">Back-Office</div>
+            </div>
+        </div>
 
     <div class="sidebar-user">
       <div class="user-avatar">AD</div>
@@ -210,18 +210,16 @@ foreach ($contrats as $contrat) {
               <option value="">Tous les statuts</option>
               <option value="actif">Actif</option>
               <option value="en attente">En attente</option>
-              <option value="en_attente">En attente</option>
               <option value="expire">Expiré</option>
-              <option value="expiré">Expiré</option>
               <option value="resilie">Résilié</option>
-              <option value="résilié">Résilié</option>
             </select>
 
             <select class="filter-select" id="filterType">
               <option value="">Tous les types</option>
-              <option value="Auto">Auto</option>
-              <option value="Santé">Santé</option>
-              <option value="Habitation">Habitation</option>
+              <option value="auto">Auto</option>
+              <option value="sante">Santé</option>
+              <option value="habitation">Habitation</option>
+              <option value="protection">Protection</option>
             </select>
 
             <input type="date" class="filter-select" id="filterDate" style="padding-right:10px;">
@@ -264,8 +262,8 @@ foreach ($contrats as $contrat) {
                     $contrat->getTypeContrat() . ' ' .
                     $contrat->getNomCategorie()
                   )) ?>"
-                  data-statut="<?= htmlspecialchars($statutRaw) ?>"
-                  data-type="<?= htmlspecialchars($contrat->getTypeContrat()) ?>"
+                  data-statut="<?= htmlspecialchars(str_replace(['é', '_'], ['e', ' '], $statutRaw)) ?>"
+                  data-type="<?= htmlspecialchars(strtolower(str_replace(['é', 'É'], ['e', 'E'], $contrat->getTypeContrat()))) ?>"
                   data-date-debut="<?= htmlspecialchars($contrat->getDateDebutContrat()) ?>"
                   data-date-fin="<?= htmlspecialchars($contrat->getDateFinContrat()) ?>"
                 >
@@ -455,19 +453,29 @@ foreach ($contrats as $contrat) {
     openModal('modalDelete');
   }
 
+  function normalizeValue(value) {
+    return (value || '')
+      .toString()
+      .toLowerCase()
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/_/g, ' ');
+  }
+
   function filterRows() {
-    const search = document.getElementById('searchInput').value.toLowerCase();
-    const statut = document.getElementById('filterStatut').value.toLowerCase();
-    const type = document.getElementById('filterType').value;
+    const search = normalizeValue(document.getElementById('searchInput').value);
+    const statut = normalizeValue(document.getElementById('filterStatut').value);
+    const type = normalizeValue(document.getElementById('filterType').value);
     const date = document.getElementById('filterDate').value;
 
     const rows = document.querySelectorAll('#contratBody tr');
     let visible = 0;
 
     rows.forEach(row => {
-      const rowSearch = row.dataset.search || '';
-      const rowStatut = row.dataset.statut || '';
-      const rowType = row.dataset.type || '';
+      const rowSearch = normalizeValue(row.dataset.search || '');
+      const rowStatut = normalizeValue(row.dataset.statut || '');
+      const rowType = normalizeValue(row.dataset.type || '');
       const rowDateDebut = row.dataset.dateDebut || '';
       const rowDateFin = row.dataset.dateFin || '';
 

@@ -1,9 +1,14 @@
 <?php
 require_once __DIR__ . '/../../controller/CategorieController.php';
 require_once __DIR__ . '/../../model/Categorie.php';
+require_once __DIR__ . '/../../config/database.php';
 
 $categorieC = new CategorieController();
 $errors = [];
+
+function normalizeText($value) {
+    return trim(preg_replace('/\s+/', ' ', $value));
+}
 
 if (!isset($_GET['id'])) {
     die("ID catégorie manquant.");
@@ -17,10 +22,11 @@ if (!$categorieData) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $nom = trim($_POST["nom_categorie"] ?? "");
-    $description = trim($_POST["description_categorie"] ?? "");
+    $nom = normalizeText($_POST["nom_categorie"] ?? "");
+    $description = normalizeText($_POST["description_categorie"] ?? "");
 
-    if ($nom === "") {
+    // ===== VALIDATION SERVEUR =====
+    if ($nom === '') {
         $errors[] = "Le nom de la catégorie est obligatoire.";
     } elseif (mb_strlen($nom) < 3) {
         $errors[] = "Le nom doit contenir au moins 3 caractères.";
@@ -30,11 +36,41 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $errors[] = "Le nom doit contenir uniquement des lettres, espaces ou tirets.";
     }
 
-    if ($description !== "") {
-        if (mb_strlen($description) < 10) {
-            $errors[] = "La description doit contenir au moins 10 caractères.";
-        } elseif (mb_strlen($description) > 500) {
-            $errors[] = "La description ne doit pas dépasser 500 caractères.";
+    if ($description === '') {
+        $errors[] = "La description est obligatoire.";
+    } elseif (mb_strlen($description) < 10) {
+        $errors[] = "La description doit contenir au moins 10 caractères.";
+    } elseif (mb_strlen($description) > 500) {
+        $errors[] = "La description ne doit pas dépasser 500 caractères.";
+    } elseif (preg_match('/\d/', $description)) {
+        $errors[] = "La description ne doit pas contenir de chiffres.";
+    }
+
+    // ===== ANTI-DOUBLON UPDATE =====
+    // On bloque si une autre catégorie possède le même nom OU la même description.
+    if (empty($errors)) {
+        try {
+            $db = config::getConnexion();
+            $check = $db->prepare("
+                SELECT COUNT(*)
+                FROM categorie
+                WHERE id_categorie <> :id
+                  AND (
+                        LOWER(TRIM(nom_categorie)) = LOWER(TRIM(:nom))
+                     OR LOWER(TRIM(description_categorie)) = LOWER(TRIM(:description))
+                  )
+            ");
+            $check->execute([
+                'id' => $id,
+                'nom' => $nom,
+                'description' => $description
+            ]);
+
+            if ((int)$check->fetchColumn() > 0) {
+                $errors[] = "Une autre catégorie possède déjà le même nom ou la même description.";
+            }
+        } catch (Exception $e) {
+            $errors[] = "Erreur lors de la vérification du doublon : " . $e->getMessage();
         }
     }
 
@@ -68,17 +104,14 @@ $currentDescription = $_POST['description_categorie'] ?? ($categorieData['descri
             margin-top: 6px;
             min-height: 18px;
         }
-
         .input-invalid {
             border-color: #ff6b6b !important;
             box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.12) !important;
         }
-
         .input-valid {
             border-color: #22c55e !important;
             box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.10) !important;
         }
-
         .error-box {
             margin-bottom: 18px;
             padding: 14px 16px;
@@ -96,7 +129,7 @@ $currentDescription = $_POST['description_categorie'] ?? ($categorieData['descri
             <div class="card-title">Modifier la catégorie</div>
         </div>
 
-        <form method="POST" id="categorieForm" style="padding:24px;" onsubmit="return validateCategorieForm()">
+        <form method="POST" id="categorieForm" style="padding:24px;" novalidate>
             <?php if (!empty($errors)) { ?>
                 <div class="error-box">
                     <?php foreach ($errors as $error) { ?>
@@ -111,20 +144,18 @@ $currentDescription = $_POST['description_categorie'] ?? ($categorieData['descri
                        id="nom_categorie"
                        class="form-control"
                        name="nom_categorie"
-                       minlength="3"
-                       maxlength="100"
                        value="<?= htmlspecialchars($currentNom) ?>"
-                       required>
+                       placeholder="Saisir le nom de la catégorie">
                 <div class="field-error" id="error_nom_categorie"></div>
             </div>
 
             <div class="form-group">
-                <label for="description_categorie">Description</label>
+                <label for="description_categorie">Description <span style="color:red;">*</span></label>
                 <textarea id="description_categorie"
                           class="form-control"
                           name="description_categorie"
                           rows="4"
-                          maxlength="500"><?= htmlspecialchars($currentDescription) ?></textarea>
+                          placeholder="Saisir la description de la catégorie"><?= htmlspecialchars($currentDescription) ?></textarea>
                 <div class="field-error" id="error_description_categorie"></div>
             </div>
 
@@ -155,7 +186,6 @@ function blockNumbers(e) {
     }
 }
 
-
 function blockPasteNumbers(e) {
     const paste = (e.clipboardData || window.clipboardData).getData('text');
     if (/\d/.test(paste)) {
@@ -169,12 +199,27 @@ function validateNom() {
     const value = input.value.trim();
 
     if (value === '') {
-        setError(input, error, 'Nom obligatoire');
+        setError(input, error, 'Le nom est obligatoire.');
+        return false;
+    }
+
+    if (value.length < 3) {
+        setError(input, error, 'Le nom doit contenir au moins 3 caractères.');
+        return false;
+    }
+
+    if (value.length > 100) {
+        setError(input, error, 'Le nom ne doit pas dépasser 100 caractères.');
         return false;
     }
 
     if (/\d/.test(value)) {
-        setError(input, error, 'Les chiffres sont interdits');
+        setError(input, error, 'Les chiffres sont interdits.');
+        return false;
+    }
+
+    if (!/^[A-Za-zÀ-ÿ\s\-]+$/.test(value)) {
+        setError(input, error, 'Utilisez seulement des lettres, espaces ou tirets.');
         return false;
     }
 
@@ -188,12 +233,22 @@ function validateDescription() {
     const value = input.value.trim();
 
     if (value === '') {
-        setError(input, error, 'Description obligatoire');
+        setError(input, error, 'La description est obligatoire.');
+        return false;
+    }
+
+    if (value.length < 10) {
+        setError(input, error, 'La description doit contenir au moins 10 caractères.');
+        return false;
+    }
+
+    if (value.length > 500) {
+        setError(input, error, 'La description ne doit pas dépasser 500 caractères.');
         return false;
     }
 
     if (/\d/.test(value)) {
-        setError(input, error, 'Les chiffres sont interdits');
+        setError(input, error, 'Les chiffres sont interdits.');
         return false;
     }
 
@@ -201,30 +256,30 @@ function validateDescription() {
     return true;
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+function validateCategorieForm() {
+    const validNom = validateNom();
+    const validDescription = validateDescription();
+    return validNom && validDescription;
+}
 
+document.addEventListener('DOMContentLoaded', function () {
     const nom = document.getElementById('nom_categorie');
     const desc = document.getElementById('description_categorie');
     const form = document.getElementById('categorieForm');
 
-
     nom.addEventListener('keypress', blockNumbers);
     desc.addEventListener('keypress', blockNumbers);
-
     nom.addEventListener('paste', blockPasteNumbers);
     desc.addEventListener('paste', blockPasteNumbers);
 
-    // ✅ validation realtime
     nom.addEventListener('input', validateNom);
     desc.addEventListener('input', validateDescription);
 
-    // ✅ submit
     form.addEventListener('submit', function(e) {
-        if (!validateNom() || !validateDescription()) {
+        if (!validateCategorieForm()) {
             e.preventDefault();
         }
     });
-
 });
 </script>
 </body>

@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Le plafond est obligatoire.';
     } elseif (!preg_match('/^\d+(\.\d{1,2})?$/', $plafondRaw)) {
         $errors[] = 'Le plafond est invalide.';
-    } elseif ($plafond < 0) {
-        $errors[] = 'Le plafond doit être positif ou nul.';
+    } elseif ($plafond <= 0) {
+        $errors[] = 'Le plafond doit être supérieur à 0.';
     }
 
     if ($idCategorie <= 0) {
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             FROM garantie
             WHERE nom_garantie = :nom_garantie
               AND id_categorie = :id_categorie
-              AND id_formule IS NULL
+
         ");
         $check->execute([
             'nom_garantie' => $nom,
@@ -61,13 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         nom_garantie,
                         description_garantie,
                         plafond_couvert_garantie,
-                        id_formule,
+
                         id_categorie
                     ) VALUES (
                         :nom_garantie,
                         :description_garantie,
                         :plafond_couvert_garantie,
-                        NULL,
+
                         :id_categorie
                     )
                 ");
@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label>PLAFOND DE COUVERTURE <span style="color:red;">*</span></label>
                 <input type="text" id="plafond_couvert_garantie" class="form-control" name="plafond_couvert_garantie"
                        placeholder="Ex: 5000 ou 5000.00"
-                       value="<?= htmlspecialchars($_POST['plafond_couvert_garantie'] ?? '0') ?>">
+                       value="<?= htmlspecialchars($_POST['plafond_couvert_garantie'] ?? '') ?>">
                 <div id="error_plafond_couvert_garantie" class="field-error"></div>
             </div>
 
@@ -206,7 +206,7 @@ function validatePlafondGarantie() {
     const value = input.value.trim();
     if (value === '') return setError(input, error, 'Plafond obligatoire'), false;
     if (!/^\d+(\.\d{1,2})?$/.test(value)) return setError(input, error, 'Plafond invalide'), false;
-    if (parseFloat(value) < 0) return setError(input, error, 'Le plafond doit être positif'), false;
+    if (parseFloat(value) <= 0) return setError(input, error, 'Le plafond doit être supérieur à 0'), false;
     return setSuccess(input, error), true;
 }
 function validateCategorieGarantie() {
@@ -233,11 +233,14 @@ document.addEventListener('DOMContentLoaded', function () {
     categorie.addEventListener('change', validateCategorieGarantie);
 
     form.addEventListener('submit', function(e) {
-        const ok = validateNomGarantie() &&
-                   validateDescriptionGarantie() &&
-                   validatePlafondGarantie() &&
-                   validateCategorieGarantie();
-        if (!ok) e.preventDefault();
+        const nomOk = validateNomGarantie();
+        const descriptionOk = validateDescriptionGarantie();
+        const plafondOk = validatePlafondGarantie();
+        const categorieOk = validateCategorieGarantie();
+
+        if (!(nomOk && descriptionOk && plafondOk && categorieOk)) {
+            e.preventDefault();
+        }
     });
 });
 </script>

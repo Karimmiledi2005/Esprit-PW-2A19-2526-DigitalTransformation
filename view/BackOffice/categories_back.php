@@ -33,12 +33,12 @@ $totalContrats = $categorieC->countContratsLiees();
 
     <aside class="sidebar" id="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-icon">🛡️</div>
-      <div>
-        <div class="logo-text">Protex</div>
-        <div class="logo-sub">Back-Office</div>
-      </div>
-    </div>
+            <img src="../FrontOffice/logo.png" alt="logo" width="40" height="40">
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">Back-Office</div>
+            </div>
+        </div>
 
     <div class="sidebar-user">
       <div class="user-avatar">AD</div>
@@ -68,11 +68,11 @@ $totalContrats = $categorieC->countContratsLiees();
         <i class="bi bi-file-earmark-text"></i> Traitements
       </a>
 
-      <a class="nav-item active" href="contrats_back.php">
+      <a class="nav-item" href="contrats_back.php">
         <i class="bi bi-file-earmark-text"></i> Contrats
       </a>
 
-      <a class="nav-item" href="categories_back.php">
+      <a class="nav-item active" href="categories_back.php">
         <i class="bi bi-grid-3x3-gap"></i> Catégories
       </a>
 

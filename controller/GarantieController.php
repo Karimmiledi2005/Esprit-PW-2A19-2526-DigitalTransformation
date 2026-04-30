@@ -4,14 +4,14 @@ require_once __DIR__ . '/../model/Garantie.php';
 
 class GarantieController
 {
-    private PDO $db;
+    private $db;
 
     public function __construct()
     {
         $this->db = config::getConnexion();
     }
 
-    public function listGaranties(): array
+    public function listGaranties()
     {
         $sql = "
             SELECT
@@ -19,8 +19,6 @@ class GarantieController
                 g.nom_garantie,
                 g.description_garantie,
                 g.plafond_couvert_garantie,
-                g.niveau_couvert_garantie,
-                g.id_formule,
                 g.id_categorie,
                 c.nom_categorie
             FROM garantie g
@@ -38,14 +36,11 @@ class GarantieController
                 $row['nom_garantie'],
                 $row['description_garantie'],
                 (float)$row['plafond_couvert_garantie'],
-                $row['id_formule'] !== null ? (int)$row['id_formule'] : null,
                 $row['id_categorie'] !== null ? (int)$row['id_categorie'] : null
             );
 
             $garantie->setIdGarantie((int)$row['id_garantie']);
-            if (method_exists($garantie, 'setNomCategorie')) {
-                $garantie->setNomCategorie($row['nom_categorie'] ?? null);
-            }
+            $garantie->setNomCategorie($row['nom_categorie'] ?? null);
 
             $garanties[] = $garantie;
         }
@@ -53,16 +48,20 @@ class GarantieController
         return $garanties;
     }
 
-    public function getAll(): array
+    public function getAll()
     {
         return $this->listGaranties();
     }
 
-    public function showGarantie(int $id): ?array
+    public function showGarantie($id)
     {
         $sql = "
             SELECT
-                g.*,
+                g.id_garantie,
+                g.nom_garantie,
+                g.description_garantie,
+                g.plafond_couvert_garantie,
+                g.id_categorie,
                 c.nom_categorie
             FROM garantie g
             LEFT JOIN categorie c ON g.id_categorie = c.id_categorie
@@ -77,7 +76,7 @@ class GarantieController
         return $result ?: null;
     }
 
-    public function deleteGarantie(int $id): bool
+    public function deleteGarantie($id)
     {
         $stmt = $this->db->prepare("DELETE FROM garantie WHERE id_garantie = :id");
         return $stmt->execute(['id' => $id]);
