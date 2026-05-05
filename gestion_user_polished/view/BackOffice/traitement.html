@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traitements — Protex Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/admin-users.css">
+</head>
+  <style>
+    /* ── Amount highlight ── */
+    .amount-value { font-family:monospace; font-weight:700; color:var(--success); font-size:13px; }
+    .amount-empty { color:var(--text-secondary); font-style:italic; }
+
+    /* ── Agent cell ── */
+    .agent-cell { display:flex; align-items:center; gap:10px; }
+    .agent-avatar {
+      width:32px; height:32px; border-radius:50%;
+      background:linear-gradient(135deg,var(--accent-dark),#0077b6);
+      border:2px solid rgba(0,180,216,0.3);
+      display:flex; align-items:center; justify-content:center;
+      font-family:var(--font-display); font-weight:700;
+      font-size:11px; color:#fff; flex-shrink:0;
+    }
+
+    /* ── Toolbar padding ── */
+    .toolbar-inner { padding:16px 24px; border-bottom:1px solid var(--glass-border); }
+
+    /* ── Stats 3 cols ── */
+    .stats-grid-3 { grid-template-columns:repeat(3,1fr); }
+
+    /* ── Decision text clamp ── */
+    .decision-cell {
+      max-width:240px; font-size:13px; color:var(--text-secondary);
+      display:-webkit-box; -webkit-line-clamp:2;
+      -webkit-box-orient:vertical; overflow:hidden;
+    }
+  </style>
+</head>
+<body>
+
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🛡️</div>
+      <div>
+        <div class="logo-text">Protex</div>
+        <div class="logo-sub">Back-Office</div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">AD</div>
+      <div>
+        <div class="user-name">Agent Admin</div>
+        <span class="user-role">Administrateur</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <a class="nav-item" href="#">
+        <i class="bi bi-grid-1x2"></i> Tableau de bord
+      </a>
+
+      <div class="nav-section">Gestion</div>
+      <a class="nav-item" href="sinistres.html">
+        <i class="bi bi-shield-exclamation"></i> Sinistres
+        <span class="nav-badge accent">New</span>
+      </a>
+      <a class="nav-item active" href="traitements.html">
+        <i class="bi bi-file-earmark-text"></i> Traitements
+      </a>
+      <a class="nav-item" href="admin-users.html">
+        <i class="bi bi-people"></i> Utilisateurs
+        <span class="nav-badge">24</span>
+      </a>
+      <a class="nav-item" href="#">
+        <i class="bi bi-file-earmark-check"></i> Contrats
+      </a>
+      <a class="nav-item" href="#">
+        <i class="bi bi-credit-card"></i> Paiements
+      </a>
+      <a class="nav-item" href="#">
+        <i class="bi bi-chat-dots"></i> Réclamations
+      </a>
+      <a class="nav-item" href="#">
+        <i class="bi bi-geo-alt"></i> Agences
+      </a>
+
+      <div class="nav-section">Compte</div>
+      <a class="nav-item" href="#">
+        <i class="bi bi-person-gear"></i> Mon profil
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="../FrontOffice/logout.php" class="logout-btn">
+        <i class="bi bi-box-arrow-left"></i> Se déconnecter
+      </a>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Historique des traitements</div>
+        <div class="topbar-sub" id="topbarDate"></div>
+      </div>
+      <div class="topbar-actions">
+        <a href="#" class="topbar-btn" title="Notifications">
+          <i class="bi bi-bell"></i>
+          <span class="notif-dot"></span>
+        </a>
+        <a href="#" class="topbar-btn" title="Aide">
+          <i class="bi bi-question-circle"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="page-header-bar">
+        <div>
+          <div class="page-title">Traitements</div>
+          <div class="page-breadcrumb">
+            <i class="bi bi-house"></i>
+            <a href="#">Accueil</a>
+            <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+            <span>Traitements</span>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateModal()">
+          <i class="bi bi-plus-lg"></i> Ajouter un traitement
+        </button>
+      </div>
+
+      <!-- STATS (3 cols) -->
+      <div class="stats-grid stats-grid-3">
+        <div class="stat-card blue">
+          <div class="stat-icon"><i class="bi bi-file-earmark-text"></i></div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total traitements</div>
+          <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> +2 ce mois</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+          <div class="stat-value" id="statMontant">0</div>
+          <div class="stat-label">Montant total indemnisé (DT)</div>
+          <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> +15%</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-icon"><i class="bi bi-clipboard-check"></i></div>
+          <div class="stat-value" id="statSinistres">0</div>
+          <div class="stat-label">Sinistres traités</div>
+          <div class="stat-trend trend-warn"><i class="bi bi-dash"></i> Stable</div>
+        </div>
+      </div>
+
+      <!-- TABLE CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="bi bi-table"></i> Liste des traitements
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">
+            <i class="bi bi-download"></i> Exporter
+          </button>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar-inner">
+          <div class="toolbar" style="margin-bottom:0;">
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="searchInput" placeholder="Rechercher par décision, sinistre, agent...">
+            </div>
+            <select class="filter-select" id="filterDecision">
+              <option value="">Toutes les décisions</option>
+              <option value="validé">Validé</option>
+              <option value="vérification">En vérification</option>
+              <option value="refusé">Refusé</option>
+              <option value="remboursement">Remboursement</option>
+            </select>
+            <select class="filter-select" id="filterMontant">
+              <option value="">Tout montant</option>
+              <option value="avec">Avec indemnité</option>
+              <option value="sans">Sans indemnité</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="resetFilters()">
+              <i class="bi bi-x-circle"></i> Réinitialiser
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Sinistre</th>
+                <th>Date</th>
+                <th>Agent</th>
+                <th>Décision</th>
+                <th>Montant indemnisé</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="traitBody"></tbody>
+          </table>
+          <div id="emptyState" style="display:none;text-align:center;padding:48px 20px;color:var(--text-secondary);">
+            <i class="bi bi-inbox" style="font-size:36px;display:block;margin-bottom:10px;opacity:0.3;"></i>
+            <p style="font-size:14px;">Aucun traitement trouvé</p>
+          </div>
+        </div>
+
+        <div class="pagination">
+          <div class="pagination-info" id="paginationInfo"></div>
+          <div class="pagination-btns" id="paginationBtns"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ===== MODAL AJOUTER / MODIFIER ===== -->
+<div class="modal-overlay" id="modalForm">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalFormTitle">
+        <i class="bi bi-plus-circle"></i> Ajouter un traitement
+      </div>
+      <button class="modal-close" onclick="closeModal('modalForm')"><i class="bi bi-x"></i></button>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>ID Sinistre *</label>
+        <input type="text" class="form-control" id="fSinistre" placeholder="Ex: #1001">
+        <div class="form-error" id="errSinistre">Champ requis</div>
+      </div>
+      <div class="form-group">
+        <label>Date *</label>
+        <input type="date" class="form-control" id="fDate">
+        <div class="form-error" id="errDate">Champ requis</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Agent responsable *</label>
+      <input type="text" class="form-control" id="fAgent" placeholder="Ex: Ahmed Ben Ali">
+      <div class="form-error" id="errAgent">Champ requis</div>
+    </div>
+
+    <div class="form-group">
+      <label>Décision *</label>
+      <textarea class="form-control" id="fDecision" placeholder="Ex: Documents vérifiés, sinistre validé..." style="min-height:80px;resize:vertical;"></textarea>
+      <div class="form-error" id="errDecision">Champ requis</div>
+    </div>
+
+    <div class="form-group">
+      <label>Montant indemnisé (DT) <span style="color:var(--text-secondary);font-size:11px;">— laisser vide si aucun</span></label>
+      <input type="number" class="form-control" id="fMontant" placeholder="Ex: 1500" min="0">
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalForm')">Annuler</button>
+      <button class="btn btn-primary" id="btnSave" onclick="saveTraitement()">
+        <i class="bi bi-save"></i> Enregistrer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL SUPPRIMER ===== -->
+<div class="modal-overlay delete-modal" id="modalDelete">
+  <div class="modal">
+    <div class="delete-icon"><i class="bi bi-trash3"></i></div>
+    <div class="delete-title">Supprimer ce traitement ?</div>
+    <div class="delete-msg" id="deleteMsg">⚠️ Réservé à l'Admin. Cette action est irréversible.</div>
+    <div class="modal-footer" style="justify-content:center;margin-top:28px;">
+      <button class="btn btn-outline" onclick="closeModal('modalDelete')">Annuler</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">
+        <i class="bi bi-trash3"></i> Supprimer définitivement
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let traitements = [
+  { id:'TR-001', sinistre:'#1001', date:'2026-04-02', agent:'Ahmed Ben Ali',   decision:'Documents reçus, en cours de vérification', montant:null },
+  { id:'TR-002', sinistre:'#1001', date:'2026-04-06', agent:'Ahmed Ben Ali',   decision:'Sinistre validé après vérification des pièces', montant:1500 },
+  { id:'TR-003', sinistre:'#1002', date:'2026-04-05', agent:'Sara Mansouri',   decision:'Fraude détectée — sinistre refusé', montant:null },
+  { id:'TR-004', sinistre:'#1003', date:'2026-04-07', agent:'Khalil Trabelsi', decision:'Dossier complet, remboursement accordé', montant:1300 },
+];
+
+let nextId=5, currentPage=1, editingId=null, deletingId=null;
+const perPage=8;
+
+// Date topbar
+const now=new Date();
+document.getElementById('topbarDate').textContent=
+  now.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+function initials(name){return name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();}
+function formatDate(d){if(!d)return'—';const[y,m,day]=d.split('-');return`${day}/${m}/${y}`;}
+
+function getFiltered(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const dec=document.getElementById('filterDecision').value.toLowerCase();
+  const mon=document.getElementById('filterMontant').value;
+  return traitements.filter(t=>{
+    const mQ=!q||t.sinistre.toLowerCase().includes(q)||t.agent.toLowerCase().includes(q)||t.decision.toLowerCase().includes(q);
+    const mD=!dec||t.decision.toLowerCase().includes(dec);
+    const mM=!mon||(mon==='avec'?t.montant!==null:t.montant===null);
+    return mQ&&mD&&mM;
+  });
+}
+
+function resetFilters(){
+  ['searchInput','filterDecision','filterMontant'].forEach(id=>document.getElementById(id).value='');
+  currentPage=1; render();
+}
+
+function render(){
+  const filtered=getFiltered(), total=filtered.length;
+  const pages=Math.ceil(total/perPage)||1;
+  if(currentPage>pages) currentPage=pages;
+  const slice=filtered.slice((currentPage-1)*perPage,currentPage*perPage);
+
+  const tbody=document.getElementById('traitBody');
+  const empty=document.getElementById('emptyState');
+
+  if(!slice.length){ tbody.innerHTML=''; empty.style.display='block'; }
+  else{
+    empty.style.display='none';
+    tbody.innerHTML=slice.map(t=>`
+      <tr>
+        <td><span style="font-family:monospace;font-size:12px;color:var(--accent);">${t.id}</span></td>
+        <td><span style="color:var(--gold);font-weight:600;">${t.sinistre}</span></td>
+        <td style="color:var(--text-secondary);">${formatDate(t.date)}</td>
+        <td>
+          <div class="agent-cell">
+            <div class="agent-avatar">${initials(t.agent)}</div>
+            <span style="font-size:13px;">${t.agent}</span>
+          </div>
+        </td>
+        <td><div class="decision-cell">${t.decision}</div></td>
+        <td>${t.montant!==null?`<span class="amount-value">${t.montant.toLocaleString('fr-FR')} DT</span>`:`<span class="amount-empty">—</span>`}</td>
+        <td>
+          <div class="actions">
+            <button class="btn btn-outline btn-sm" onclick="openEditModal('${t.id}')" title="Modifier"><i class="bi bi-pencil"></i></button>
+            <button class="btn btn-danger  btn-sm" onclick="openDeleteModal('${t.id}')" title="Supprimer"><i class="bi bi-trash3"></i></button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  const start=total===0?0:(currentPage-1)*perPage+1;
+  const end=Math.min(currentPage*perPage,total);
+  document.getElementById('paginationInfo').textContent=`Affichage ${start}–${end} sur ${total} traitement${total>1?'s':''}`;
+  document.getElementById('paginationBtns').innerHTML=`
+    <button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}><i class="bi bi-chevron-left"></i></button>
+    ${Array.from({length:pages},(_,i)=>`<button class="page-btn ${i+1===currentPage?'active':''}" onclick="goPage(${i+1})">${i+1}</button>`).join('')}
+    <button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=pages?'disabled':''}><i class="bi bi-chevron-right"></i></button>`;
+
+  updateStats();
+}
+
+function goPage(p){currentPage=p;render();}
+
+function updateStats(){
+  document.getElementById('statTotal').textContent=traitements.length;
+  const total=traitements.filter(t=>t.montant!==null).reduce((s,t)=>s+t.montant,0);
+  document.getElementById('statMontant').textContent=total.toLocaleString('fr-FR');
+  document.getElementById('statSinistres').textContent=new Set(traitements.map(t=>t.sinistre)).size;
+}
+
+// ── MODALS ──
+function openCreateModal(){
+  editingId=null;
+  document.getElementById('modalFormTitle').innerHTML='<i class="bi bi-plus-circle"></i> Ajouter un traitement';
+  document.getElementById('btnSave').innerHTML='<i class="bi bi-save"></i> Enregistrer';
+  clearForm();
+  document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
+  openModal('modalForm');
+}
+
+function openEditModal(id){
+  const t=traitements.find(x=>x.id===id); if(!t)return;
+  editingId=id;
+  document.getElementById('modalFormTitle').innerHTML='<i class="bi bi-pencil"></i> Modifier le traitement';
+  document.getElementById('btnSave').innerHTML='<i class="bi bi-save"></i> Mettre à jour';
+  document.getElementById('fSinistre').value=t.sinistre;
+  document.getElementById('fDate').value=t.date;
+  document.getElementById('fAgent').value=t.agent;
+  document.getElementById('fDecision').value=t.decision;
+  document.getElementById('fMontant').value=t.montant??'';
+  document.querySelectorAll('.form-error').forEach(e=>e.classList.remove('show'));
+  document.querySelectorAll('.form-control').forEach(e=>e.classList.remove('error'));
+  openModal('modalForm');
+}
+
+function clearForm(){
+  ['fSinistre','fDate','fAgent','fDecision','fMontant'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('.form-error').forEach(e=>e.classList.remove('show'));
+  document.querySelectorAll('.form-control').forEach(e=>e.classList.remove('error'));
+}
+
+function saveTraitement(){
+  const sinistre=document.getElementById('fSinistre').value.trim();
+  const date=document.getElementById('fDate').value;
+  const agent=document.getElementById('fAgent').value.trim();
+  const decision=document.getElementById('fDecision').value.trim();
+  const montantV=document.getElementById('fMontant').value.trim();
+  let ok=true;
+
+  if(!sinistre){showErr('fSinistre','errSinistre',true);ok=false;}else showErr('fSinistre','errSinistre',false);
+  if(!date)    {showErr('fDate','errDate',true);ok=false;}          else showErr('fDate','errDate',false);
+  if(!agent)   {showErr('fAgent','errAgent',true);ok=false;}        else showErr('fAgent','errAgent',false);
+  if(!decision){showErr('fDecision','errDecision',true);ok=false;}  else showErr('fDecision','errDecision',false);
+  if(!ok) return;
+
+  const montant=montantV?parseFloat(montantV):null;
+  const btn=document.getElementById('btnSave');
+  const orig=btn.innerHTML;
+  btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Enregistrement...'; btn.disabled=true;
+
+  setTimeout(()=>{
+    if(editingId){
+      const idx=traitements.findIndex(x=>x.id===editingId);
+      if(idx!==-1) traitements[idx]={...traitements[idx],sinistre,date,agent,decision,montant};
+      showToast('Traitement modifié avec succès.','success');
+    } else {
+      const newId=`TR-${String(nextId++).padStart(3,'0')}`;
+      traitements.unshift({id:newId,sinistre,date,agent,decision,montant});
+      showToast('Traitement ajouté avec succès.','success');
+    }
+    btn.innerHTML=orig; btn.disabled=false;
+    closeModal('modalForm'); currentPage=1; render();
+  },700);
+}
+
+function showErr(inputId,errId,show){
+  document.getElementById(inputId).classList.toggle('error',show);
+  document.getElementById(errId).classList.toggle('show',show);
+}
+
+function openDeleteModal(id){
+  deletingId=id;
+  document.getElementById('deleteMsg').innerHTML=`⚠️ Vous êtes sur le point de supprimer le traitement <strong>${id}</strong>. Cette action est irréversible.`;
+  openModal('modalDelete');
+}
+function confirmDelete(){
+  traitements=traitements.filter(t=>t.id!==deletingId);
+  closeModal('modalDelete'); render(); showToast('Traitement supprimé.','danger');
+}
+
+function exportCSV(){
+  const rows=[['ID','Sinistre','Date','Agent','Décision','Montant (DT)']];
+  traitements.forEach(t=>rows.push([t.id,t.sinistre,t.date,t.agent,t.decision,t.montant??'']));
+  const csv=rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='traitements.csv'; a.click();
+  showToast('Export CSV téléchargé.','success');
+}
+
+function openModal(id){
+  const modal=document.getElementById(id);
+  if(!modal) return;
+  modal.classList.add('open','active');
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){
+  const modal=document.getElementById(id);
+  if(!modal) return;
+  modal.classList.remove('open','active');
+  document.body.style.overflow='';
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open, .modal-overlay.active').forEach(m=>closeModal(m.id));
+});
+document.querySelectorAll('.modal-overlay').forEach(o=>{
+  o.addEventListener('click',e=>{if(e.target===o) closeModal(o.id);});
+});
+
+function showToast(message,type='success'){
+  const icons={success:'check-circle',warning:'exclamation-triangle',danger:'x-circle'};
+  const t=document.createElement('div');
+  t.className=`toast-notif toast-${type}`;
+  t.innerHTML=`<i class="bi bi-${icons[type]}"></i><span>${message}</span>`;
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add('show'),50);
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3500);
+}
+
+document.getElementById('searchInput').addEventListener('input',()=>{currentPage=1;render();});
+document.getElementById('filterDecision').addEventListener('change',()=>{currentPage=1;render();});
+document.getElementById('filterMontant').addEventListener('change',()=>{currentPage=1;render();});
+
+// Charger le rôle de l'utilisateur connecté
+fetch("get_admin.php")
+.then(res => res.json())
+.then(data => {
+    if (!data || data.error) return;
+    const initiales = ((data.nom||'').charAt(0) + (data.prenom||'').charAt(0)).toUpperCase();
+    const avatarValue = data.avatar || '';
+    const isValidImage = avatarValue && (avatarValue.includes('/') || avatarValue.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+    const avatarPath = isValidImage ? (avatarValue.includes('/') ? avatarValue : '../../uploads/avatars/' + avatarValue) : '';
+    document.querySelectorAll('.user-avatar').forEach(el => {
+        if (avatarPath) {
+            el.innerHTML = `<img src="${avatarPath}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent='${initiales}'">`;
+        } else {
+            if (!el.querySelector('img')) el.textContent = initiales;
+        }
+    });
+    const nameEl = document.querySelector('.user-name');
+    if (nameEl) nameEl.textContent = (data.prenom||'') + ' ' + (data.nom||'');
+    const roleEl = document.querySelector('.user-role');
+    if (roleEl && data.role) {
+        let roleTxt = data.role.charAt(0).toUpperCase() + data.role.slice(1);
+        if (data.nom_agence) {
+            roleTxt += ' (' + data.nom_agence + ')';
+        }
+        roleEl.textContent = roleTxt;
+    }
+});
+
+render();
+</script>
+</body>
+</html>
