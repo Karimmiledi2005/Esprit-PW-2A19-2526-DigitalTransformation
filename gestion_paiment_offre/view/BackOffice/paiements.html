@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paiements — BackOffice Protex</title>
+
+    <style>
+        :root {
+            --bg-1: #07111f;
+            --bg-2: #0b1d33;
+            --card: rgba(255,255,255,0.08);
+            --card-border: rgba(255,255,255,0.14);
+            --text: #ffffff;
+            --muted: #b8c2d1;
+            --accent: #00b4d8;
+            --accent-2: #0096c7;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top right, rgba(0,180,216,0.18), transparent 25%),
+                linear-gradient(135deg, var(--bg-1), var(--bg-2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card {
+            width: 90%;
+            max-width: 650px;
+            padding: 35px;
+            border-radius: 20px;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: var(--muted);
+        }
+
+        .spinner {
+            width: 25px;
+            height: 25px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            margin: 20px auto;
+            animation: spin 1s linear infinite;
+        }
+
+        .btn {
+            margin-top: 20px;
+            padding: 12px 18px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            color: white;
+            text-decoration: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+
+    <script>
+        const TARGET_URL = "paiements/liste.php";
+
+        function goToPaiements() {
+            window.location.href = TARGET_URL;
+        }
+
+        // redirection auto
+        window.onload = () => {
+            setTimeout(goToPaiements, 1200);
+        };
+    </script>
+</head>
+<body>
+
+<div class="card">
+    <h1>Gestion des paiements</h1>
+    <p>Chargement du module Paiements...</p>
+
+    <div class="spinner"></div>
+
+    <a class="btn" href="paiements/liste.php">
+        Accéder aux paiements
+    </a>
+
+    <p style="margin-top:15px;font-size:12px;">
+        Si la redirection ne fonctionne pas, cliquez sur le bouton ci-dessus.
+    </p>
+</div>
+
+</body>
+<script>
+// Charge la sidebar depuis PHP via fetch
+fetch('/projet_web1/gestion_paiment_offre/view/BackOffice/assets/includes/sidebar.php')
+    .then(r => r.text())
+    .then(html => {
+        document.querySelector('.sidebar')?.outerHTML === undefined
+            ? document.querySelector('.layout').insertAdjacentHTML('afterbegin', html)
+            : document.querySelector('.sidebar').outerHTML = html;
+    });
+</script>
+</html>

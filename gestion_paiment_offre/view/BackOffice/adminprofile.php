@@ -1,0 +1,386 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (empty($_SESSION['user_id'])) { header('Location: connexion.html'); exit; }
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Espace Client — Protex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <!-- Protex CSS -->
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/client.css">
+
+    <!-- Toast style inline (petit composant) -->
+    <style>
+        .toast-notif {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: var(--navy-mid);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-primary);
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .toast-notif.show { opacity: 1; transform: translateY(0); }
+        .toast-success i  { color: var(--success); font-size: 18px; }
+        .toast-warning i  { color: var(--gold); font-size: 18px; }
+        .toast-danger  i  { color: var(--danger); font-size: 18px; }
+    </style>
+    <style>
+        .toast-notif {
+            position: fixed; bottom: 24px; right: 24px;
+            background: var(--navy-mid); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px 20px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 14px; color: var(--text-primary);
+            z-index: 9999; opacity: 0; transform: translateY(10px);
+            transition: all 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .toast-notif.show { opacity: 1; transform: translateY(0); }
+        .toast-success i { color: var(--success); font-size: 18px; }
+        .toast-warning i { color: var(--gold); font-size: 18px; }
+        .toast-danger  i { color: var(--danger); font-size: 18px; }
+
+        /* Barre de force mot de passe */
+        .pwd-strength {
+            height: 4px;
+            border-radius: 4px;
+            background: var(--glass-border);
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .pwd-strength-fill {
+            height: 100%;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease, background 0.3s ease;
+        }
+        .pwd-strength-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .card { 
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            overflow: hidden;
+        }
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card-title {
+            font-family: var(--font-display);
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .card-body { padding: 24px; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border-radius: var(--radius-md);
+            font-family: var(--font-body); font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: var(--transition); text-decoration: none; border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+            color: #fff;
+        }
+        .btn-primary:hover { box-shadow: 0 4px 14px rgba(0,180,216,0.4); }
+        .btn-outline {
+            background: transparent; border: 1px solid var(--glass-border);
+            color: var(--text-secondary);
+        }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-block { width: 100%; justify-content: center; }
+    </style>
+</head>
+<body>
+
+<!-- Background animé (glassmorphism) -->
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<class="layout">
+
+<!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="C:\xampp\htdocs\MVC TEMPLATE\view\frontoffice\logo.png" alt="logo" width="40" height="40">
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">Back-Office</div>
+            </div>
+        </div>
+
+        <div class="sidebar-user">
+            <div class="user-avatar">KM</div>
+            <div>
+                <div class="user-name">Karim Miledi</div>
+                <span class="user-role">Administrateur</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">Principal</div>
+            <a class="nav-item" href="/projet_web1/gestion_paiment_offre/view/BackOffice/admin.html">
+                <i class="bi bi-grid-1x2"></i> Tableau de bord
+            </a>
+
+            <div class="nav-section">Gestion</div>
+            <a class="nav-item active" href="/projet_web1/gestion_paiment_offre/view/BackOffice/admin-users.html">
+                <i class="bi bi-people"></i> Utilisateurs
+                <span class="nav-badge accent">24</span>
+            </a>
+            <a class="nav-item" href="admin-contrats.html">
+                <i class="bi bi-file-earmark-text"></i> Contrats
+            </a>
+            <a class="nav-item" href="admin-sinistres.html">
+                <i class="bi bi-shield-exclamation"></i> Sinistres
+            </a>
+            <a class="nav-item" href="admin-paiements.html">
+                <i class="bi bi-credit-card"></i> Paiements
+            </a>
+            <a class="nav-item" href="admin-reclamations.html">
+                <i class="bi bi-chat-dots"></i> Réclamations
+            </a>
+            <a class="nav-item" href="admin-agences.html">
+                <i class="bi bi-geo-alt"></i> Agences
+            </a>
+
+            <div class="nav-section">Compte</div>
+            <a class="nav-item" href="/projet_web1/gestion_paiment_offre/view/BackOffice/adminprofile.html">
+                <i class="bi bi-person-gear"></i> Mon profil
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="connexion.html" class="logout-btn">
+                <i class="bi bi-box-arrow-left"></i> Se déconnecter
+            </a>
+        </div>
+    </aside>  
+
+    <!-- ==================== MAIN ==================== -->
+    <main class="main">
+       <div class="page-header">
+            <div>
+                <div class="page-title-main">Mon Profil</div>
+                <div class="page-breadcrumb">
+                    <i class="bi bi-house"></i>
+                    <a href="client.html" style="color:inherit;text-decoration:none;">Accueil</a>
+                    <i class="bi bi-chevron-right" style="font-size:10px"></i>
+                    <span>Mon profil</span>
+                    &nbsp;·&nbsp; <span id="currentnow"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- ===== SECTION INFOS PERSONNELLES ===== -->
+            <div class="section-header" style="margin-bottom:20px">
+                <div>
+                    <div class="section-title">Informations personnelles</div>
+                    <div class="section-sub">Gérez vos données personnelles</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+
+                <!-- CARTE PROFIL -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="bi bi-person-circle" style="color:var(--accent);margin-right:8px"></i>Profil</div>
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Avatar upload -->
+                        <div class="profile-avatar">
+                            <div id="avatarPreview" class="avatar-placeholder">
+                                <i class="bi bi-person"></i>
+                            </div>
+                            <div class="file-input-wrap">
+                                <label for="avatarInput" class="btn btn-outline btn-sm">
+                                    <i class="bi bi-upload"></i> Changer la photo
+                                </label>
+                                <input type="file" id="avatarInput" accept="image/*">
+                                <span class="file-name">Aucun fichier sélectionné</span>
+                            </div>
+                        </div>
+
+                        <!-- Formulaire -->
+                        <div class="profile-info">
+                            <div class="info-item">
+                                <label>Nom & Prénom</label>
+                                <input type="text" id="fullName" value="Ahmed Ben Ali" readonly>
+                            </div>
+                            <div class="info-item">
+                                <label>Email</label>
+                                <input type="email" id="email" value="ahmed@example.com">
+                            </div>
+                            <div class="info-item">
+                                <label>Téléphone</label>
+                                <input type="tel" id="phone" value="+216 20 123 456" placeholder="+216 XX XXX XXX">
+                            </div>
+                            <div class="info-item">
+                                <label>CIN</label>
+                                <input type="text" value="12345678" readonly>
+                            </div>
+                            <div class="info-item">
+                                <label>Date de naissance</label>
+                                <input type="text" value="15 Mars 1990" readonly>
+                            </div>
+                            <div class="info-item">
+                                <label>Adresse</label>
+                                <input type="text" id="address" value="Tunis, Tunisie">
+                            </div>
+                        </div>
+
+                        <button class="btn-save-profile" id="saveProfile">
+                            <i class="bi bi-save"></i> Sauvegarder les modifications
+                        </button>
+                    </div>
+                </div>
+
+                <!-- CARTE SÉCURITÉ -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title"><i class="bi bi-shield-lock" style="color:var(--accent);margin-right:8px"></i>Sécurité</div>
+                    </div>
+                    <div class="card-body">
+
+                        <!-- Mot de passe -->
+                        <div class="info-item" style="margin-bottom:4px">
+                            <label>Nouveau mot de passe</label>
+                            <div class="input-group">
+                                <input type="password" id="password" placeholder="••••••••" oninput="checkStrength(this.value)">
+                                <button type="button" class="btn btn-outline btn-sm" id="togglePwdBtn">
+                                    <i class="bi bi-eye" id="eyeIcon"></i>
+                                </button>
+                            </div>
+                            <div class="pwd-strength">
+                                <div class="pwd-strength-fill" id="strengthFill"></div>
+                            </div>
+                            <div class="pwd-strength-label" id="strengthLabel">Entrez un mot de passe</div>
+                        </div>
+
+                        <div class="info-item" style="margin-bottom:20px">
+                            <label>Confirmer le mot de passe</label>
+                            <input type="password" id="passwordConfirm" placeholder="••••••••">
+                        </div>
+
+                        <button class="btn-save-profile" id="savePwd" style="margin-bottom:24px">
+                            <i class="bi bi-key"></i> Changer le mot de passe
+                        </button>
+
+                        <!-- Séparateur -->
+                        <div style="border-top:1px solid var(--glass-border); padding-top:20px; margin-bottom:16px">
+                            <div class="section-title" style="font-size:13px; margin-bottom:12px">Options de sécurité</div>
+                        </div>
+
+                        <!-- Toggles sécurité -->
+                        <div class="toggle-row">
+                            <div>
+                                <div class="toggle-label">Double authentification (2FA)</div>
+                                <div class="toggle-desc">SMS envoyé à +216 20 *** ***</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle2fa" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <div class="toggle-row">
+                            <div>
+                                <div class="toggle-label">Alertes de connexion</div>
+                                <div class="toggle-desc">Notification par email à chaque connexion</div>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggleAlerts" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Séparateur -->
+                        <div style="border-top:1px solid var(--glass-border); padding-top:20px; margin-top:8px">
+                            <div class="section-title" style="font-size:13px; margin-bottom:12px">Sessions actives</div>
+                        </div>
+
+                        <!-- Sessions -->
+                        <div class="session-item">
+                            <div class="session-icon"><i class="bi bi-laptop"></i></div>
+                            <div class="session-info">
+                                <div class="session-name">Chrome — Windows 11</div>
+                                <div class="session-meta">Tunis · Maintenant</div>
+                            </div>
+                            <span class="session-current">Actuel</span>
+                        </div>
+
+                        <div class="session-item">
+                            <div class="session-icon"><i class="bi bi-phone"></i></div>
+                            <div class="session-info">
+                                <div class="session-name">Safari — iPhone</div>
+                                <div class="session-meta">Tunis · Il y a 2h</div>
+                            </div>
+                            <button class="btn btn-outline btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="window.showToast && showToast('Session déconnectée','warning')">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+
+                        <div class="info-item" style="margin-top:16px">
+                            <label>Dernière connexion</label>
+                            <span style="font-size:14px;color:var(--text-primary)">7 Avril 2026 · 10:45</span>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+</div>
+
+<!-- Script pour prévisualiser avatar -->
+<script>
+    const avatarInput = document.getElementById('avatarInput');
+    const avatarPreview = document.getElementById('avatarPreview');
+
+    avatarInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(file){
+            avatarPreview.src = URL.createObjectURL(file);
+
+        }
+        
+    });
+</script>
