@@ -1,0 +1,17 @@
+{
+    "name": "protex/assurance",
+    "description": "Protex Assurance - Application de gestion des réclamations",
+    "type": "project",
+    "require": {
+        "php": ">=7.4",
+        "phpmailer/phpmailer": "^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Protex\\": "src/"
+        }
+    },
+    "config": {
+        "vendor-dir": "vendor"
+    }
+}
