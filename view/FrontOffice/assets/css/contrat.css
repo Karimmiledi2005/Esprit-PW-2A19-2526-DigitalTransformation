@@ -1775,3 +1775,95 @@
     font-size: 24px;
     margin: 24px 0 16px;
 }
+.contract-icon {
+    width: 82px;
+    height: 82px;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 38px;
+    box-shadow: 0 18px 35px rgba(15, 23, 42, 0.16);
+}
+
+.contract-icon i {
+    display: block;
+    line-height: 1;
+}
+
+/* Auto */
+.contract-icon.auto {
+    background: linear-gradient(135deg, #ff7a1a, #ff4b00);
+    color: white;
+}
+
+/* Habitation */
+.contract-icon.habitation {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+}
+
+/* Santé */
+.contract-icon.sante {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+/* Protection */
+.contract-icon.protection {
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+    color: white;
+}
+
+/* Par défaut */
+.contract-icon.default {
+    background: linear-gradient(135deg, #64748b, #334155);
+    color: white;
+}
+.recommendation-box{
+    background: linear-gradient(135deg,#0A1931,#1b3358);
+    border-radius:20px;
+    padding:25px;
+    margin:25px 0;
+    color:white;
+    box-shadow:0 10px 25px rgba(0,0,0,0.12);
+}
+
+.recommendation-content{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.recommendation-content h3{
+    margin:0 0 10px;
+    font-size:26px;
+    color:white;
+}
+
+.recommendation-content p{
+    margin:0;
+    color:rgba(255,255,255,0.85);
+    max-width:700px;
+    line-height:1.6;
+}
+
+.recommendation-btn{
+    background:#FF6B1A;
+    color:white;
+    text-decoration:none;
+    padding:14px 24px;
+    border-radius:14px;
+    font-weight:700;
+    transition:0.3s;
+    display:inline-block;
+    white-space:nowrap;
+}
+
+.recommendation-btn:hover{
+    background:#ff7d36;
+    transform:translateY(-2px);
+    color:white;
+}

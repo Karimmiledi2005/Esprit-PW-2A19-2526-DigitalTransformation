@@ -85,6 +85,10 @@ foreach ($contrats as $contrat) {
         <i class="bi bi-file-earmark-text"></i> Contrats
       </a>
 
+      <a class="nav-item" href="calendrier_contrats.php">
+        <i class="bi bi-calendar-event"></i> Calendrier contrats
+      </a>
+
       <a class="nav-item" href="categories_back.php">
         <i class="bi bi-grid-3x3-gap"></i> Catégories
       </a>
@@ -153,9 +157,14 @@ foreach ($contrats as $contrat) {
           </div>
         </div>
         <div>
-          <a href="addContrat.php" class="btn btn-primary">
-            <i class="bi bi-plus"></i> Ajouter un contrat
-          </a>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="calendrier_contrats.php" class="btn btn-outline">
+              <i class="bi bi-calendar-event"></i> Calendrier
+            </a>
+            <a href="addContrat.php" class="btn btn-primary">
+              <i class="bi bi-plus"></i> Ajouter un contrat
+            </a>
+          </div>
         </div>
       </div>
 
@@ -194,16 +203,18 @@ foreach ($contrats as $contrat) {
           <div class="card-title">
             <i class="bi bi-table"></i> Liste des contrats
           </div>
-          <button class="btn btn-outline btn-sm" onclick="exportCSV()">
-            <i class="bi bi-download"></i> Exporter
-          </button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="exportPDF()">
+              <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </button>
+          </div>
         </div>
 
         <div class="toolbar-inner">
           <div class="toolbar" style="margin-bottom:0;">
             <div class="search-box">
               <i class="bi bi-search"></i>
-              <input type="text" id="searchInput" placeholder="Rechercher par numéro, type, catégorie...">
+              <input type="text" id="searchInput" placeholder="Rechercher par numéro, client, formule, catégorie...">
             </div>
 
             <select class="filter-select" id="filterStatut">
@@ -215,7 +226,7 @@ foreach ($contrats as $contrat) {
             </select>
 
             <select class="filter-select" id="filterType">
-              <option value="">Tous les types</option>
+              <option value="">Toutes les catégories</option>
               <option value="auto">Auto</option>
               <option value="sante">Santé</option>
               <option value="habitation">Habitation</option>
@@ -223,6 +234,14 @@ foreach ($contrats as $contrat) {
             </select>
 
             <input type="date" class="filter-select" id="filterDate" style="padding-right:10px;">
+
+            <select class="filter-select" id="sortContrats">
+              <option value="">Tri par défaut</option>
+              <option value="prime_asc">Prime croissante</option>
+              <option value="prime_desc">Prime décroissante</option>
+              <option value="date_debut_asc">Date début ancienne → récente</option>
+              <option value="date_debut_desc">Date début récente → ancienne</option>
+            </select>
 
             <button class="btn btn-outline btn-sm" onclick="resetFilters()">
               <i class="bi bi-x-circle"></i> Réinitialiser
@@ -235,7 +254,7 @@ foreach ($contrats as $contrat) {
             <thead>
               <tr>
                 <th>N° Contrat</th>
-                <th>Type</th>
+                <th>Formule choisie</th>
                 <th>Catégorie</th>
                 <th>Prime</th>
                 <th>Date début</th>
@@ -255,17 +274,30 @@ foreach ($contrats as $contrat) {
                   if ($type === 'Auto') $icon = 'bi-car-front';
                   elseif ($type === 'Santé' || $type === 'Sante') $icon = 'bi-heart-pulse';
                   elseif ($type === 'Habitation') $icon = 'bi-house-door';
+
+                  $nomFormule = $contrat->getNomFormule();
+                  if (!$nomFormule || $nomFormule === '—') {
+                      $nomFormule = $contrat->getFormuleContrat();
+                  }
+                  if (!$nomFormule) {
+                      $nomFormule = '—';
+                  }
                 ?>
                 <tr
                   data-search="<?= htmlspecialchars(strtolower(
                     $contrat->getNumeroContrat() . ' ' .
                     $contrat->getTypeContrat() . ' ' .
-                    $contrat->getNomCategorie()
+                    $contrat->getNomCategorie() . ' ' .
+                    $nomFormule . ' ' .
+                    $contrat->getNomClient() . ' ' .
+                    $contrat->getPrenomClient() . ' ' .
+                    $contrat->getEmailClient()
                   )) ?>"
                   data-statut="<?= htmlspecialchars(str_replace(['é', '_'], ['e', ' '], $statutRaw)) ?>"
                   data-type="<?= htmlspecialchars(strtolower(str_replace(['é', 'É'], ['e', 'E'], $contrat->getTypeContrat()))) ?>"
                   data-date-debut="<?= htmlspecialchars($contrat->getDateDebutContrat()) ?>"
                   data-date-fin="<?= htmlspecialchars($contrat->getDateFinContrat()) ?>"
+                  data-prime="<?= htmlspecialchars((float)$contrat->getPrimeContrat()) ?>"
                 >
                   <td style="color:var(--accent);font-weight:700;">
                     <?= htmlspecialchars($contrat->getNumeroContrat()) ?>
@@ -275,7 +307,7 @@ foreach ($contrats as $contrat) {
                       <div class="type-icon">
                         <i class="bi <?= $icon ?>"></i>
                       </div>
-                      <span><?= htmlspecialchars($contrat->getTypeContrat()) ?></span>
+                      <span><?= htmlspecialchars($nomFormule) ?></span>
                     </div>
                   </td>
                   <td style="color:#fff;font-weight:600;">
@@ -492,6 +524,8 @@ foreach ($contrats as $contrat) {
       }
     });
 
+    sortRows();
+
     document.getElementById('emptyState').style.display = visible ? 'none' : 'block';
     document.getElementById('paginationInfo').textContent =
       visible > 0
@@ -499,45 +533,361 @@ foreach ($contrats as $contrat) {
         : 'Affichage 0–0 sur 0 contrat';
   }
 
+  function sortRows() {
+    const sortValue = document.getElementById('sortContrats').value;
+    const tbody = document.getElementById('contratBody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    if (!sortValue) {
+      return;
+    }
+
+    rows.sort((a, b) => {
+      if (sortValue === 'prime_asc' || sortValue === 'prime_desc') {
+        const primeA = parseFloat(a.dataset.prime || '0');
+        const primeB = parseFloat(b.dataset.prime || '0');
+        return sortValue === 'prime_asc' ? primeA - primeB : primeB - primeA;
+      }
+
+      if (sortValue === 'date_debut_asc' || sortValue === 'date_debut_desc') {
+        const dateA = new Date(a.dataset.dateDebut || '1900-01-01').getTime();
+        const dateB = new Date(b.dataset.dateDebut || '1900-01-01').getTime();
+        return sortValue === 'date_debut_asc' ? dateA - dateB : dateB - dateA;
+      }
+
+      return 0;
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+  }
+
   function resetFilters() {
     document.getElementById('searchInput').value = '';
     document.getElementById('filterStatut').value = '';
     document.getElementById('filterType').value = '';
     document.getElementById('filterDate').value = '';
+    document.getElementById('sortContrats').value = '';
     filterRows();
   }
 
-  function exportCSV() {
-    let csv = 'Numero,Type,Categorie,Prime,Date debut,Date fin,Statut\n';
+  function getVisibleContratsData() {
     const rows = document.querySelectorAll('#contratBody tr');
+    const data = [];
 
     rows.forEach(row => {
       if (row.style.display === 'none') return;
+
       const cols = row.querySelectorAll('td');
       if (cols.length >= 7) {
-        csv += [
-          cols[0].innerText.trim(),
-          cols[1].innerText.trim(),
-          cols[2].innerText.trim(),
-          cols[3].innerText.trim(),
-          cols[4].innerText.trim(),
-          cols[5].innerText.trim(),
-          cols[6].innerText.trim()
-        ].join(',') + '\n';
+        data.push({
+          numero: cols[0].innerText.trim(),
+          formule: cols[1].innerText.trim(),
+          categorie: cols[2].innerText.trim(),
+          prime: cols[3].innerText.trim(),
+          dateDebut: cols[4].innerText.trim(),
+          dateFin: cols[5].innerText.trim(),
+          statut: cols[6].innerText.trim()
+        });
       }
     });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'contrats.csv';
-    link.click();
+    return data;
+  }
+
+  function escapeHTML(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function exportPDF() {
+    const data = getVisibleContratsData();
+
+    if (data.length === 0) {
+      alert('Aucun contrat à exporter.');
+      return;
+    }
+
+    const logoUrl = new URL('../FrontOffice/logo.png', window.location.href).href;
+    const exportDate = new Date().toLocaleDateString('fr-FR');
+
+    const rowsHTML = data.map(item => `
+      <tr>
+        <td class="ref">${escapeHTML(item.numero)}</td>
+        <td>${escapeHTML(item.formule)}</td>
+        <td><span class="badge">${escapeHTML(item.categorie)}</span></td>
+        <td class="money">${escapeHTML(item.prime)}</td>
+        <td>${escapeHTML(item.dateDebut)}</td>
+        <td>${escapeHTML(item.dateFin)}</td>
+        <td><span class="status">${escapeHTML(item.statut)}</span></td>
+      </tr>
+    `).join('');
+
+    const printWindow = window.open('', '_blank');
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+        <meta charset="UTF-8">
+        <title>Export PDF - Contrats</title>
+        <style>
+          * { box-sizing: border-box; }
+
+          body {
+            margin: 0;
+            padding: 28px;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: #f4f7fb;
+            color: #0A1931;
+          }
+
+          .page {
+            min-height: calc(100vh - 56px);
+            background: #ffffff;
+            border: 1px solid #dbe7f3;
+            border-radius: 22px;
+            overflow: hidden;
+            box-shadow: 0 18px 45px rgba(10, 25, 49, 0.12);
+          }
+
+          .hero {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 26px 30px;
+            color: #ffffff;
+            background:
+              radial-gradient(circle at 85% 0%, rgba(255, 107, 26, 0.42), transparent 34%),
+              linear-gradient(135deg, #0A1931 0%, #0A274C 58%, #123B63 100%);
+          }
+
+          .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+          }
+
+          .brand img {
+            width: 54px;
+            height: 54px;
+            object-fit: contain;
+          }
+
+          .brand-title {
+            font-size: 26px;
+            font-weight: 800;
+            letter-spacing: 0.2px;
+            line-height: 1;
+          }
+
+          .brand-sub {
+            margin-top: 5px;
+            color: #00b4d8;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.3px;
+          }
+
+          .export-meta {
+            text-align: right;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.86);
+            line-height: 1.7;
+          }
+
+          .meta-pill {
+            display: inline-block;
+            margin-top: 7px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(0, 180, 216, 0.15);
+            border: 1px solid rgba(0, 180, 216, 0.45);
+            color: #ffffff;
+            font-weight: 700;
+          }
+
+          .content {
+            padding: 26px 30px 30px;
+          }
+
+          .doc-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 20px;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 3px solid #FF6B1A;
+          }
+
+          h1 {
+            margin: 0;
+            color: #0A1931;
+            font-size: 23px;
+          }
+
+          .note {
+            margin-top: 5px;
+            color: #5d6b7c;
+            font-size: 12px;
+          }
+
+          table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border: 1px solid #d9e3ee;
+            border-radius: 14px;
+            font-size: 12px;
+          }
+
+          thead th {
+            background: #0A1931;
+            color: #ffffff;
+            text-align: left;
+            padding: 12px 10px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-right: 1px solid rgba(255, 255, 255, 0.14);
+          }
+
+          tbody td {
+            padding: 11px 10px;
+            border-top: 1px solid #d9e3ee;
+            border-right: 1px solid #edf2f7;
+            vertical-align: middle;
+          }
+
+          tbody tr:nth-child(even) td {
+            background: #f8fbff;
+          }
+
+          .ref {
+            color: #00a7d5;
+            font-weight: 800;
+          }
+
+          .money {
+            color: #0A1931;
+            font-weight: 800;
+          }
+
+          .badge, .status {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-size: 11px;
+          }
+
+          .badge {
+            background: #e9f7fb;
+            color: #007da3;
+            border: 1px solid #bdebf5;
+          }
+
+          .status {
+            background: #fff3e8;
+            color: #e05a0f;
+            border: 1px solid #ffd3b6;
+          }
+
+          .footer {
+            margin-top: 18px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            color: #64748b;
+            font-size: 11px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+          }
+
+          @media print {
+            body {
+              padding: 0;
+              background: #ffffff;
+            }
+
+            .page {
+              box-shadow: none;
+              border-radius: 0;
+              border: none;
+            }
+          }
+        </style>
+      </head>
+      <body>
+        <section class="page">
+          <div class="hero">
+            <div class="brand">
+              <img src="${logoUrl}" alt="Protex Logo">
+              <div>
+                <div class="brand-title">Protex</div>
+                <div class="brand-sub">Assurance Digitale</div>
+              </div>
+            </div>
+            <div class="export-meta">
+              <strong>Back Office</strong><br>
+              Exporté le ${exportDate}<br>
+              <span class="meta-pill">${data.length} contrat${data.length > 1 ? 's' : ''} exporté${data.length > 1 ? 's' : ''}</span>
+            </div>
+          </div>
+
+          <div class="content">
+            <div class="doc-title">
+              <div>
+                <h1>Liste des contrats</h1>
+                <div class="note">Contrats visibles après recherche, filtre et tri.</div>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>N° Contrat</th>
+                  <th>Formule</th>
+                  <th>Catégorie</th>
+                  <th>Prime</th>
+                  <th>Date début</th>
+                  <th>Date fin</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHTML}</tbody>
+            </table>
+
+            <div class="footer">
+              <span>Protex Assurance — Document généré automatiquement</span>
+              <span>Export PDF Back Office</span>
+            </div>
+          </div>
+        </section>
+
+        <script>
+          window.onload = function () {
+            window.print();
+          };
+        <\/script>
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
   }
 
   document.getElementById('searchInput').addEventListener('input', filterRows);
   document.getElementById('filterStatut').addEventListener('change', filterRows);
   document.getElementById('filterType').addEventListener('change', filterRows);
   document.getElementById('filterDate').addEventListener('change', filterRows);
+  document.getElementById('sortContrats').addEventListener('change', filterRows);
 
   filterRows();
 </script>

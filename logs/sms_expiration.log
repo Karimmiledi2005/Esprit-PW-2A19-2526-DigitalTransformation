@@ -1,0 +1,110 @@
+[2026-05-05 16:57:53] {"total_detectes":1,"envoyes":1,"deja_envoyes":0,"sans_telephone":0,"erreurs":0,"details":[{"numero":"CTR-2026-000007","telephone":"93981981","message":"Bonjour Akrem BACCARI, votre contrat d'assurance CTR-2026-000007 expire le 04/06/2026, dans 30 jour(s). Merci de le renouveler avant son expiration.","status":"PENDING_ACCEPTED","message_id":"177791027403807951488807","bulk_id":"177791027403807951488806","error":""}]}
+[2026-05-05 19:26:00] {"total_detectes":1,"envoyes":0,"deja_envoyes":1,"sans_telephone":0,"erreurs":0,"details":[{"numero":"CTR-2026-000007","status":"deja_envoye","message":"Alerte déjà envoyée pour ce contrat."}]}
+[2026-05-05 20:39:08] STATUS CHANGE SMS
+Contract: CTR-2026-000007
+New Status: refusé
+Client: Akrem BACCARI
+Phone: 54122325
+Message: Bonjour Akrem BACCARI, le statut de votre contrat d'assurance CTR-2026-000007 a été mis à jour : refusé.
+SMS Status: PENDING_ACCEPTED
+Message ID: 177792354892507950912422
+Bulk ID: 177792354892507950912421
+----------------------------------------
+[2026-05-05 20:41:05] STATUS CHANGE SMS
+Contract: CTR-2026-000007
+New Status: actif
+Client: Akrem BACCARI
+Phone: 54122325
+Message: Bonjour Akrem BACCARI, le statut de votre contrat d'assurance CTR-2026-000007 a été mis à jour : actif.
+SMS Status: PENDING_ACCEPTED
+Message ID: 177792366436907950919398
+Bulk ID: 177792366436907950919397
+----------------------------------------
+[2026-05-05 20:53:27] STATUS CHANGE SMS
+Contract: CTR-2026-000007
+New Status: actif
+Client: Akrem BACCARI
+Phone: 93981981
+Message: Bonjour Akrem BACCARI, le statut de votre contrat d'assurance CTR-2026-000007 a été mis à jour : actif.
+SMS Status: PENDING_ACCEPTED
+Type Alert: changement_statut_actif
+Message ID: 177792440823607950966177
+Bulk ID: 177792440823607950966176
+----------------------------------------
+[2026-05-05 22:48:56] STATUS CHANGE SMS
+Contract: CTR-2026-890918
+New Status: actif
+Client: Meryem bouazizi
+Phone: 93981981
+Message: Bonjour Meryem bouazizi, le statut de votre contrat d'assurance CTR-2026-890918 a été mis à jour : actif.
+SMS Status: PENDING_ACCEPTED
+Type Alert: changement_statut_actif
+Message ID: 177801413694307950474375
+Bulk ID: 177801413694307950474374
+----------------------------------------
+[2026-05-06 02:49:49] STATUS CHANGE SMS
+Contract: CTR-2026-602244
+New Status: résilié
+Client: Emna Bargougui
+Phone: 56897412
+Message: Bonjour Emna Bargougui, le statut de votre contrat d'assurance CTR-2026-602244 a été mis à jour : résilié.
+SMS Status: PENDING_ACCEPTED
+Type Alert: changement_statut_r__sili__
+Message ID: 177802858944107951067925
+Bulk ID: 177802858944107951067924
+----------------------------------------
+[2026-05-06 02:49:49] STATUS CHANGE SMS
+Contract: CTR-2026-602244
+New Status: refusé
+Client: Emna Bargougui
+Phone: 56897412
+Message: Bonjour Emna Bargougui, le statut de votre contrat d'assurance CTR-2026-602244 a été mis à jour : refusé.
+SMS Status: PENDING_ACCEPTED
+Type Alert: changement_statut_refus__
+Message ID: 177802858964507950435186
+Bulk ID: 177802858964507950435185
+----------------------------------------
+[2026-05-06 02:50:02] STATUS CHANGE SMS
+Contract: CTR-2026-602244
+New Status: résilié
+Client: Emna Bargougui
+Phone: 56897412
+Message: Bonjour Emna Bargougui, le statut de votre contrat d'assurance CTR-2026-602244 a été mis à jour : résilié.
+SMS Status: PENDING_ACCEPTED
+Type Alert: changement_statut_r__sili__
+Message ID: 177802860242407951068476
+Bulk ID: 177802860242407951068475
+----------------------------------------
+[2026-05-06 12:33:40] STATUS CHANGE SMS
+Contract: CTR-2026-058456
+New Status: actif
+Client: miledi abdou
+Phone: 69745254
+Message: Bonjour miledi abdou, le statut de votre contrat d'assurance CTR-2026-058456 a été mis à jour : actif.
+SMS Status: PENDING_ACCEPTED
+Type Alert: changement_statut_actif
+Message ID: 177806362122807950997285
+Bulk ID: 177806362122807950997284
+----------------------------------------
+[2026-05-06 19:41:13] STATUS CHANGE SMS
+Contract: CTR-2026-481187
+New Status: actif
+Client: Meriem Bouaz
+Phone: 93981981
+Message: Bonjour Meriem Bouaz, le statut de votre contrat d'assurance CTR-2026-481187 a été mis à jour : actif.
+SMS Status: PENDING_ACCEPTED
+Type Alert: changement_statut_actif
+Message ID: 177808927384007950417389
+Bulk ID: 177808927384007950417388
+----------------------------------------
+[2026-05-06 19:41:13] STATUS CHANGE SMS
+Contract: CTR-2026-481187
+New Status: actif
+Client: Meriem Bouaz
+Phone: 93981981
+Message: Bonjour Meriem Bouaz, le statut de votre contrat d'assurance CTR-2026-481187 a été mis à jour : actif.
+SMS Status: PENDING_ACCEPTED
+Type Alert: changement_statut_actif
+Message ID: 177808927406007952315103
+Bulk ID: 177808927406007952315102
+----------------------------------------

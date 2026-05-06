@@ -17,6 +17,12 @@ $formules = $formuleC->listFormulesByCategorie($id);
 if (!$categorie) {
     die("Catégorie introuvable.");
 }
+
+$totalFormules = count($formules);
+$totalGaranties = array_sum(array_map(fn($f) => (int)($f['nb_garanties'] ?? 0), $formules));
+$totalPrix = array_sum(array_map(fn($f) => (float)($f['prix_formule'] ?? 0), $formules));
+$prixMoyen = $totalFormules > 0 ? $totalPrix / $totalFormules : 0;
+$formulesUtilisees = count(array_filter($formules, fn($f) => (int)($f['nb_contrats'] ?? 0) > 0));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -31,6 +37,37 @@ if (!$categorie) {
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/admin-users.css">
     <link rel="stylesheet" href="assets/css/contrats.css">
+
+    <style>
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 18px; margin: 22px 0 24px; }
+        .stat-card { position: relative; overflow: hidden; border-radius: 22px; padding: 24px; min-height: 130px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.06); box-shadow: 0 18px 50px rgba(0,0,0,.12); }
+        .stat-card::after { content: ''; position: absolute; right: -38px; top: -38px; width: 118px; height: 118px; border-radius: 50%; background: rgba(255,255,255,.06); }
+        .stat-card.blue { background: linear-gradient(135deg, rgba(0,180,216,.20), rgba(10,25,49,.55)); }
+        .stat-card.gold { background: linear-gradient(135deg, rgba(238,88,40,.22), rgba(10,25,49,.55)); }
+        .stat-card.green { background: linear-gradient(135deg, rgba(46,204,113,.18), rgba(10,25,49,.55)); }
+        .stat-icon { width: 48px; height: 48px; border-radius: 15px; display: grid; place-items: center; background: rgba(255,255,255,.10); color: #00d4ff; font-size: 20px; margin-bottom: 14px; }
+        .stat-card.gold .stat-icon { color: #ffb36b; }
+        .stat-card.green .stat-icon { color: #55efc4; }
+        .stat-value { font-size: 30px; font-weight: 900; color: #fff; line-height: 1; }
+        .stat-label { margin-top: 8px; color: rgba(255,255,255,.78); font-weight: 600; }
+        @media (max-width: 900px) { .stats-grid { grid-template-columns: 1fr; } }
+        .mini-stats { display: grid; grid-template-columns: repeat(2, minmax(180px, 1fr)); gap: 14px; margin: 18px 0; }
+        .mini-stat { border: 1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); border-radius: 18px; padding: 16px; }
+        .mini-stat-value { font-size: 26px; font-weight: 800; color: #fff; }
+        .mini-stat-label { color: rgba(255,255,255,.7); margin-top: 4px; }
+        .toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:16px 24px; border-bottom:1px solid rgba(255,255,255,.08); }
+        .search-box { flex:1; min-width:260px; position:relative; }
+        .search-box i { position:absolute; top:50%; left:14px; transform:translateY(-50%); color:rgba(255,255,255,.65); }
+        .toolbar input, .toolbar select { height:44px; border-radius:14px; border:1px solid rgba(255,255,255,.13); background:rgba(255,255,255,.07); color:#fff; padding:0 14px; outline:none; }
+        .toolbar input { width:100%; padding-left:42px; }
+        .toolbar select { min-width:210px; }
+        .toolbar option { color:#0A1931; }
+        .export-btn, .reset-btn { height:42px; border-radius:14px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.08); color:#fff; padding:0 14px; cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
+        .export-btn:hover, .reset-btn:hover { border-color:#00b4d8; color:#00d4ff; }
+        .badge-count { display:inline-flex; align-items:center; justify-content:center; min-width:34px; padding:6px 10px; border-radius:999px; background:rgba(0,180,216,.15); border:1px solid rgba(0,180,216,.35); color:#91eaff; font-weight:700; }
+        .empty-row { display:none; text-align:center; padding:24px; color:rgba(255,255,255,.75); }
+    </style>
 </head>
 <body>
 
@@ -42,82 +79,46 @@ if (!$categorie) {
 <div class="layout">
 
     <aside class="sidebar" id="sidebar">
-    <div class="sidebar-logo">
-      <div class="logo-icon">🛡️</div>
-      <div>
-        <div class="logo-text">Protex</div>
-        <div class="logo-sub">Back-Office</div>
-      </div>
-    </div>
+        <div class="sidebar-logo">
+            <div class="logo-icon">🛡️</div>
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">Back-Office</div>
+            </div>
+        </div>
 
-    <div class="sidebar-user">
-      <div class="user-avatar">AD</div>
-      <div>
-        <div class="user-name">Agent Admin</div>
-        <span class="user-role">Administrateur</span>
-      </div>
-    </div>
+        <div class="sidebar-user">
+            <div class="user-avatar">AD</div>
+            <div>
+                <div class="user-name">Agent Admin</div>
+                <span class="user-role">Administrateur</span>
+            </div>
+        </div>
 
-    <nav class="sidebar-nav">
-      <div class="nav-section">Principal</div>
-      <a class="nav-item" href="#">
-        <i class="bi bi-grid-1x2"></i> Tableau de bord
-      </a>
+        <nav class="sidebar-nav">
+            <div class="nav-section">Principal</div>
+            <a class="nav-item" href="#"><i class="bi bi-grid-1x2"></i> Tableau de bord</a>
 
-      <div class="nav-section">Gestion</div>
-      <a class="nav-item" href="admin-users.html">
-        <i class="bi bi-people"></i> Utilisateurs
-        <span class="nav-badge accent">24</span>
-      </a>
+            <div class="nav-section">Gestion</div>
+            <a class="nav-item" href="admin-users.html"><i class="bi bi-people"></i> Utilisateurs <span class="nav-badge accent">24</span></a>
+            <a class="nav-item" href="sinsiter.html"><i class="bi bi-shield-exclamation"></i> Sinistres</a>
+            <a class="nav-item" href="traitement.html"><i class="bi bi-file-earmark-text"></i> Traitements</a>
+            <a class="nav-item" href="contrats_back.php"><i class="bi bi-file-earmark-text"></i> Contrats</a>
+            <a class="nav-item active" href="categories_back.php"><i class="bi bi-grid-3x3-gap"></i> Catégories</a>
+            <a class="nav-item" href="garanties_back.php"><i class="bi bi-shield-check"></i> Garanties</a>
+            <a class="nav-item" href="paiements_back.html"><i class="bi bi-credit-card"></i> Paiements</a>
+            <a class="nav-item" href="offres_back.html"><i class="bi bi-tags"></i> Offres</a>
+            <a class="nav-item" href="admin-reclamations.html"><i class="bi bi-chat-dots"></i> Réclamations</a>
+            <a class="nav-item" href="admin-agences.html"><i class="bi bi-geo-alt"></i> Agences</a>
 
-      <a class="nav-item" href="sinsiter.html">
-        <i class="bi bi-shield-exclamation"></i> Sinistres
-      </a>
+            <div class="nav-section">Compte</div>
+            <a class="nav-item" href="adminprofile.html"><i class="bi bi-person-gear"></i> Mon profil</a>
+        </nav>
 
-      <a class="nav-item" href="traitement.html">
-        <i class="bi bi-file-earmark-text"></i> Traitements
-      </a>
-
-      <a class="nav-item active" href="contrats_back.php">
-        <i class="bi bi-file-earmark-text"></i> Contrats
-      </a>
-
-      <a class="nav-item" href="categories_back.php">
-        <i class="bi bi-grid-3x3-gap"></i> Catégories
-      </a>
-
-      <a class="nav-item" href="garanties_back.php">
-        <i class="bi bi-shield-check"></i> Garanties
-      </a>
-
-      <a class="nav-item" href="paiements_back.html">
-        <i class="bi bi-credit-card"></i> Paiements
-      </a>
-
-      <a class="nav-item" href="offres_back.html">
-        <i class="bi bi-tags"></i> Offres
-      </a>
-
-      <a class="nav-item" href="admin-reclamations.html">
-        <i class="bi bi-chat-dots"></i> Réclamations
-      </a>
-
-      <a class="nav-item" href="admin-agences.html">
-        <i class="bi bi-geo-alt"></i> Agences
-      </a>
-
-      <div class="nav-section">Compte</div>
-      <a class="nav-item" href="adminprofile.html">
-        <i class="bi bi-person-gear"></i> Mon profil
-      </a>
-    </nav>
-
-    <div class="sidebar-footer">
-      <a href="#" class="logout-btn">
-        <i class="bi bi-box-arrow-left"></i> Se déconnecter
-      </a>
-    </div>
-  </aside>
+        <div class="sidebar-footer">
+            <a href="#" class="logout-btn"><i class="bi bi-box-arrow-left"></i> Se déconnecter</a>
+        </div>
+    </aside>
 
     <main class="main">
         <div class="topbar">
@@ -140,22 +141,35 @@ if (!$categorie) {
                     </div>
                 </div>
 
-                <div style="display:flex; gap:10px;">
-                    <a href="categories_back.php" class="btn btn-outline">
-                        <i class="bi bi-arrow-left"></i> Retour
-                    </a>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <a href="categories_back.php" class="btn btn-outline"><i class="bi bi-arrow-left"></i> Retour</a>
+                    <a href="addFormule.php?id_categorie=<?= (int)$categorie['id_categorie'] ?>" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Ajouter une formule</a>
+                </div>
+            </div>
 
-                    <a href="addFormule.php?id_categorie=<?= (int)$categorie['id_categorie'] ?>" class="btn btn-primary">
-                        <i class="bi bi-plus-lg"></i> Ajouter une formule
-                    </a>
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-icon"><i class="bi bi-list-check"></i></div>
+                    <div class="stat-value"><?= $totalFormules ?></div>
+                    <div class="stat-label">Total formules</div>
+                </div>
+
+                <div class="stat-card gold">
+                    <div class="stat-icon"><i class="bi bi-shield-check"></i></div>
+                    <div class="stat-value"><?= $totalGaranties ?></div>
+                    <div class="stat-label">Garanties associées</div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-icon"><i class="bi bi-people-check"></i></div>
+                    <div class="stat-value"><?= (int)$formulesUtilisees ?></div>
+                    <div class="stat-label">Formules utilisées</div>
                 </div>
             </div>
 
             <div class="card">
                 <div class="card-header">
-                    <div class="card-title">
-                        <i class="bi bi-info-circle"></i> Informations catégorie
-                    </div>
+                    <div class="card-title"><i class="bi bi-info-circle"></i> Informations catégorie</div>
                 </div>
 
                 <div class="modal-body">
@@ -180,69 +194,80 @@ if (!$categorie) {
 
             <div class="card" style="margin-top:20px;">
                 <div class="card-header">
-                    <div class="card-title">
-                        <i class="bi bi-list-check"></i> Formules de cette catégorie
+                    <div class="card-title"><i class="bi bi-list-check"></i> Formules de cette catégorie</div>
+                    <button type="button" class="export-btn" onclick="exportPDF()"><i class="bi bi-file-earmark-pdf"></i> Export PDF</button>
+                </div>
+
+                <div class="toolbar">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="searchInput" placeholder="Rechercher par ID, nom, description, niveau, prix, franchise, garanties..." oninput="applyFilters()">
                     </div>
+                    <select id="sortSelect" onchange="applyFilters()">
+                        <option value="default">Tri par défaut</option>
+                        <option value="price-asc">Prix croissant</option>
+                        <option value="price-desc">Prix décroissant</option>
+                        <option value="franchise-asc">Franchise croissante</option>
+                        <option value="franchise-desc">Franchise décroissante</option>
+                        <option value="garanties-desc">Garanties liées ↓</option>
+                        <option value="garanties-asc">Garanties liées ↑</option>
+                    </select>
+                    <button type="button" class="reset-btn" onclick="resetFilters()"><i class="bi bi-x-circle"></i> Réinitialiser</button>
                 </div>
 
                 <div class="table-wrap">
-                    <table>
+                    <table id="formulesTable">
                         <thead>
-                            <thead>
-    <tr>
-        <th>ID</th>
-        <th>Nom formule</th>
-        <th>Description</th>
-        <th>Prix</th>
-        <th>Franchise</th>
-        <th>Niveau</th>
-        <th>Actions</th>
-    </tr>
-</thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom formule</th>
+                                <th>Description</th>
+                                <th>Prix</th>
+                                <th>Franchise</th>
+                                <th>Niveau</th>
+                                <th>Garanties liées</th>
+                                <th>Actions</th>
+                            </tr>
                         </thead>
-                        <tbody>
-<?php foreach ($formules as $formule): ?>
-<tr>
-    <td>#<?= $formule['id_formule'] ?></td>
-
-    <td><?= htmlspecialchars($formule['nom_formule']) ?></td>
-
-    <td><?= htmlspecialchars($formule['description_formule']) ?></td>
-
-    <td><?= number_format($formule['prix_formule'], 2) ?> DT</td>
-
-    <td><?= number_format((float)($formule['franchise_formule'] ?? 0), 2) ?> DT</td>
-
-    <td><?= htmlspecialchars($formule['niveau_formule']) ?></td>
-
-    <td>
-    <div class="actions">
-
-        <!-- Voir formule -->
-        <a class="btn-soft"
-           href="showFormule.php?id=<?= (int)$formule['id_formule'] ?>">
-            <i class="bi bi-eye"></i>
-        </a>
-
-        <!-- Modifier formule -->
-        <a class="btn-soft"
-           href="updateFormule.php?id=<?= (int)$formule['id_formule'] ?>">
-            <i class="bi bi-pencil"></i>
-        </a>
-
-        <!-- Supprimer formule -->
-        <a class="btn-soft danger"
-           href="deleteFormule.php?id=<?= (int)$formule['id_formule'] ?>&id_categorie=<?= (int)$categorie['id_categorie'] ?>"
-           onclick="return confirm('Supprimer cette formule ?');">
-            <i class="bi bi-trash3"></i>
-        </a>
-
-    </div>
-</td>
-</tr>
-<?php endforeach; ?>
-</tbody>
+                        <tbody id="formulesBody">
+                            <?php foreach ($formules as $formule):
+                                $prix = (float)($formule['prix_formule'] ?? 0);
+                                $franchise = (float)($formule['franchise_formule'] ?? 0);
+                                $nbGaranties = (int)($formule['nb_garanties'] ?? 0);
+                            ?>
+                                <tr class="formule-row"
+                                    data-search="<?= htmlspecialchars(strtolower(
+                                        '#' . ($formule['id_formule'] ?? '') . ' ' .
+                                        ($formule['nom_formule'] ?? '') . ' ' .
+                                        ($formule['description_formule'] ?? '') . ' ' .
+                                        ($formule['niveau_formule'] ?? '') . ' ' .
+                                        ($categorie['nom_categorie'] ?? '') . ' ' .
+                                        number_format($prix, 2, '.', '') . ' ' .
+                                        number_format($franchise, 2, '.', '') . ' ' .
+                                        $nbGaranties . ' garanties'
+                                    )) ?>"
+                                    data-price="<?= $prix ?>"
+                                    data-franchise="<?= $franchise ?>"
+                                    data-garanties="<?= $nbGaranties ?>">
+                                    <td>#<?= (int)$formule['id_formule'] ?></td>
+                                    <td><strong><?= htmlspecialchars($formule['nom_formule']) ?></strong></td>
+                                    <td><?= htmlspecialchars($formule['description_formule'] ?? '—') ?></td>
+                                    <td><?= number_format($prix, 2) ?> DT</td>
+                                    <td><?= number_format($franchise, 2) ?> DT</td>
+                                    <td><?= htmlspecialchars($formule['niveau_formule'] ?? '—') ?></td>
+                                    <td><span class="badge-count"><?= $nbGaranties ?></span></td>
+                                    <td>
+                                        <div class="actions">
+                                            <a class="btn-soft" href="showFormule.php?id=<?= (int)$formule['id_formule'] ?>"><i class="bi bi-eye"></i></a>
+                                            <a class="btn-soft" href="updateFormule.php?id=<?= (int)$formule['id_formule'] ?>"><i class="bi bi-pencil"></i></a>
+                                            <a class="btn-soft danger" href="deleteFormule.php?id=<?= (int)$formule['id_formule'] ?>&id_categorie=<?= (int)$categorie['id_categorie'] ?>" onclick="return confirm('Supprimer cette formule ?');"><i class="bi bi-trash3"></i></a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
                     </table>
+                    <div id="emptyRow" class="empty-row">Aucune formule trouvée.</div>
                 </div>
             </div>
 
@@ -258,6 +283,352 @@ document.getElementById('topbarDate').textContent =
         month:'long',
         year:'numeric'
     });
+
+function normalize(text) {
+    return (text || '').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function applyFilters() {
+    const searchValue = normalize(document.getElementById('searchInput').value.trim());
+    const keywords = searchValue.split(/\s+/).filter(Boolean);
+    const sort = document.getElementById('sortSelect').value;
+    const tbody = document.getElementById('formulesBody');
+    const rows = Array.from(document.querySelectorAll('.formule-row'));
+
+    rows.forEach(row => {
+        const searchableText = normalize(row.dataset.search);
+        const matchesSearch = keywords.length === 0 || keywords.every(word => searchableText.includes(word));
+        row.style.display = matchesSearch ? '' : 'none';
+    });
+
+    const visibleRows = rows.filter(row => row.style.display !== 'none');
+
+    visibleRows.sort((a, b) => {
+        const priceA = parseFloat(a.dataset.price || '0');
+        const priceB = parseFloat(b.dataset.price || '0');
+        const franchiseA = parseFloat(a.dataset.franchise || '0');
+        const franchiseB = parseFloat(b.dataset.franchise || '0');
+        const garantiesA = parseInt(a.dataset.garanties || '0', 10);
+        const garantiesB = parseInt(b.dataset.garanties || '0', 10);
+
+        switch (sort) {
+            case 'price-asc': return priceA - priceB;
+            case 'price-desc': return priceB - priceA;
+            case 'franchise-asc': return franchiseA - franchiseB;
+            case 'franchise-desc': return franchiseB - franchiseA;
+            case 'garanties-asc': return garantiesA - garantiesB;
+            case 'garanties-desc': return garantiesB - garantiesA;
+            default: return 0;
+        }
+    });
+
+    visibleRows.forEach(row => tbody.appendChild(row));
+    document.getElementById('emptyRow').style.display = visibleRows.length === 0 ? 'block' : 'none';
+}
+
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('sortSelect').value = 'default';
+    applyFilters();
+}
+
+function escapeHTML(value) {
+    return (value || '').toString()
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
+function exportPDF() {
+    const visibleRows = Array.from(document.querySelectorAll('.formule-row'))
+        .filter(row => row.style.display !== 'none');
+
+    if (visibleRows.length === 0) {
+        alert('Aucune formule à exporter.');
+        return;
+    }
+
+    const logoUrl = new URL('../FrontOffice/logo.png', window.location.href).href;
+    const exportDate = new Date().toLocaleDateString('fr-FR');
+    const categoryName = <?= json_encode($categorie['nom_categorie'] ?? 'Catégorie') ?>;
+
+    const tableRows = visibleRows.map(row => {
+        const cells = row.querySelectorAll('td');
+        return `
+            <tr>
+                <td class="ref">${escapeHTML(cells[0].innerText.trim())}</td>
+                <td>${escapeHTML(cells[1].innerText.trim())}</td>
+                <td>${escapeHTML(cells[2].innerText.trim())}</td>
+                <td class="money">${escapeHTML(cells[3].innerText.trim())}</td>
+                <td class="money">${escapeHTML(cells[4].innerText.trim())}</td>
+                <td><span class="badge">${escapeHTML(cells[5].innerText.trim())}</span></td>
+                <td><span class="count-pill">${escapeHTML(cells[6].innerText.trim())}</span></td>
+            </tr>
+        `;
+    }).join('');
+
+    const printWindow = window.open('', '_blank');
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+            <meta charset="UTF-8">
+            <title>Export PDF - Formules</title>
+            <style>
+                * { box-sizing: border-box; }
+
+                body {
+                    margin: 0;
+                    padding: 28px;
+                    font-family: "Segoe UI", Arial, sans-serif;
+                    background: #f4f7fb;
+                    color: #0A1931;
+                }
+
+                .page {
+                    min-height: calc(100vh - 56px);
+                    background: #ffffff;
+                    border: 1px solid #dbe7f3;
+                    border-radius: 22px;
+                    overflow: hidden;
+                    box-shadow: 0 18px 45px rgba(10, 25, 49, 0.12);
+                }
+
+                .hero {
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 24px;
+                    padding: 26px 30px;
+                    color: #ffffff;
+                    background:
+                        radial-gradient(circle at 85% 0%, rgba(255, 107, 26, 0.42), transparent 34%),
+                        linear-gradient(135deg, #0A1931 0%, #0A274C 58%, #123B63 100%);
+                }
+
+                .brand {
+                    display: flex;
+                    align-items: center;
+                    gap: 14px;
+                }
+
+                .brand img {
+                    width: 54px;
+                    height: 54px;
+                    object-fit: contain;
+                }
+
+                .brand-title {
+                    font-size: 26px;
+                    font-weight: 800;
+                    letter-spacing: 0.2px;
+                    line-height: 1;
+                }
+
+                .brand-sub {
+                    margin-top: 5px;
+                    color: #00b4d8;
+                    font-size: 12px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 1.3px;
+                }
+
+                .export-meta {
+                    text-align: right;
+                    font-size: 13px;
+                    color: rgba(255, 255, 255, 0.86);
+                    line-height: 1.7;
+                }
+
+                .meta-pill {
+                    display: inline-block;
+                    margin-top: 7px;
+                    padding: 6px 12px;
+                    border-radius: 999px;
+                    background: rgba(0, 180, 216, 0.15);
+                    border: 1px solid rgba(0, 180, 216, 0.45);
+                    color: #ffffff;
+                    font-weight: 700;
+                }
+
+                .content {
+                    padding: 26px 30px 30px;
+                }
+
+                .doc-title {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-end;
+                    gap: 20px;
+                    margin-bottom: 18px;
+                    padding-bottom: 14px;
+                    border-bottom: 3px solid #FF6B1A;
+                }
+
+                h1 {
+                    margin: 0;
+                    color: #0A1931;
+                    font-size: 23px;
+                }
+
+                .note {
+                    margin-top: 5px;
+                    color: #5d6b7c;
+                    font-size: 12px;
+                }
+
+                .category-chip {
+                    display: inline-flex;
+                    align-items: center;
+                    padding: 8px 13px;
+                    border-radius: 999px;
+                    background: rgba(0, 180, 216, 0.12);
+                    border: 1px solid rgba(0, 180, 216, 0.35);
+                    color: #0A274C;
+                    font-weight: 800;
+                    font-size: 12px;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: separate;
+                    border-spacing: 0;
+                    overflow: hidden;
+                    border: 1px solid #d9e3ee;
+                    border-radius: 14px;
+                    font-size: 12px;
+                }
+
+                th {
+                    background: #0A1931;
+                    color: #ffffff;
+                    padding: 12px 11px;
+                    text-align: left;
+                    font-size: 11px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.7px;
+                }
+
+                td {
+                    padding: 11px;
+                    border-bottom: 1px solid #e4ebf3;
+                    color: #17293f;
+                    vertical-align: middle;
+                }
+
+                tr:nth-child(even) td {
+                    background: #f7f9fc;
+                }
+
+                tr:last-child td {
+                    border-bottom: none;
+                }
+
+                .ref {
+                    color: #00b4d8;
+                    font-weight: 800;
+                }
+
+                .money {
+                    font-weight: 800;
+                    color: #0A1931;
+                }
+
+                .badge, .count-pill {
+                    display: inline-block;
+                    padding: 5px 10px;
+                    border-radius: 999px;
+                    background: rgba(0, 180, 216, 0.10);
+                    border: 1px solid rgba(0, 180, 216, 0.28);
+                    color: #0A274C;
+                    font-size: 11px;
+                    font-weight: 800;
+                }
+
+                .count-pill {
+                    background: rgba(238, 88, 40, 0.10);
+                    border-color: rgba(238, 88, 40, 0.30);
+                    color: #EE5828;
+                }
+
+                .footer {
+                    margin-top: 22px;
+                    padding-top: 14px;
+                    border-top: 1px solid #dbe7f3;
+                    color: #637487;
+                    font-size: 12px;
+                    display: flex;
+                    justify-content: space-between;
+                    gap: 14px;
+                }
+
+                @media print {
+                    body { background: #ffffff; padding: 0; }
+                    .page { box-shadow: none; border-radius: 0; border: none; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="page">
+                <div class="hero">
+                    <div class="brand">
+                        <img src="${logoUrl}" alt="Protex">
+                        <div>
+                            <div class="brand-title">Protex</div>
+                            <div class="brand-sub">Back Office</div>
+                        </div>
+                    </div>
+                    <div class="export-meta">
+                        Exporté le ${exportDate}<br>
+                        <span class="meta-pill">${visibleRows.length} formules exportées</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="doc-title">
+                        <div>
+                            <h1>Liste des formules</h1>
+                            <div class="note">Ce document contient uniquement les formules visibles après recherche et tri.</div>
+                        </div>
+                        <div class="category-chip">Catégorie : ${escapeHTML(categoryName)}</div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nom formule</th>
+                                <th>Description</th>
+                                <th>Prix</th>
+                                <th>Franchise</th>
+                                <th>Niveau</th>
+                                <th>Garanties liées</th>
+                            </tr>
+                        </thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+
+                    <div class="footer">
+                        <span>Protex Assurance — Export Back Office</span>
+                        <span>Document généré automatiquement</span>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                window.onload = function () {
+                    window.print();
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+
+    printWindow.document.close();
+}
 </script>
 
 </body>

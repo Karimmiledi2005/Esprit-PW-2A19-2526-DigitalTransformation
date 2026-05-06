@@ -2,55 +2,154 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../model/Formule.php';
 
-class FormuleController {
+class FormuleController
+{
+    private PDO $db;
 
-    public function listFormules() {
-        $sql = "
-            SELECT f.*, c.nom_categorie
+    public function __construct()
+    {
+        $this->db = config::getConnexion();
+    }
+
+    private function baseSelect(string $where = '', string $order = 'ORDER BY f.id_formule DESC'): string
+    {
+        return "
+            SELECT
+                f.*,
+                c.nom_categorie,
+                COUNT(DISTINCT fg.id_garantie) AS nb_garanties,
+                COUNT(DISTINCT ct.id_contrat) AS nb_contrats
             FROM formule f
             LEFT JOIN categorie c ON f.id_categorie = c.id_categorie
-            ORDER BY f.id_formule DESC
+            LEFT JOIN formule_garantie fg ON f.id_formule = fg.id_formule
+            LEFT JOIN contrat ct ON f.id_formule = ct.id_formule
+            $where
+            GROUP BY
+                f.id_formule,
+                f.nom_formule,
+                f.description_formule,
+                f.prix_formule,
+                f.franchise_formule,
+                f.niveau_formule,
+                f.id_categorie,
+                c.nom_categorie
+            $order
         ";
+    }
 
-        $db = config::getConnexion();
-
+    public function listFormules()
+    {
         try {
-            return $db->query($sql);
+            return $this->db->query($this->baseSelect());
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            die('Erreur listFormules: ' . $e->getMessage());
         }
     }
 
-    public function listFormulesByCategorie($id_categorie) {
-        $sql = "
-            SELECT *
-            FROM formule
-            WHERE id_categorie = :id_categorie
-            ORDER BY id_formule DESC
-        ";
+    public function listFormulesArray(): array
+    {
+        $stmt = $this->listFormules();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
-        $db = config::getConnexion();
-
+    public function listFormulesByCategorie($id_categorie): array
+    {
         try {
-            $query = $db->prepare($sql);
+            $sql = $this->baseSelect(
+                'WHERE f.id_categorie = :id_categorie',
+                'ORDER BY f.id_formule DESC'
+            );
+
+            $query = $this->db->prepare($sql);
             $query->execute([
-                'id_categorie' => $id_categorie
+                'id_categorie' => (int)$id_categorie
             ]);
+
             return $query->fetchAll(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            die('Erreur listFormulesByCategorie: ' . $e->getMessage());
         }
     }
 
-    public function addFormule($formule) {
-        $sql = "INSERT INTO formule (nom_formule, description_formule, prix_formule, franchise_formule, niveau_formule, id_categorie)
-                VALUES (:nom_formule, :description_formule, :prix_formule, :franchise_formule, :niveau_formule, :id_categorie)";
+    public function searchFormules(string $keyword): array
+    {
+        $keyword = trim($keyword);
 
-        $db = config::getConnexion();
+        if ($keyword === '') {
+            return $this->listFormulesArray();
+        }
 
         try {
-            $query = $db->prepare($sql);
+            $sql = $this->baseSelect(
+                "WHERE f.nom_formule LIKE :keyword
+                    OR f.description_formule LIKE :keyword
+                    OR f.niveau_formule LIKE :keyword
+                    OR c.nom_categorie LIKE :keyword",
+                'ORDER BY f.id_formule DESC'
+            );
+
+            $query = $this->db->prepare($sql);
             $query->execute([
+                'keyword' => '%' . $keyword . '%'
+            ]);
+
+            return $query->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            die('Erreur searchFormules: ' . $e->getMessage());
+        }
+    }
+
+    public function getFormulesSortedByPrix(string $order = 'ASC'): array
+    {
+        $order = strtoupper($order) === 'DESC' ? 'DESC' : 'ASC';
+
+        try {
+            $stmt = $this->db->query(
+                $this->baseSelect('', "ORDER BY f.prix_formule $order")
+            );
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            die('Erreur getFormulesSortedByPrix: ' . $e->getMessage());
+        }
+    }
+
+    public function getFormulesSortedByFranchise(string $order = 'ASC'): array
+    {
+        $order = strtoupper($order) === 'DESC' ? 'DESC' : 'ASC';
+
+        try {
+            $stmt = $this->db->query(
+                $this->baseSelect('', "ORDER BY f.franchise_formule $order")
+            );
+
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            die('Erreur getFormulesSortedByFranchise: ' . $e->getMessage());
+        }
+    }
+
+    public function addFormule($formule): bool
+    {
+        $sql = "INSERT INTO formule (
+                    nom_formule,
+                    description_formule,
+                    prix_formule,
+                    franchise_formule,
+                    niveau_formule,
+                    id_categorie
+                ) VALUES (
+                    :nom_formule,
+                    :description_formule,
+                    :prix_formule,
+                    :franchise_formule,
+                    :niveau_formule,
+                    :id_categorie
+                )";
+
+        try {
+            $query = $this->db->prepare($sql);
+            return $query->execute([
                 'nom_formule' => $formule->getNomFormule(),
                 'description_formule' => $formule->getDescriptionFormule(),
                 'prix_formule' => $formule->getPrixFormule(),
@@ -59,30 +158,46 @@ class FormuleController {
                 'id_categorie' => $formule->getIdCategorie()
             ]);
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            die('Erreur addFormule: ' . $e->getMessage());
         }
     }
 
-    public function showFormule($id) {
+    public function showFormule($id)
+    {
         $sql = "
-            SELECT f.*, c.nom_categorie
+            SELECT
+                f.*,
+                c.nom_categorie,
+                COUNT(DISTINCT fg.id_garantie) AS nb_garanties,
+                COUNT(DISTINCT ct.id_contrat) AS nb_contrats
             FROM formule f
             LEFT JOIN categorie c ON f.id_categorie = c.id_categorie
+            LEFT JOIN formule_garantie fg ON f.id_formule = fg.id_formule
+            LEFT JOIN contrat ct ON f.id_formule = ct.id_formule
             WHERE f.id_formule = :id
+            GROUP BY
+                f.id_formule,
+                f.nom_formule,
+                f.description_formule,
+                f.prix_formule,
+                f.franchise_formule,
+                f.niveau_formule,
+                f.id_categorie,
+                c.nom_categorie
+            LIMIT 1
         ";
 
-        $db = config::getConnexion();
-
         try {
-            $query = $db->prepare($sql);
-            $query->execute(['id' => $id]);
-            return $query->fetch();
+            $query = $this->db->prepare($sql);
+            $query->execute(['id' => (int)$id]);
+            return $query->fetch(PDO::FETCH_ASSOC);
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            die('Erreur showFormule: ' . $e->getMessage());
         }
     }
 
-    public function updateFormule($id, $formule) {
+    public function updateFormule($id, $formule): bool
+    {
         $sql = "UPDATE formule
                 SET nom_formule = :nom_formule,
                     description_formule = :description_formule,
@@ -92,12 +207,10 @@ class FormuleController {
                     id_categorie = :id_categorie
                 WHERE id_formule = :id";
 
-        $db = config::getConnexion();
-
         try {
-            $query = $db->prepare($sql);
-            $query->execute([
-                'id' => $id,
+            $query = $this->db->prepare($sql);
+            return $query->execute([
+                'id' => (int)$id,
                 'nom_formule' => $formule->getNomFormule(),
                 'description_formule' => $formule->getDescriptionFormule(),
                 'prix_formule' => $formule->getPrixFormule(),
@@ -106,32 +219,101 @@ class FormuleController {
                 'id_categorie' => $formule->getIdCategorie()
             ]);
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            die('Erreur updateFormule: ' . $e->getMessage());
         }
     }
 
-    public function deleteFormule($id) {
+    public function deleteFormule($id): bool
+    {
         $sql = "DELETE FROM formule WHERE id_formule = :id";
-        $db = config::getConnexion();
 
         try {
-            $query = $db->prepare($sql);
-            $query->execute(['id' => $id]);
+            $query = $this->db->prepare($sql);
+            return $query->execute(['id' => (int)$id]);
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            die('Erreur deleteFormule: ' . $e->getMessage());
         }
     }
 
-    public function countFormules() {
+    public function countFormules(): int
+    {
         $sql = "SELECT COUNT(*) AS total FROM formule";
-        $db = config::getConnexion();
 
         try {
-            $query = $db->query($sql);
-            $row = $query->fetch();
+            $query = $this->db->query($sql);
+            $row = $query->fetch(PDO::FETCH_ASSOC);
             return (int)$row['total'];
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            die('Erreur countFormules: ' . $e->getMessage());
+        }
+    }
+
+    public function countGarantiesAssociees(): int
+    {
+        $sql = "SELECT COUNT(*) AS total FROM formule_garantie";
+
+        try {
+            $query = $this->db->query($sql);
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            return (int)$row['total'];
+        } catch (Exception $e) {
+            die('Erreur countGarantiesAssociees: ' . $e->getMessage());
+        }
+    }
+
+    public function countGarantiesByFormule($idFormule): int
+    {
+        $sql = "
+            SELECT COUNT(*) AS total
+            FROM formule_garantie
+            WHERE id_formule = :id
+        ";
+
+        try {
+            $query = $this->db->prepare($sql);
+            $query->execute(['id' => (int)$idFormule]);
+            return (int)$query->fetchColumn();
+        } catch (Exception $e) {
+            die('Erreur countGarantiesByFormule: ' . $e->getMessage());
+        }
+    }
+
+    public function countContratsUsingFormule($idFormule): int
+    {
+        $sql = "
+            SELECT COUNT(*) AS total
+            FROM contrat
+            WHERE id_formule = :id
+        ";
+
+        try {
+            $query = $this->db->prepare($sql);
+            $query->execute(['id' => (int)$idFormule]);
+            return (int)$query->fetchColumn();
+        } catch (Exception $e) {
+            die('Erreur countContratsUsingFormule: ' . $e->getMessage());
+        }
+    }
+
+    public function canDeleteFormule($idFormule): bool
+    {
+        return $this->countContratsUsingFormule($idFormule) === 0;
+    }
+
+    public function countFormulesUtiliseesParContrats(): int
+    {
+        $sql = "
+            SELECT COUNT(DISTINCT id_formule) AS total
+            FROM contrat
+            WHERE id_formule IS NOT NULL
+        ";
+
+        try {
+            $query = $this->db->query($sql);
+            $row = $query->fetch(PDO::FETCH_ASSOC);
+            return (int)$row['total'];
+        } catch (Exception $e) {
+            die('Erreur countFormulesUtiliseesParContrats: ' . $e->getMessage());
         }
     }
 }

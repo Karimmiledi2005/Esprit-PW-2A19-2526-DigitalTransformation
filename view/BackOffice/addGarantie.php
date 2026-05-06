@@ -1,8 +1,11 @@
 <?php
+require_once '../../controller/GarantieController.php';
 require_once '../../controller/CategorieController.php';
-require_once '../../config/database.php';
+require_once '../../model/Garantie.php';
 
+$garantieC = new GarantieController();
 $categorieC = new CategorieController();
+
 $categories = $categorieC->listCategories();
 $errors = [];
 
@@ -38,46 +41,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        $db = config::getConnexion();
-
-        $check = $db->prepare("
-            SELECT COUNT(*)
-            FROM garantie
-            WHERE nom_garantie = :nom_garantie
-              AND id_categorie = :id_categorie
-
-        ");
-        $check->execute([
-            'nom_garantie' => $nom,
-            'id_categorie' => $idCategorie
-        ]);
-
-        if ((int)$check->fetchColumn() > 0) {
+        if ($garantieC->garantieExists($nom, $idCategorie)) {
             $errors[] = 'Cette garantie existe déjà dans cette catégorie.';
         } else {
             try {
-                $stmt = $db->prepare("
-                    INSERT INTO garantie (
-                        nom_garantie,
-                        description_garantie,
-                        plafond_couvert_garantie,
+                $garantie = new Garantie(
+                    $nom,
+                    $description,
+                    $plafond,
+                    $idCategorie
+                );
 
-                        id_categorie
-                    ) VALUES (
-                        :nom_garantie,
-                        :description_garantie,
-                        :plafond_couvert_garantie,
-
-                        :id_categorie
-                    )
-                ");
-
-                $stmt->execute([
-                    'nom_garantie' => $nom,
-                    'description_garantie' => $description,
-                    'plafond_couvert_garantie' => $plafond,
-                    'id_categorie' => $idCategorie
-                ]);
+                $garantieC->addGarantie($garantie);
 
                 header('Location: garanties_back.php');
                 exit();

@@ -92,6 +92,7 @@ $canEdit = in_array($status, ['en attente', 'refusé', 'refuse'], true);
     <link rel="stylesheet" href="assets/css/base.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/client.css">
+    <link rel="stylesheet" href="assets/css/contrat.css">
     <style>
         body { background: #f6f8ff; }
         .edit-card { max-width: 1050px; margin: 35px auto; padding: 28px; border-radius: 28px; border: 1px solid rgba(15,31,58,.10); background: rgba(255,255,255,.94); box-shadow: 0 24px 70px rgba(15,31,58,.10); }
