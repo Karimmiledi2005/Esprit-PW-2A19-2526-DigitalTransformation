@@ -5,6 +5,8 @@ const SINISTRE_LIST_API         = '../FrontOffice/sinistre_list.php';
 const SINISTRE_UPDATE_STATUT_API = '../FrontOffice/sinistre_update_statut.php';
 const SINISTRE_CREATE_API       = '../FrontOffice/sinistre_create.php';
 const SINISTRE_DELETE_API       = '../FrontOffice/sinistre_delete.php';
+const FRAUD_GET_API             = 'fraud_get.php';
+const FRAUD_ANALYSE_API         = 'fraud_analyse.php';
 
 let sinistres = [];   // chargé depuis la BDD
 let nextNum = 1000, currentPage = 1, deletingId = null;
@@ -25,13 +27,16 @@ async function loadSinistres() {
         const json = await res.json();
         if (json.success) {
             sinistres = json.data.map(s => ({
-                id:          s.id_sinistre,
-                contrat:     s.numero_contrat,
-                type:        s.type,
-                date:        s.date_declaration,
-                statut:      s.statut,
-                description: s.description,
-                client:      s.client_nom || '—',
+                id:             s.id_sinistre,
+                contrat:        s.numero_contrat,
+                type:           s.type,
+                date:           s.date_declaration,
+                statut:         s.statut,
+                description:    s.description,
+                client:         s.client_nom || '—',
+                fraudScore:     s.fraud_score  !== undefined ? s.fraud_score  : null,
+                fraudNiveau:    s.fraud_niveau !== undefined ? s.fraud_niveau : null,
+                fraudSuggestion:s.fraud_suggestion !== undefined ? s.fraud_suggestion : null,
             }));
             currentPage = 1;
             render();
@@ -233,6 +238,105 @@ function updateSortHeaders() {
   });
 }
 
+
+// ── Antifraud helpers ─────────────────────────────────────────────────────────
+const FRAUD_NIVEAU_LABELS = { faible:'Faible', moyen:'Moyen', eleve:'Élevé', critique:'Critique' };
+
+function renderFraudBadge(score, niveau) {
+  if (score === null || niveau === null) {
+    return '<span class="fraud-badge none"><i class="bi bi-shield"></i> —</span>';
+  }
+  const icons = { faible:'bi-shield-check', moyen:'bi-shield-exclamation', eleve:'bi-shield-x', critique:'bi-shield-fill' };
+  const icon  = icons[niveau] || 'bi-shield';
+  const label = FRAUD_NIVEAU_LABELS[niveau] || niveau;
+  return `<span class="fraud-badge ${niveau}"><i class="bi ${icon}"></i> ${label} (${score})</span>`;
+}
+
+async function reanalyserFraud(idSinistre) {
+  const btn = document.getElementById('fraudReanalyseBtn');
+  if (btn) { btn.classList.add('loading'); btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Analyse...'; }
+  try {
+    const fd = new FormData(); fd.append('id_sinistre', idSinistre);
+    const res  = await fetch(FRAUD_ANALYSE_API, { method: 'POST', body: fd });
+    const json = await res.json();
+    if (json.success) {
+      renderFraudPanel(json.data, idSinistre);
+      // Mettre à jour le badge dans le tableau
+      const s = sinistres.find(x => x.id == idSinistre);
+      if (s) { s.fraudScore = json.data.score_global; s.fraudNiveau = json.data.niveau_risque; s.fraudSuggestion = json.data.suggestion_ia; render(); }
+      showToast('Analyse antifraud terminée.', 'success');
+    } else {
+      showToast(json.message || 'Erreur analyse.', 'danger');
+    }
+  } catch(e) { showToast('Erreur réseau lors de l\'analyse.', 'danger'); }
+  finally { if (btn) { btn.classList.remove('loading'); btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Relancer l\'analyse'; } }
+}
+
+function renderFraudPanel(data, idSinistre) {
+  const panel = document.getElementById('fraudPanel');
+  if (!panel) return;
+  panel.style.display = '';
+  const niveauMap = { faible:'Faible', moyen:'Moyen', eleve:'Élevé', critique:'CRITIQUE' };
+  const suggMap   = { accepter:'Accepter', investiguer:'Investiguer', refuser:'Refuser' };
+  document.getElementById('fraudScoreNum').textContent  = data.score_global;
+  document.getElementById('fraudCircle').className      = 'fraud-score-circle ' + data.niveau_risque;
+  document.getElementById('fraudNiveauLabel').className = 'niveau-label ' + data.niveau_risque;
+  document.getElementById('fraudNiveauLabel').textContent = niveauMap[data.niveau_risque] || data.niveau_risque;
+  const pill = document.getElementById('fraudSuggestionPill');
+  pill.innerHTML = `<span class="suggestion-pill ${data.suggestion_ia}"><i class="bi bi-lightning-charge"></i> ${suggMap[data.suggestion_ia] || data.suggestion_ia}</span>`;
+
+  // Barres sous-scores
+  const sd = data.scores_detail || {};
+  document.getElementById('barTexteVal').textContent   = (sd.texte ?? '—') + '/100';
+  document.getElementById('barComportVal').textContent = (sd.comportement ?? '—') + '/100';
+  document.getElementById('barContratVal').textContent = (sd.contrat ?? '—') + '/100';
+  document.getElementById('barTexte').style.width   = (sd.texte  || 0) + '%';
+  document.getElementById('barComport').style.width = (sd.comportement || 0) + '%';
+  document.getElementById('barContrat').style.width = (sd.contrat || 0) + '%';
+
+  // Flags
+  const flagDefs = [
+    { key:'description_vague',   label:'Description vague',     icon:'bi-chat-square-dots' },
+    { key:'sinistres_multiples', label:'Sinistres multiples',   icon:'bi-exclamation-triangle' },
+    { key:'contrat_recent',      label:'Contrat récent',        icon:'bi-calendar-x' },
+    { key:'montant_eleve',       label:'Montant élevé',         icon:'bi-cash-stack' },
+    { key:'image_suspecte',      label:'Image suspecte',        icon:'bi-image' },
+  ];
+  const flags = data.flags || {};
+  document.getElementById('fraudFlags').innerHTML = flagDefs.map(f => {
+    const active = !!flags[f.key];
+    return `<span class="fraud-flag ${active ? 'active' : 'inactive'}"><i class="bi ${f.icon}"></i> ${f.label}</span>`;
+  }).join('');
+
+  // Recommandation
+  const rec = document.getElementById('fraudRecommandation');
+  if (rec) rec.textContent = data.recommandation || '—';
+
+  // Bouton relancer
+  const btn = document.getElementById('fraudReanalyseBtn');
+  if (btn) btn.setAttribute('onclick', `reanalyserFraud(${idSinistre})`);
+
+  // Date
+  const dt = document.getElementById('fraudAnalyseDate');
+  if (dt && data.date_analyse) dt.textContent = '— ' + data.date_analyse.substring(0,10);
+}
+
+async function loadFraudPanel(idSinistre) {
+  const panel = document.getElementById('fraudPanel');
+  if (!panel) return;
+  panel.style.display = '';
+  try {
+    const res  = await fetch(FRAUD_GET_API + '?id_sinistre=' + idSinistre);
+    const json = await res.json();
+    if (json.success && json.data) {
+      renderFraudPanel(json.data, idSinistre);
+    } else {
+      // Pas encore analysé : simple message sans bouton
+      panel.innerHTML += '<div style="padding:14px 18px;font-size:13px;color:var(--text-secondary);"><i class="bi bi-info-circle"></i> Aucune analyse disponible. Veuillez passer par l\'onglet "Traitements" pour analyser ce sinistre.</div>';
+    }
+  } catch(e) { /* silencieux */ }
+}
+
 function render() {
   const filtered=getFiltered(), total=filtered.length;
   const pages=Math.ceil(total/perPage)||1;
@@ -260,6 +364,7 @@ function render() {
             <option value="refuse"     ${s.statut==='refuse'    ?'selected':''}>Refusé</option>
           </select>
         </td>
+        <td>${renderFraudBadge(s.fraudScore, s.fraudNiveau)}</td>
         <td>
           <div class="actions">
             <button class="btn btn-outline btn-sm" onclick="viewSinistre(${s.id})" title="Voir"><i class="bi bi-eye"></i></button>
@@ -312,7 +417,29 @@ function viewSinistre(id){
       <div class="detail-field"><div class="detail-field-label"><i class="bi bi-person"></i> Client</div><div class="detail-field-value">${s.client||'—'}</div></div>
       <div class="detail-field"><div class="detail-field-label"><i class="bi bi-calendar3"></i> Date</div><div class="detail-field-value">${formatDate(s.date)}</div></div>
       <div class="detail-field full"><div class="detail-field-label"><i class="bi bi-chat-left-text"></i> Description</div><div class="detail-field-value" style="color:var(--text-secondary);">${s.description}</div></div>
+    </div>
+    <!-- ANTIFRAUD PANEL -->
+    <div class="fraud-panel" id="fraudPanel" style="display:none;">
+      <div class="fraud-panel-header">
+        <div class="fraud-panel-title"><i class="bi bi-shield-shaded"></i> Analyse Antifraud IA <span id="fraudAnalyseDate" style="font-weight:400;font-size:11px;color:var(--text-secondary);margin-left:4px;"></span></div>
+      </div>
+      <div class="fraud-score-row">
+        <div class="fraud-score-circle" id="fraudCircle"><span class="fraud-score-num" id="fraudScoreNum">—</span><span class="fraud-score-denom">/100</span></div>
+        <div class="fraud-score-meta">
+          <div class="niveau-label" id="fraudNiveauLabel">—</div>
+          <div id="fraudSuggestionPill"></div>
+          <div style="font-size:12px;color:var(--text-secondary);">Score de risque global calculé par l'IA</div>
+        </div>
+      </div>
+      <div class="fraud-bars">
+        <div class="fraud-bar-row"><div class="fraud-bar-label"><span><i class="bi bi-chat-text"></i> Analyse textuelle</span><span id="barTexteVal">—</span></div><div class="fraud-bar-track"><div class="fraud-bar-fill bar-texte" id="barTexte" style="width:0%"></div></div></div>
+        <div class="fraud-bar-row"><div class="fraud-bar-label"><span><i class="bi bi-person-lines-fill"></i> Comportement client</span><span id="barComportVal">—</span></div><div class="fraud-bar-track"><div class="fraud-bar-fill bar-comportement" id="barComport" style="width:0%"></div></div></div>
+        <div class="fraud-bar-row" style="margin-bottom:0;"><div class="fraud-bar-label"><span><i class="bi bi-file-earmark-text"></i> Profil contrat</span><span id="barContratVal">—</span></div><div class="fraud-bar-track"><div class="fraud-bar-fill bar-contrat" id="barContrat" style="width:0%"></div></div></div>
+      </div>
+      <div class="fraud-flags" id="fraudFlags"></div>
+      <div class="fraud-recommandation" id="fraudRecommandation"></div>
     </div>`;
+  loadFraudPanel(s.id);
   openModal('modalDetail');
 }
 

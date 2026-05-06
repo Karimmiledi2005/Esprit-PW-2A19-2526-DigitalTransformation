@@ -9,6 +9,9 @@ class Sinistre {
     private $photo_url;
     private $date_declaration;
     private $statut;
+    public $fraudScore;
+    public $fraudNiveau;
+    public $fraudSuggestion;
 
     // Constructor
     public function __construct($id_contrat, $id_user, $type, $description, $photo_url = null) {

@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../model/Traitement.php';
+require_once __DIR__ . '/../controller/EmailService.php'; // ← EMAIL
 
 class TraitementController
 {
@@ -92,7 +93,10 @@ class TraitementController
         $message    = trim($data['message_agent'] ?? '');
 
         if (!$idSinistre) return ['success' => false, 'message' => 'ID sinistre requis.'];
-        if (!$decision) return ['success' => false, 'message' => 'Decision requise.'];
+        if (!$decision)   return ['success' => false, 'message' => 'Decision requise.'];
+        if (!$nomAgent)   return ['success' => false, 'message' => 'Nom de l\'agent requis.'];
+        if ($montantRaw === '') return ['success' => false, 'message' => 'Montant requis.'];
+        if (!$statut)     return ['success' => false, 'message' => 'Statut requis.'];
         if ($this->traitementExists($idSinistre)) {
             return ['success' => false, 'message' => "Le sinistre #$idSinistre a deja un traitement enregistre.", 'code' => 409];
         }
@@ -118,6 +122,18 @@ class TraitementController
             $newStat = $statut === 'accepte' ? 'rembourse' : 'refuse';
             $s = $this->db->prepare("UPDATE sinistre SET statut=:s WHERE id_sinistre=:id");
             $s->execute([':s' => $newStat, ':id' => $idSinistre]);
+
+            // ── Email : décision finale ───────────────────────────────────────
+            try {
+                $emailService = new EmailService($this->db);
+                if ($statut === 'accepte') {
+                    $emailService->sendSinistreRembourse($idSinistre, $montant);
+                } else {
+                    $emailService->sendSinistreRefuse($idSinistre, $message ?: null);
+                }
+            } catch (Exception $e) {
+                error_log('[TraitementController] Email send error: ' . $e->getMessage());
+            }
         }
 
         return ['success' => true, 'message' => 'Traitement enregistre.', 'id' => $id];
@@ -129,7 +145,14 @@ class TraitementController
         
         $montantRaw = isset($data['montant']) ? trim($data['montant']) : '';
         $montant    = ($montantRaw !== '' && is_numeric($montantRaw)) ? (float)$montantRaw : null;
+        $nomAgent   = trim($data['nom_agent'] ?? '');
+        $decision   = trim($data['decision']  ?? '');
         $message    = trim($data['message_agent'] ?? '');
+
+        if (!$nomAgent) return ['success' => false, 'message' => 'Nom de l\'agent requis.'];
+        if ($decision === '')   return ['success' => false, 'message' => 'Decision requise.'];
+        if ($montantRaw === '') return ['success' => false, 'message' => 'Montant requis.'];
+        if (($data['statut'] ?? '') === '') return ['success' => false, 'message' => 'Statut requis.'];
 
         $stmt = $this->db->prepare("
             UPDATE traitement SET nom_agent=:nom_agent, decision=:decision, montant_indemnise=:montant, statut=:statut, message_agent=:message_agent
@@ -144,6 +167,34 @@ class TraitementController
             ':id'            => $id,
         ]);
 
+        // ── Email si décision finale prise lors de la mise à jour ─────────────
+        $newStatut = $data['statut'] ?? 'en_cours';
+        if (in_array($newStatut, ['accepte', 'refuse'])) {
+            // Récupérer l'id_sinistre lié à ce traitement
+            $stmtSin = $this->db->prepare("SELECT id_sinistre FROM traitement WHERE id_traitement=:id");
+            $stmtSin->execute([':id' => $id]);
+            $idSinistre = (int)$stmtSin->fetchColumn();
+
+            if ($idSinistre) {
+                // Mettre à jour le statut du sinistre
+                $newSinistreStat = $newStatut === 'accepte' ? 'rembourse' : 'refuse';
+                $sStmt = $this->db->prepare("UPDATE sinistre SET statut=:s WHERE id_sinistre=:id");
+                $sStmt->execute([':s' => $newSinistreStat, ':id' => $idSinistre]);
+
+                // Envoyer email
+                try {
+                    $emailService = new EmailService($this->db);
+                    if ($newStatut === 'accepte') {
+                        $emailService->sendSinistreRembourse($idSinistre, $montant);
+                    } else {
+                        $emailService->sendSinistreRefuse($idSinistre, $message ?: null);
+                    }
+                } catch (Exception $e) {
+                    error_log('[TraitementController] Email update error: ' . $e->getMessage());
+                }
+            }
+        }
+
         return ['success' => true, 'message' => 'Traitement mis a jour.'];
     }
 
@@ -151,9 +202,22 @@ class TraitementController
     {
         if (!$id) return ['success' => false, 'message' => 'ID manquant.'];
         
+        // 1. Récupérer l'id_sinistre associé avant suppression
+        $stmtGet = $this->db->prepare("SELECT id_sinistre FROM traitement WHERE id_traitement=:id");
+        $stmtGet->execute([':id' => $id]);
+        $idSinistre = $stmtGet->fetchColumn();
+
+        // 2. Supprimer le traitement
         $stmt = $this->db->prepare("DELETE FROM traitement WHERE id_traitement=:id");
         $stmt->execute([':id' => $id]);
-        return ['success' => true, 'message' => 'Traitement supprime.'];
+
+        // 3. Supprimer le sinistre associé si trouvé
+        if ($idSinistre) {
+            $stmtS = $this->db->prepare("DELETE FROM sinistre WHERE id_sinistre=:id");
+            $stmtS->execute([':id' => $idSinistre]);
+        }
+
+        return ['success' => true, 'message' => 'Traitement et sinistre supprimés.'];
     }
 
     public function getStats(): array

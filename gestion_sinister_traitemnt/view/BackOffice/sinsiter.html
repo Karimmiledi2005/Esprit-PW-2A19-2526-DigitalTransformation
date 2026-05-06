@@ -12,6 +12,58 @@
     <link rel="stylesheet" href="assets/css/admin-users.css">
     <script src="assets/js/validation.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- ANTIFRAUD STYLES -->
+  <style>
+  .fraud-badge { display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.4px;white-space:nowrap; }
+  .fraud-badge i { font-size:10px; }
+  .fraud-badge.faible   { background:rgba(46,196,182,.15);color:#2ec4b6;border:1px solid rgba(46,196,182,.3); }
+  .fraud-badge.moyen    { background:rgba(244,162,97,.15);color:#f4a261;border:1px solid rgba(244,162,97,.3); }
+  .fraud-badge.eleve    { background:rgba(230,57,70,.15);color:#e63946;border:1px solid rgba(230,57,70,.3); }
+  .fraud-badge.critique { background:rgba(180,0,50,.25);color:#ff4d6d;border:1px solid rgba(180,0,50,.4);animation:fraud-pulse 1.4s infinite; }
+  .fraud-badge.none     { background:rgba(255,255,255,.04);color:var(--text-secondary);border:1px dashed var(--glass-border); }
+  @keyframes fraud-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,77,109,.4)} 50%{box-shadow:0 0 0 6px rgba(255,77,109,0)} }
+  .fraud-panel { margin-top:20px;background:rgba(255,255,255,.03);border:1px solid var(--glass-border);border-radius:var(--radius-md);overflow:hidden; }
+  .fraud-panel-header { display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--glass-border);background:rgba(255,255,255,.02); }
+  .fraud-panel-title  { display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text-primary); }
+  .fraud-panel-title i { color:var(--accent); }
+  .fraud-score-row { display:flex;align-items:center;gap:16px;padding:16px 18px;border-bottom:1px solid var(--glass-border); }
+  .fraud-score-circle { width:72px;height:72px;border-radius:50%;border:3px solid var(--glass-border);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:var(--glass-bg);transition:border-color .3s; }
+  .fraud-score-circle.faible   { border-color:#2ec4b6; }
+  .fraud-score-circle.moyen    { border-color:#f4a261; }
+  .fraud-score-circle.eleve    { border-color:#e63946; }
+  .fraud-score-circle.critique { border-color:#ff4d6d;box-shadow:0 0 14px rgba(255,77,109,.3); }
+  .fraud-score-num   { font-size:22px;font-weight:800;line-height:1;color:#fff; }
+  .fraud-score-denom { font-size:10px;color:var(--text-secondary); }
+  .fraud-score-meta  { flex:1; }
+  .fraud-score-meta .niveau-label { font-size:15px;font-weight:700;margin-bottom:4px; }
+  .niveau-label.faible   { color:#2ec4b6; }
+  .niveau-label.moyen    { color:#f4a261; }
+  .niveau-label.eleve    { color:#e63946; }
+  .niveau-label.critique { color:#ff4d6d; }
+  .suggestion-pill { display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:8px; }
+  .suggestion-pill.accepter    { background:rgba(46,196,182,.15);color:#2ec4b6;border:1px solid rgba(46,196,182,.3); }
+  .suggestion-pill.investiguer { background:rgba(244,162,97,.15);color:#f4a261;border:1px solid rgba(244,162,97,.3); }
+  .suggestion-pill.refuser     { background:rgba(230,57,70,.15);color:#e63946;border:1px solid rgba(230,57,70,.3); }
+  .fraud-bars { padding:14px 18px;border-bottom:1px solid var(--glass-border); }
+  .fraud-bar-row { margin-bottom:10px; }
+  .fraud-bar-label { display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);margin-bottom:4px; }
+  .fraud-bar-track { height:5px;background:var(--glass-bg);border-radius:99px;overflow:hidden; }
+  .fraud-bar-fill  { height:100%;border-radius:99px;transition:width .6s ease; }
+  .bar-texte        { background:linear-gradient(90deg,#00b4d8,#0096c7); }
+  .bar-comportement { background:linear-gradient(90deg,#f4a261,#e76f51); }
+  .bar-contrat      { background:linear-gradient(90deg,#2ec4b6,#219ebc); }
+  .fraud-flags { display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px;border-bottom:1px solid var(--glass-border); }
+  .fraud-flag { display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600; }
+  .fraud-flag.active   { background:rgba(230,57,70,.15);color:#e63946;border:1px solid rgba(230,57,70,.3); }
+  .fraud-flag.inactive { background:rgba(255,255,255,.04);color:var(--text-secondary);border:1px solid var(--glass-border);text-decoration:line-through;opacity:.5; }
+  .fraud-recommandation { padding:14px 18px;font-size:13px;line-height:1.7;color:var(--text-secondary);font-style:italic;border-left:3px solid var(--accent);margin:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:rgba(0,180,216,.05); }
+  .fraud-reanalyse-btn { display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-secondary);cursor:pointer;transition:var(--transition); }
+  .fraud-reanalyse-btn:hover { border-color:var(--accent);color:var(--accent); }
+  .fraud-reanalyse-btn.loading { opacity:.6;pointer-events:none; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .spin { display:inline-block;animation:spin .8s linear infinite; }
+  </style>
 </head>
   <style>
     /* ── Status select inline ── */
@@ -108,7 +160,7 @@
 
     <nav class="sidebar-nav">
       <div class="nav-section">Principal</div>
-      <a class="nav-item" href="#">
+      <a class="nav-item" href="dashboard.html">
         <i class="bi bi-grid-1x2"></i> Tableau de bord
       </a>
 
@@ -275,6 +327,7 @@
                 <th class="sortable" data-sort="client" onclick="toggleSort('client')">Client</th>
                 <th class="sortable" data-sort="date" onclick="toggleSort('date')">Date</th>
                 <th class="sortable" data-sort="statut" onclick="toggleSort('statut')">Statut</th>
+                <th><i class="bi bi-shield-shaded"></i> Risque IA</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -326,5 +379,6 @@
 
 <script src="assets/js/sinistre.js"></script>
 
+<script src="assets/js/main.js"></script>
 </body>
 </html>

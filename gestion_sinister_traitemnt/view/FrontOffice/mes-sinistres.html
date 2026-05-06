@@ -201,6 +201,34 @@
         /* ===== BADGE EXTRA ===== */
         .badge-info   { background: rgba(255,107,26,0.10); color: #FF6B1A; }
         .badge-danger { background: rgba(230,57,70,0.10);  color: var(--danger); }
+        .badge-fraud  { 
+            background: linear-gradient(135deg, #000, #444); 
+            color: #fff; 
+            border: 1px solid #FFD700;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            text-transform: uppercase;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+        }
+        .fraud-banner {
+            background: rgba(0, 0, 0, 0.05);
+            border: 2px dashed #000;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            animation: pulse-border 2s infinite;
+        }
+        @keyframes pulse-border {
+            0% { border-color: #000; }
+            50% { border-color: #f00; }
+            100% { border-color: #000; }
+        }
+        .fraud-banner i { font-size: 30px; color: #000; }
+        .fraud-title { font-weight: 700; color: #000; font-size: 14px; margin-bottom: 2px; }
+        .fraud-desc { font-size: 12px; color: #444; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -422,6 +450,8 @@ async function loadSinistres() {
                 date:        s.date_declaration,
                 statut:      s.statut,
                 photo:       s.photo_url || '',
+                fraud_score:  s.fraud_score,
+                fraud_niveau: s.fraud_niveau,
                 commentaires: [],
                 traitements:  [],
             }));
@@ -441,11 +471,15 @@ function renderList() {
     if (!sinistres.length) { el.innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;">Aucun sinistre déclaré.</div>`; return; }
     el.innerHTML = sinistres.map(s => {
         const st = STATUTS[s.statut] || STATUTS.en_attente;
+        const isFraud = s.statut === 'refuse' && (s.fraud_niveau === 'critique' || s.fraud_niveau === 'eleve');
+        const badgeLabel = isFraud ? 'Refusé (Fraude)' : st.label;
+        const badgeClass = isFraud ? 'badge-fraud' : st.css;
+
         const canEdit = s.statut === 'en_attente';
         return `<div class="sinistre-box ${selectedId===s.id?'selected':''}" style="cursor:pointer;margin-bottom:12px;" onclick="selectSinistre(${s.id})">
             <div class="sinistre-header">
                 <div class="sinistre-title">${s.type}</div>
-                <span class="badge ${st.css}">${st.label}</span>
+                <span class="badge ${badgeClass}">${badgeLabel}</span>
             </div>
             <div class="sinistre-meta">Déclaré le ${fmt(s.date)} — Contrat ${s.contrat}</div>
             ${s.statut==='rembourse'&&s.montant?`<div class="montant-banner" style="margin-top:10px;margin-bottom:4px;"><i class="bi bi-cash-stack"></i><div><div class="montant-banner-label">Montant remboursé</div><div class="montant-banner-amount">${s.montant} DT</div></div></div>`:''}
@@ -479,6 +513,8 @@ async function selectSinistre(id) {
                 date:        row.date_declaration,
                 statut:      row.statut,
                 photo:       row.photo_url || '',
+                fraud_score:  row.fraud_score,
+                fraud_niveau: row.fraud_niveau,
                 commentaires: [],
                 traitements:  [],
             }));
@@ -541,6 +577,16 @@ async function selectSinistre(id) {
             <div class="sinistre-meta">Contrat ${s.contrat} — ${fmt(s.date)}</div>
             <p style="font-size:13px;color:var(--text-secondary);margin:10px 0 12px;">${s.description}</p>
             <img src="${s.photo}" style="width:100%;border-radius:10px;margin-bottom:14px;" alt="photo" onerror="this.style.display='none'">
+
+            ${s.statut === 'refuse' && (s.fraud_niveau === 'critique' || s.fraud_niveau === 'eleve') ? `
+            <div class="fraud-banner">
+                <i class="bi bi-shield-lock-fill"></i>
+                <div>
+                    <div class="fraud-title">Dossier de Fraude Identifié</div>
+                    <div class="fraud-desc">Votre dossier a été refusé suite à la détection d'incohérences majeures. Votre compte a été signalé à notre service de conformité.</div>
+                </div>
+            </div>
+            ` : ''}
 
             <div class="sinistre-title" style="margin-bottom:10px;">Suivi du statut</div>
             <div class="timeline" style="margin-bottom:16px;">

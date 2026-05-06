@@ -15,6 +15,9 @@ foreach ($sinistres as $s) {
         'photo_url' => $s->getPhotoUrl(),
         'id_contrat' => $s->getIdContrat(),
         'id_user' => $s->getIdUser(),
+        'fraud_score' => $s->fraudScore,
+        'fraud_niveau' => $s->fraudNiveau,
+        'fraud_suggestion' => $s->fraudSuggestion,
     ];
 }
 
