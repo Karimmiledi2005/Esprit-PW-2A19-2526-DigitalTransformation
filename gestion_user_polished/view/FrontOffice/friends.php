@@ -23,6 +23,11 @@ try {
         $result = $controller->handleFriendAction($my_id, $friend_id, $action);
         echo json_encode($result);
 
+    } elseif ($action === 'remove' || $action === 'reject') {
+        $friend_id = (int)($data['friend_id'] ?? 0);
+        $result = $controller->handleFriendAction($my_id, $friend_id, 'remove');
+        echo json_encode($result);
+
     } elseif ($action === 'list') {
         $result = $controller->getSocialData($my_id);
         echo json_encode(array_merge(["success" => true], $result));

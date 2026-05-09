@@ -5,10 +5,10 @@
     <title>Mes Sinistres — Protex</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="assets/css/variables.css">
-    <link rel="stylesheet" href="assets/css/base.css">
-    <link rel="stylesheet" href="assets/css/layout.css">
-    <link rel="stylesheet" href="assets/css/client.css">
+    <link rel="stylesheet" href="user/css/variables.css">
+    <link rel="stylesheet" href="user/css/base.css">
+    <link rel="stylesheet" href="user/css/layout.css">
+    <link rel="stylesheet" href="user/css/client.css">
     <style>
         /* ===== TOAST ===== */
         .toast-notif {
@@ -379,11 +379,11 @@
     <span id="toastMsg"></span>
 </div>
 
-<script src="assets/js/main.js"></script>
+<script src="user/js/main.js"></script>
 <script>
 let sinistres = [
-    { id: 1, contrat: '#1023', type: 'Accident auto', description: 'Accident sur autoroute A1, choc arrière.', date: '2026-04-05', statut: 'en_attente', montant: null, photo: 'assets/img/sample.jpg', commentaires: [], traitements: [{ num:'T1', decision:'Documents reçus, en cours de vérification', date:'02/04/2026', montant:null }] },
-    { id: 2, contrat: '#998',  type: 'Dégât des eaux', description: 'Inondation cuisine suite rupture canalisation.', date: '2026-04-01', statut: 'rembourse', montant: 300, photo: 'assets/img/sample.jpg', commentaires: [{ texte:'Merci pour le traitement rapide !', date:'05/04/2026' }], traitements: [{ num:'T1', decision:'Documents reçus', date:'02/04/2026', montant:null }, { num:'T2', decision:'Sinistre validé après vérification', date:'05/04/2026', montant:300 }] }
+    { id: 1, contrat: '#1023', type: 'Accident auto', description: 'Accident sur autoroute A1, choc arrière.', date: '2026-04-05', statut: 'en_attente', montant: null, photo: 'user/img/sample.jpg', commentaires: [], traitements: [{ num:'T1', decision:'Documents reçus, en cours de vérification', date:'02/04/2026', montant:null }] },
+    { id: 2, contrat: '#998',  type: 'Dégât des eaux', description: 'Inondation cuisine suite rupture canalisation.', date: '2026-04-01', statut: 'rembourse', montant: 300, photo: 'user/img/sample.jpg', commentaires: [{ texte:'Merci pour le traitement rapide !', date:'05/04/2026' }], traitements: [{ num:'T1', decision:'Documents reçus', date:'02/04/2026', montant:null }, { num:'T2', decision:'Sinistre validé après vérification', date:'05/04/2026', montant:300 }] }
 ];
 
 let editingId  = null;

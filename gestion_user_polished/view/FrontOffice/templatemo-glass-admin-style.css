@@ -1512,6 +1512,54 @@ a {
     box-shadow: 0 0 20px rgba(52, 211, 153, 0.2);
 }
 
+/* ===== SELECT DROPDOWN STYLING ===== */
+select.form-input {
+    width: 100%;
+    padding: 14px 18px;
+    background-color: #ffffff !important;
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: #15233C !important;
+    font-family: inherit;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    appearance: none;
+    padding-right: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2315233C' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat !important;
+    background-position: right 14px center !important;
+    background-size: 12px 12px !important;
+    background-attachment: local;
+}
+
+select.form-input:hover {
+    border-color: var(--emerald-light);
+}
+
+select.form-input:focus {
+    outline: none;
+    border-color: var(--emerald-light);
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.2);
+}
+
+select.form-input option {
+    background-color: #ffffff !important;
+    color: #15233C !important;
+    padding: 12px 8px !important;
+    margin: 2px 0 !important;
+    line-height: 1.5 !important;
+}
+
+select.form-input option:checked {
+    background-color: rgba(52, 211, 153, 0.3) !important;
+    color: #15233C !important;
+}
+
+select.form-input option:disabled {
+    color: rgba(21, 35, 60, 0.5) !important;
+}
+
 .form-row {
     display: flex;
     align-items: center;

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="templatemo-glass-admin-style.css">
-    <link rel="stylesheet" href="assets/css/validation.css">
+    <link rel="stylesheet" href="user/css/validation.css">
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <style>
         /* ===== COOKIE BANNER ===== */
@@ -273,7 +273,7 @@
     </div>
 
     <script src="templatemo-glass-admin-script.js"></script>
-    <script src="assets/js/validation.js"></script>
+    <script src="user/js/validation.js"></script>
     <script>
         // Limiter la date de naissance &agrave; 18 ans dans le pass&eacute;
         document.addEventListener('DOMContentLoaded', function() {
@@ -382,9 +382,13 @@
                     
                     if (data.success) {
                         // Pr&eacute;-remplir les champs du formulaire
-                        if (data.data.nom) document.querySelector('input[name="nom"]').value = data.data.nom;
-                        if (data.data.prenom) document.querySelector('input[name="prenom"]').value = data.data.prenom;
-                        if (data.data.date_naissance) document.querySelector('input[name="date_naissance"]').value = data.data.date_naissance;
+                        fillOcrField('input[name="nom"]', data.data.nom);
+                        fillOcrField('input[name="prenom"]', data.data.prenom);
+                        fillOcrField('input[name="date_naissance"]', normalizeOcrDate(data.data.date_naissance));
+                        fillOcrField('input[name="cin"]', data.data.cin_number);
+                        fillOcrField('input[name="email"]', data.data.email);
+                        fillOcrField('input[name="telephone"]', data.data.telephone);
+                        fillOcrField('input[name="adresse"]', data.data.adresse);
                         
                         const confiance = Math.round(data.data.confiance * 100);
                         document.getElementById('cinResult').style.display = 'block';
@@ -392,6 +396,7 @@
                             <div style="background:rgba(46,213,115,0.1); border:1px solid rgba(46,213,115,0.3); border-radius:10px; padding:12px; margin-top:10px;">
                                 <div style="color:#2ed573; font-weight:700; margin-bottom:6px;">&#9989; Document analys&eacute; &mdash; Confiance : ${confiance}%</div>
                                 <div style="font-size:12px; color:rgba(255,255,255,0.6);">Nom: ${data.data.nom || '&mdash;'} | Pr&eacute;nom: ${data.data.prenom || '&mdash;'} | N&eacute;(e): ${data.data.date_naissance || '&mdash;'}</div>
+                                <div style="font-size:12px; color:rgba(255,255,255,0.55); margin-top:4px;">Email: ${data.data.email || '&mdash;'} | T&eacute;l: ${data.data.telephone || '&mdash;'} | Adresse: ${data.data.adresse || '&mdash;'}</div>
                                 <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-top:4px;">V&eacute;rifiez et corrigez les champs si n&eacute;cessaire</div>
                             </div>`;
                     } else {
@@ -408,6 +413,24 @@
                 }
             };
             reader.readAsDataURL(file);
+        }
+
+        function normalizeOcrDate(value) {
+            if (!value) return '';
+            const text = String(value).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+            const match = text.match(/^(\d{2})[\/\.](\d{2})[\/\.](\d{4})$/);
+            if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+            return text;
+        }
+
+        function fillOcrField(selector, value) {
+            if (!value) return;
+            const field = document.querySelector(selector);
+            if (!field) return;
+            field.value = value;
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
         function resetCINUpload() {

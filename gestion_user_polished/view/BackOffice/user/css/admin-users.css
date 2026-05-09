@@ -288,7 +288,53 @@ tbody td { padding: 14px 16px; color: var(--text-primary); vertical-align: middl
 .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,180,216,0.12); }
 .form-control::placeholder { color: rgba(245,245,244,0.35); }
 .form-control.error { border-color: var(--danger); }
-select.form-control option { background: #0d2845; }
+
+/* ===== SELECT DROPDOWN STYLING ===== */
+select.form-control {
+    appearance: none;
+    padding-right: 40px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ffffff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat !important;
+    background-position: right 14px center !important;
+    background-size: 12px 12px !important;
+    background-color: #0d2845 !important;
+    color: #ffffff !important;
+    cursor: pointer;
+    background-attachment: local;
+}
+
+select.form-control:hover {
+    border-color: var(--accent);
+    background-color: #0d2845 !important;
+}
+
+select.form-control:focus {
+    background-color: #0d2845 !important;
+    color: #ffffff !important;
+}
+
+select.form-control option {
+    background-color: #0d2845 !important;
+    color: #ffffff !important;
+    padding: 12px 8px !important;
+    margin: 2px 0 !important;
+    line-height: 1.5 !important;
+}
+
+select.form-control option:hover {
+    background-color: rgba(0, 180, 216, 0.3) !important;
+    color: #ffffff !important;
+}
+
+select.form-control option:checked {
+    background-color: rgba(0, 180, 216, 0.5) !important;
+    color: #ffffff !important;
+}
+
+select.form-control option:disabled {
+    color: rgba(255, 255, 255, 0.5) !important;
+}
+
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .form-hint { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
 .form-error { font-size: 11px; color: var(--danger); margin-top: 4px; display: none; }

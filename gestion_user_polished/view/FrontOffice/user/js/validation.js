@@ -34,7 +34,7 @@ nom: {
             if (v.length < 2) return 'Le nom doit contenir au moins 2 lettres';
             if (v.length > 50) return 'Le nom ne doit pas dépasser 50 caractères';
             if (/[0-9]/.test(v)) return 'Le nom ne doit pas contenir de chiffres';
-            if (!/^[a-zA-ZÀ-ÿ\s'\-]+$/.test(v)) return 'Le nom ne doit contenir que des lettres';
+            if (!/^[a-zA-ZÀ-ÿ\u0600-\u06FF\s'\-]+$/.test(v)) return 'Le nom ne doit contenir que des lettres';
             return null;
         }
     },
@@ -44,7 +44,7 @@ nom: {
             if (v.length < 2) return 'Le prénom doit contenir au moins 2 lettres';
             if (v.length > 50) return 'Le prénom ne doit pas dépasser 50 caractères';
             if (/[0-9]/.test(v)) return 'Le prénom ne doit pas contenir de chiffres';
-            if (!/^[a-zA-ZÀ-ÿ\s'\-]+$/.test(v)) return 'Le prénom ne doit contenir que des lettres';
+            if (!/^[a-zA-ZÀ-ÿ\u0600-\u06FF\s'\-]+$/.test(v)) return 'Le prénom ne doit contenir que des lettres';
             return null;
         }
     },

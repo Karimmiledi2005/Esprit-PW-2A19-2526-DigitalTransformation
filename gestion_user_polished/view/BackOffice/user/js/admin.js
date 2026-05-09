@@ -40,7 +40,7 @@ function saveUserAdd() {
     data.append('csrf_token', typeof csrfToken !== 'undefined' ? csrfToken : '');
 
     if (role === 'admin')  data.append('niveau_acces',  document.getElementById('fNiveau').value || 1);
-    if (role === 'agent' || role === 'client')  data.append('id_agence', document.getElementById('fAgence').value);
+    if (role === 'admin' || role === 'agent' || role === 'client')  data.append('id_agence', document.getElementById('fAgence').value);
     if (role === 'agent')  data.append('salaire', document.getElementById('fSalaire').value);
     // CLIENT : numero_client est généré automatiquement côté serveur, ne pas l'envoyer
 
@@ -80,7 +80,7 @@ function saveUser() {
         data.append('csrf_token', typeof csrfToken !== 'undefined' ? csrfToken : '');
 
         if (role === 'admin')  data.append('niveau_acces',  document.getElementById('fNiveau').value || 1);
-        if (role === 'agent' || role === 'client')  data.append('id_agence', document.getElementById('fAgence').value);
+        if (role === 'admin' || role === 'agent' || role === 'client')  data.append('id_agence', document.getElementById('fAgence').value);
         if (role === 'agent')  data.append('salaire', document.getElementById('fSalaire').value);
         // CLIENT : numero_client ne peut pas être modifié
 
@@ -122,9 +122,14 @@ function toggleStatut(id) {
                 loadStats();
             } else {
                 alert('Erreur : ' + res.message);
+                // Recharger pour remettre le toggle dans le bon état en cas d'échec
+                render();
             }
         })
-        .catch(err => console.error(err));
+        .catch(err => {
+            console.error(err);
+            render();
+        });
 }
 
 // ===== SUPPRIMER =====

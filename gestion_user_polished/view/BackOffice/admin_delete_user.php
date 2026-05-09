@@ -22,6 +22,10 @@ if ($id_user === (int)$_SESSION['user_id']) {
 }
 
 try {
+    // Sécurité supplémentaire : l'agent ne peut pas supprimer
+    if (($_SESSION['role']??'') === 'agent') {
+        throw new Exception("Les agents n'ont pas la permission de supprimer.");
+    }
     $controller = new UserController();
     $controller->deleteUser($id_user, $_POST['csrf_token'] ?? '');
     echo json_encode(["success"=>true,"message"=>"Utilisateur supprimé"]);

@@ -9,7 +9,7 @@
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="templatemo-glass-admin-style.css">
-    <link rel="stylesheet" href="assets/css/validation.css">
+    <link rel="stylesheet" href="user/css/validation.css">
 
 
     <style>
@@ -916,6 +916,14 @@
                         </div>
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label" for="agenceSelect">Agence *</label>
+                        <select name="id_agence" id="agenceSelect" class="form-input" required>
+                            <option value="">-- Sélectionner une agence --</option>
+                        </select>
+                        <div id="agenceError" style="font-size:11px; margin-top:4px; color:#ff6b6b; display:none;"></div>
+                    </div>
+
                     <div class="grid-2-col">
                         <div class="form-group">
                             <input type="password" name="password" id="reg-password" class="form-input"
@@ -1188,7 +1196,7 @@
         </div>
     </div>
 
-    <script src="assets/js/validation.js"></script>
+    <script src="user/js/validation.js"></script>
     <script>
         // Double Slide Logic
         const signUpButton = document.getElementById('signUp');
@@ -1301,7 +1309,35 @@
             }
         });
 
+        loadAgences();
 
+        async function loadAgences() {
+            const select = document.getElementById('agenceSelect');
+            if (!select) return;
+            const errorDiv = document.getElementById('agenceError');
+            try {
+                const res = await fetch('get_agences.php');
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data)) {
+                    select.innerHTML = '<option value="">-- Sélectionner une agence --</option>';
+                    data.data.forEach(agence => {
+                        const option = document.createElement('option');
+                        option.value = agence.id_agence;
+                        option.textContent = agence.nom_agence;
+                        select.appendChild(option);
+                    });
+                    if (errorDiv) errorDiv.style.display = 'none';
+                } else if (errorDiv) {
+                    errorDiv.textContent = 'Aucune agence disponible';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                if (errorDiv) {
+                    errorDiv.textContent = 'Erreur lors du chargement des agences';
+                    errorDiv.style.display = 'block';
+                }
+            }
+        }
 
         // ==========================================
         // FORGOT PASSWORD LOGIC
@@ -1437,43 +1473,50 @@
                 const container = document.getElementById('puzzleContainer');
                 
                 if (currentPuzzleType === 'slider') {
+                    // S'assurer que les données existent avant de générer le HTML
+                    const imgBg = data.image_bg || "";
+                    const imgPiece = data.piece || "";
+                    
                     container.innerHTML = `
-                        <div style="position:relative; display:inline-block;">
-                            <img src="data:image/png;base64,${data.image_bg}" style="border-radius:10px; width:300px;">
-                            <div id="sliderPiece" style="position:absolute; top:50%; left:0; transform:translateY(-50%); cursor:grab;">
-                                <img src="data:image/png;base64,${data.piece}" style="border:2px solid #00b4d8; border-radius:6px;">
+                        <div style="position:relative; display:inline-block; background:rgba(0,0,0,0.1); width:300px; height:150px; border-radius:10px; overflow:hidden;">
+                            ${imgBg ? `<img src="data:image/png;base64,${imgBg}" style="width:300px; height:150px; display:block;">` : '<div style="background:#333; height:150px;"></div>'}
+                            <div id="sliderPiece" style="position:absolute; top:${data.y || 50}px; left:0; cursor:grab; z-index:10;">
+                                ${imgPiece ? `<img src="data:image/png;base64,${imgPiece}" style="border:2px solid #00b4d8; border-radius:6px; height:40px; width:40px;">` : ''}
                             </div>
                         </div>
                         <input type="range" id="sliderControl" min="0" max="260" value="0" style="width:300px; margin-top:10px; accent-color:#00b4d8;">
                         <button type="button" onclick="verifyCaptcha()" style="margin-top:8px; background:#00b4d8; color:#fff; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; width:100%;">Valider ✓</button>`;
                     
                     document.getElementById('sliderControl').addEventListener('input', function() {
-                        document.getElementById('sliderPiece').style.left = this.value + 'px';
+                        const piece = document.getElementById('sliderPiece');
+                        if (piece) piece.style.left = this.value + 'px';
                     });
                     window._captchaCorrectX = data.correct_x;
                 }
                 
                 if (currentPuzzleType === 'intrus') {
-                    const grid = data.images.map((img, i) => 
+                    const grid = (data.images || []).map((img, i) => 
                         `<img src="data:image/png;base64,${img}" onclick="selectIntrus(${i}, this)" 
-                        style="width:88px; border-radius:8px; cursor:pointer; border:2px solid transparent; transition:0.2s;">`
+                        style="width:88px; border-radius:8px; cursor:pointer; border:2px solid transparent; transition:0.2s;" onerror="this.style.display='none'">`
                     ).join('');
                     container.innerHTML = `
-                        <div style="font-size:13px; color:rgba(255,255,255,0.7); margin-bottom:10px; text-align:center;">&#128269; Clique sur l'image diff&eacute;rente des autres</div>
+                        <div style="font-size:13px; color:rgba(255,255,255,0.7); margin-bottom:10px; text-align:center;">&#128269; Cliquez sur l'image diff&eacute;rente</div>
                         <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; justify-content:center;">${grid}</div>`;
                     window._captchaSelected = null;
                 }
                 
                 if (currentPuzzleType === 'rotation') {
+                    const imgRot = data.image || "";
                     container.innerHTML = `
                         <div style="text-align:center;">
-                            <div style="font-size:13px; color:rgba(255,255,255,0.7); margin-bottom:10px;">&#128256; Remets l'image dans le bon sens</div>
-                            <img id="rotImg" src="data:image/png;base64,${data.image}" style="width:120px; border-radius:10px; transition:transform 0.1s;">
+                            <div style="font-size:13px; color:rgba(255,255,255,0.7); margin-bottom:10px;">&#128256; Remettez l'image dans le bon sens</div>
+                            ${imgRot ? `<img id="rotImg" src="data:image/png;base64,${imgRot}" style="width:120px; border-radius:10px; transition:transform 0.1s;">` : '<div style="height:120px; background:#333; display:flex; align-items:center; justify-content:center;">Image non disponible</div>'}
                             <input type="range" id="rotControl" min="0" max="359" value="0" style="width:100%; margin-top:12px; accent-color:#00b4d8;">
                             <button type="button" onclick="verifyCaptcha()" style="margin-top:8px; background:#00b4d8; color:#fff; border:none; border-radius:8px; padding:8px 20px; cursor:pointer; width:100%;">Valider ✓</button>
                         </div>`;
                     document.getElementById('rotControl').addEventListener('input', function() {
-                        document.getElementById('rotImg').style.transform = `rotate(${this.value}deg)`;
+                        const img = document.getElementById('rotImg');
+                        if (img) img.style.transform = `rotate(${this.value}deg)`;
                     });
                     window._captchaCorrectAngle = data.correct_angle;
                 }
@@ -1497,22 +1540,29 @@
             if (currentPuzzleType === 'intrus') { if (window._captchaSelected === null) return; body.index = window._captchaSelected; }
             if (currentPuzzleType === 'rotation') body.angle = parseInt(document.getElementById('rotControl').value);
             
-            const action = currentPuzzleType === 'slider' ? 'verify' : currentPuzzleType === 'intrus' ? 'verify_intrus' : 'verify_rotation';
-            const res = await fetch(`http://localhost:5006/puzzle/${action}`, {
-                method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
-            });
-            const data = await res.json();
-            const status = document.getElementById('captchaStatus');
-            status.style.display = 'block';
-            if (data.success) {
-                captchaVerified = true;
-                document.getElementById('puzzleContainer').innerHTML = '<div style="text-align:center; color:#2ed573; font-size:20px; padding:10px;">&#9989; V&eacute;rification r&eacute;ussie !</div>';
-                status.style.color = '#2ed573';
-                status.textContent = 'Vous &ecirc;tes humain !';
-            } else {
-                status.style.color = '#ff4757';
-                status.textContent = '&#10060; Incorrect &mdash; Nouveau puzzle charg&eacute;';
-                setTimeout(loadPuzzle, 1000);
+            // Corriger l'URL si on utilise 'slider' car puzzle_engine.py attend /puzzle/verify
+            // alors que loadPuzzle utilise /puzzle/slider, /puzzle/intrus, etc.
+            let endpoint = currentPuzzleType === 'slider' ? 'verify' : currentPuzzleType === 'intrus' ? 'verify_intrus' : 'verify_rotation';
+            
+            try {
+                const res = await fetch(`http://localhost:5006/puzzle/${endpoint}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                const status = document.getElementById('captchaStatus');
+                status.style.display = 'block';
+                if (data.success) {
+                    captchaVerified = true;
+                    document.getElementById('puzzleContainer').innerHTML = '<div style="text-align:center; color:#2ed573; font-size:20px; padding:10px;">&#9989; V&eacute;rification r&eacute;ussie !</div>';
+                    status.style.color = '#2ed573';
+                    status.textContent = 'Vous &ecirc;tes humain !';
+                } else {
+                    status.style.color = '#ff4757';
+                    status.textContent = '&#10060; Incorrect &mdash; Nouveau puzzle charg&eacute;';
+                    setTimeout(loadPuzzle, 1000);
+                }
+            } catch (err) {
+                console.error("Erreur verification captcha", err);
             }
         }
 
@@ -1557,10 +1607,13 @@
                     document.getElementById('cinProcessing').style.display = 'none';
                     
                     if (data.success) {
-                        if (data.data.nom) document.querySelector('input[name="nom"]').value = data.data.nom;
-                        if (data.data.prenom) document.querySelector('input[name="prenom"]').value = data.data.prenom;
-                        if (data.data.date_naissance) document.querySelector('input[name="date_naissance"]').value = data.data.date_naissance;
-                        if (data.data.cin_number) document.querySelector('input[name="cin"]').value = data.data.cin_number;
+                        fillOcrField('input[name="nom"]', data.data.nom);
+                        fillOcrField('input[name="prenom"]', data.data.prenom);
+                        fillOcrField('input[name="date_naissance"]', normalizeOcrDate(data.data.date_naissance));
+                        fillOcrField('input[name="cin"]', data.data.cin_number);
+                        fillOcrField('input[name="email"]', data.data.email);
+                        fillOcrField('input[name="telephone"]', data.data.telephone);
+                        fillOcrField('input[name="adresse"]', data.data.adresse);
                         
                         const confiance = Math.round(data.data.confiance * 100);
                         document.getElementById('cinResult').style.display = 'block';
@@ -1568,6 +1621,7 @@
                             <div style="background:rgba(46,213,115,0.1); border:1px solid rgba(46,213,115,0.3); border-radius:10px; padding:12px; margin-top:10px;">
                                 <div style="color:#2ed573; font-weight:700; margin-bottom:6px;">&#9989; Document analys&eacute; &mdash; Confiance : ${confiance}%</div>
                                 <div style="font-size:12px; color:rgba(255,255,255,0.6);">Nom: ${data.data.nom || '&mdash;'} | Pr&eacute;nom: ${data.data.prenom || '&mdash;'} | N&eacute;(e): ${data.data.date_naissance || '&mdash;'}</div>
+                                <div style="font-size:12px; color:rgba(255,255,255,0.55); margin-top:4px;">Email: ${data.data.email || '&mdash;'} | T&eacute;l: ${data.data.telephone || '&mdash;'} | Adresse: ${data.data.adresse || '&mdash;'}</div>
                             </div>`;
                     } else {
                         document.getElementById('cinResult').style.display = 'block';
@@ -1583,6 +1637,24 @@
                 }
             };
             reader.readAsDataURL(file);
+        }
+
+        function normalizeOcrDate(value) {
+            if (!value) return '';
+            const text = String(value).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+            const match = text.match(/^(\d{2})[\/\.](\d{2})[\/\.](\d{4})$/);
+            if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+            return text;
+        }
+
+        function fillOcrField(selector, value) {
+            if (!value) return;
+            const field = document.querySelector(selector);
+            if (!field) return;
+            field.value = value;
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
         }
 
         function resetCINUpload() {

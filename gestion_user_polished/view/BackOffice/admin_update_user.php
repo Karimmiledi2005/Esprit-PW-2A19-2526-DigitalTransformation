@@ -35,6 +35,10 @@ $role      = strtolower(trim($_POST['role']   ?? 'client'));
 $statut    = strtolower(trim($_POST['statut'] ?? 'actif'));
 
 try {
+    // Sécurité supplémentaire pour l'agent (ne peut modifier que des clients)
+    if (($_SESSION['role'] ?? '') === 'agent' && $role !== 'client') {
+        throw new Exception("Les agents ne peuvent modifier que des comptes clients.");
+    }
     $controller   = new UserController();
     $niveau_acces = $_POST['niveau_acces'] ?? null;
     $id_agence    = isset($_POST['id_agence']) && $_POST['id_agence'] !== '' ? (int)$_POST['id_agence'] : null;

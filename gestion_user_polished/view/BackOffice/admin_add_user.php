@@ -46,6 +46,10 @@ if ($role === 'agent' && !in_array($_SESSION['role'], ['superadmin','admin'])) {
 }
 
 try {
+    // Sécurité supplémentaire : l'agent ne peut créer que des clients
+    if (($_SESSION['role']??'') === 'agent' && $role !== 'client') {
+        throw new Exception("En tant qu'agent, vous ne pouvez créer que des clients.");
+    }
     $controller    = new UserController();
     $niveau_acces  = $_POST['niveau_acces'] ?? null;
     $id_agence     = isset($_POST['id_agence']) && $_POST['id_agence'] !== '' ? (int)$_POST['id_agence'] : null;

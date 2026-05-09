@@ -636,11 +636,15 @@ class UserController
         $sessionRole = $_SESSION['role'] ?? '';
         
         if ($this->isAdminAgence()) {
-            // Admin agence cannot toggle superadmin/admin
+            // Admin agence : peut toggle toute personne inscrite dans son agence (Agents et Clients)
+            // Mais il ne peut pas modifier un SuperAdmin ou un autre Admin
             if (in_array($t['role'],['superadmin','admin'])) throw new Exception("Accès refusé");
-            // Admin agence can only toggle users in their agency
-            $userAgence = $t['id_agence'] ?? $t['admin_id_agence'] ?? $t['client_id_agence'] ?? null;
-            if (!$userAgence || $userAgence !== $this->getSessionAgence()) throw new Exception("Utilisateur d'une autre agence");
+            
+            // Vérification de l'agence (doit correspondre à celle de l'admin)
+            $userAgence = $t['id_agence'] ?? $t['admin_id_agence'] ?? $t['agent_id_agence'] ?? $t['client_id_agence'] ?? null;
+            if (!$userAgence || (int)$userAgence !== (int)$this->getSessionAgence()) {
+                throw new Exception("L'utilisateur n'appartient pas à votre agence");
+            }
         } elseif ($sessionRole === 'agent') {
             // Agents can only toggle clients in their agency
             if ($t['role'] !== 'client') throw new Exception("Accès refusé");
@@ -967,8 +971,23 @@ class UserController
         return ["success" => true, "history" => $stmt->fetchAll(\PDO::FETCH_ASSOC)];
     }
 
+    public function ensureMessagesTable(): void {
+        $db = config::getConnexion();
+        $db->exec("CREATE TABLE IF NOT EXISTS messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            sender_id INT NOT NULL,
+            receiver_id INT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            is_read TINYINT(1) NOT NULL DEFAULT 0,
+            INDEX idx_messages_sender_receiver (sender_id, receiver_id),
+            INDEX idx_messages_receiver_read (receiver_id, is_read)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
     public function getMessages(int $my_id, int $friend_id): array {
         $db = config::getConnexion();
+        $this->ensureMessagesTable();
         $db->prepare("UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ?")->execute([$friend_id, $my_id]);
         $stmt = $db->prepare("SELECT id, sender_id, content, created_at, is_read FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) ORDER BY created_at ASC");
         $stmt->execute([$my_id, $friend_id, $friend_id, $my_id]);
@@ -978,6 +997,7 @@ class UserController
     public function sendMessage(int $my_id, int $friend_id, string $content): bool {
         if (empty(trim($content))) return false;
         $db = config::getConnexion();
+        $this->ensureMessagesTable();
         $stmt = $db->prepare("INSERT INTO messages (sender_id, receiver_id, content) VALUES (?, ?, ?)");
         return $stmt->execute([$my_id, $friend_id, $content]);
     }

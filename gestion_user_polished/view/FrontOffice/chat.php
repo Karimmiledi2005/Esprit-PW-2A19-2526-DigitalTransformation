@@ -26,6 +26,12 @@ if (!$friend_id) {
 try {
     if ($action === 'fetch') {
         $messages = $controller->getMessages($my_id, $friend_id);
+        // Add is_mine and sent_at for frontend compatibility
+        foreach ($messages as &$m) {
+            $m['is_mine'] = ($m['sender_id'] == $my_id) ? 1 : 0;
+            $m['sent_at'] = $m['created_at'] ?? null;
+        }
+        unset($m);
         echo json_encode(["success" => true, "messages" => $messages]);
 
     } elseif ($action === 'send') {
@@ -36,6 +42,7 @@ try {
             throw new Exception("Erreur lors de l'envoi");
         }
     } elseif ($action === 'unread_count') {
+        $controller->ensureMessagesTable();
         $db = config::getConnexion();
         $stmt = $db->prepare("SELECT COUNT(*) as count FROM messages WHERE sender_id = ? AND receiver_id = ? AND is_read = 0");
         $stmt->execute([$friend_id, $my_id]);

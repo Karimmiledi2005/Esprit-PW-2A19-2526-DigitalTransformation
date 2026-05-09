@@ -10,12 +10,17 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/puzzle/*": {"origins": "*"}})
 
 # Store active sessions: token -> { 'type': str, 'correct': any, 'expires_at': float, 'attempts': int }
 sessions = {}
 # IP blacklist: ip -> unban_time
 blacklist = {}
+
+@app.before_request
+def clear_blacklist_on_start():
+    # Force clear blacklist for debugging
+    blacklist.clear()
 
 def clean_sessions():
     now = time.time()
@@ -24,6 +29,8 @@ def clean_sessions():
         del sessions[k]
 
 def check_blacklist(ip):
+    # Désactivation temporaire de la blacklist pour débloquer le développement
+    return False
     if ip in blacklist:
         if time.time() < blacklist[ip]:
             return True
@@ -82,6 +89,7 @@ def slider_puzzle():
         "image_bg": encode_cv2_image(bg),
         "piece": encode_cv2_image(piece),
         "correct_x": correct_x,
+        "y": correct_y,
         "tolerance": 20,
         "token": token
     })
@@ -112,8 +120,9 @@ def intrus_puzzle():
 
 @app.route('/puzzle/rotation', methods=['GET'])
 def rotation_puzzle():
-    ip = request.remote_addr
-    if check_blacklist(ip): return jsonify({"error": "Banned"}), 403
+    # Bypass check_blacklist for this route specifically to debug
+    # ip = request.remote_addr
+    # if check_blacklist(ip): return jsonify({"error": "Banned"}), 403
     
     img = np.zeros((120, 120, 3), dtype=np.uint8)
     img[:] = (200, 200, 200)

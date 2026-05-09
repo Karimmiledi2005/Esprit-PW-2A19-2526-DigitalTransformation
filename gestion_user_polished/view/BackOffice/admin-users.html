@@ -5,12 +5,12 @@
     <title>Gestion Utilisateurs — Protex Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="assets/css/variables.css">
-    <link rel="stylesheet" href="assets/css/base.css">
-    <link rel="stylesheet" href="assets/css/layout.css">
-    <link rel="stylesheet" href="assets/css/admin-users.css">
-    <link rel="stylesheet" href="assets/css/validation.css">
-    <link rel="stylesheet" href="assets/css/animations.css">
+    <link rel="stylesheet" href="user/css/variables.css">
+    <link rel="stylesheet" href="user/css/base.css">
+    <link rel="stylesheet" href="user/css/layout.css">
+    <link rel="stylesheet" href="user/css/admin-users.css">
+    <link rel="stylesheet" href="user/css/validation.css">
+    <link rel="stylesheet" href="user/css/animations.css">
 </head>
 <body>
 
@@ -563,11 +563,26 @@ function getAvatarCell(u) {
 }
 
 function roleInfo(u) {
-    if (u.role === 'admin')  return u.niveau_acces  !== null ? `<i class="bi bi-shield-check"></i> Niveau ${u.niveau_acces}` : '—';
-    if (u.role === 'agent')  return u.agence ? `<i class="bi bi-building"></i> ${u.agence}${u.salaire ? ' · '+Number(u.salaire).toLocaleString('fr-FR')+' TND' : ''}` : '—';
+    if (u.role === 'admin') {
+        let res = u.niveau_acces  !== null ? `<i class="bi bi-shield-check"></i> Niveau ${u.niveau_acces}` : '—';
+        if (currentUserRole === 'superadmin' && u.agence) {
+            res += ` <br><small style="color:var(--accent)"><i class="bi bi-building"></i> ${u.agence}</small>`;
+        }
+        return res;
+    }
+    if (u.role === 'agent') {
+        let res = (currentUserRole === 'superadmin' && u.agence) ? `<i class="bi bi-building"></i> ${u.agence}` : '';
+        if (u.salaire) {
+            if (res) res += ' · ';
+            res += Number(u.salaire).toLocaleString('fr-FR')+' TND';
+        }
+        return res || '—';
+    }
     if (u.role === 'client') {
         let res = u.numero_client ? `<i class="bi bi-person-badge"></i> ${u.numero_client}` : '—';
-        if (u.agence) res += ` <br><small style="color:var(--accent)"><i class="bi bi-building"></i> ${u.agence}</small>`;
+        if (currentUserRole === 'superadmin' && u.agence) {
+            res += ` <br><small style="color:var(--accent)"><i class="bi bi-building"></i> ${u.agence}</small>`;
+        }
         return res;
     }
     return '—';
@@ -602,17 +617,24 @@ function render() {
                     <button class="btn btn-outline btn-sm" title="Voir" onclick='viewUser(${JSON.stringify(String(u.id))})'>
                         <i class="bi bi-eye"></i>
                     </button>
+                    ${(currentUserRole === 'superadmin' || currentUserRole === 'admin' || (currentUserRole === 'agent' && u.role === 'client')) ? `
                     <button class="btn btn-outline btn-sm" title="Modifier" onclick='editUser(${JSON.stringify(String(u.id))})'>
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="btn btn-${u.statut === 'actif' ? 'warning' : 'success'} btn-sm"
-                        title="${u.statut === 'actif' ? 'Bloquer' : 'Débloquer'}"
-                        onclick='toggleStatut(${JSON.stringify(String(u.id))})'>
-                        <i class="bi bi-${u.statut === 'actif' ? 'lock' : 'unlock'}"></i>
-                    </button>
+                    ` : ''}
+                    ${(currentUserRole === 'superadmin' || (currentUserRole === 'admin' && u.role !== 'admin' && u.role !== 'superadmin')) ? `
+                    <div class="toggle-switch-wrapper" title="${u.statut === 'actif' ? 'Bloquer' : 'Débloquer'}">
+                        <input type="checkbox" id="toggle-${u.id}" class="toggle-switch-input" 
+                            ${u.statut === 'actif' ? 'checked' : ''} 
+                            onchange='toggleStatut(${JSON.stringify(String(u.id))})'>
+                        <label for="toggle-${u.id}" class="toggle-switch-label"></label>
+                    </div>
+                    ` : ''}
+                    ${(currentUserRole === 'superadmin' || (currentUserRole === 'admin' && u.role !== 'admin')) ? `
                     <button class="btn btn-danger btn-sm" title="Supprimer" onclick='deleteUser(${JSON.stringify(String(u.id))})'>
                         <i class="bi bi-trash3"></i>
                     </button>
+                    ` : ''}
                 </div>
             </td>
         </tr>`).join('');
@@ -847,11 +869,11 @@ function editUser(id) {
         document.getElementById('fNiveau').value = u.niveau_acces ?? 1;
         document.getElementById('fNiveau').disabled = false;
     }
-    if (u.role === 'agent' || u.role === 'client') {
+    if (u.role === 'admin' || u.role === 'agent' || u.role === 'client') {
         loadAgences();
         // Wait for options to load then set value
         setTimeout(() => { 
-            const agId = u.client_id_agence || u.id_agence || '';
+            const agId = u.admin_id_agence || u.agent_id_agence || u.client_id_agence || u.id_agence || '';
             document.getElementById('fAgence').value = agId; 
         }, 300);
         
@@ -958,33 +980,37 @@ document.getElementById('filterDateTo').addEventListener('change',    () => { cu
 
 // ===== CHAMPS DYNAMIQUES PAR RÔLE =====
 function toggleRoleFields(role) {
-    const isAdmin = currentUserRole === 'admin';
-    const isAgent = currentUserRole === 'agent';
     const isSuper = currentUserRole === 'superadmin';
+    const isAgent = currentUserRole === 'agent';
 
     document.getElementById('roleFieldsAdmin').style.display  = role === 'admin'  ? '' : 'none';
-    document.getElementById('roleFieldAgence').style.display  = (role === 'agent' || role === 'client') ? '' : 'none';
+    document.getElementById('roleFieldAgence').style.display  = (role === 'admin' || role === 'agent' || role === 'client') ? '' : 'none';
     document.getElementById('roleFieldsAgent').style.display  = role === 'agent'  ? '' : 'none';
     document.getElementById('roleFieldsClient').style.display = role === 'client' ? '' : 'none';
     
     document.getElementById('fNiveau').disabled = role !== 'admin';
-    document.getElementById('fAgence').disabled = (role !== 'agent' && role !== 'client');
+    document.getElementById('fAgence').disabled = !(role === 'admin' || role === 'agent' || role === 'client');
     document.getElementById('fSalaire').disabled = role !== 'agent';
     document.getElementById('fNumClient').disabled = true;
     
-    if (role === 'agent' || role === 'client') {
+    const fStatut = document.getElementById('fStatut');
+    if (fStatut) {
+        // Un agent ne peut pas modifier le statut (bloqué/actif)
+        fStatut.closest('.form-group').style.display = isAgent ? 'none' : '';
+    }
+
+    if (role === 'admin' || role === 'agent' || role === 'client') {
         loadAgences();
-        // Si admin ou agent (non superadmin), on force l'agence
+        // Si l'utilisateur courant est restreint à une seule agence, on la force
         if (!isSuper && currentUserAgenceId) {
             setTimeout(() => {
                 const sel = document.getElementById('fAgence');
                 if (sel) {
                     sel.value = currentUserAgenceId;
                     sel.disabled = true;
-                    // Ajouter un champ caché pour être sûr que la valeur est envoyée si besoin (déjà géré par admin.js)
                 }
             }, 500);
-        } else if (isSuper) {
+        } else {
             document.getElementById('fAgence').disabled = false;
         }
     }
@@ -1059,6 +1085,11 @@ fetch("get_admin.php")
         allowedRoles = ['client'];
     }
     
+    // Un agent ne peut pas changer le rôle (fixé à client)
+    if (currentUserRole === 'agent') {
+        fRole.disabled = true;
+    }
+    
     // Retirer les options non autorisées
     Array.from(fRole.options).forEach(opt => {
         if (!allowedRoles.includes(opt.value) && opt.value !== '') {
@@ -1099,8 +1130,8 @@ document.querySelectorAll('.nav-item').forEach(link => {
 });
 </script>
 
-<script src="assets/js/main.js"></script>
-<script src="assets/js/admin.js"></script>
+<script src="user/js/main.js"></script>
+<script src="user/js/admin.js"></script>
 
 </body>
 </html>
