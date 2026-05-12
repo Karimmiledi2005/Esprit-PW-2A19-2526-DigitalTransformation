@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Postes — Protex Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="sinistre/css/variables.css">
+    <link rel="stylesheet" href="sinistre/css/base.css">
+    <link rel="stylesheet" href="sinistre/css/layout.css">
+    <link rel="stylesheet" href="sinistre/css/admin-users.css">
+    <script src="sinistre/js/validation.js"></script>
+</head>
+  <style>
+    .badge-like  { background:rgba(230,57,70,0.15);color:var(--danger);border:1px solid rgba(230,57,70,0.3);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px; }
+    .badge-comm  { background:rgba(0,180,216,0.15);color:var(--accent);border:1px solid rgba(0,180,216,0.3);font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;cursor:pointer;transition:var(--transition); }
+    .badge-comm:hover { background:rgba(0,180,216,0.25); }
+
+    .comment-tree { margin-top:8px; }
+    .c-item {
+      background:var(--glass-bg);border:1px solid var(--glass-border);
+      border-radius:var(--radius-sm);padding:10px 12px;margin-top:6px;
+    }
+    .c-item.hidden { opacity:0.55; }
+    .c-item.hidden .c-text { text-decoration:line-through; }
+    .c-item.hidden .c-author { text-decoration:line-through; }
+    .c-head { display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px; }
+    .c-author { font-size:13px;font-weight:600;color:#fff; }
+    .c-badge { font-size:10px;color:var(--danger);font-weight:600; }
+    .c-text { font-size:13px;color:var(--text-primary); }
+    .c-date { font-size:11px;color:var(--text-secondary); }
+
+    .toolbar-inner {
+      padding:16px 24px;
+      border-bottom:1px solid var(--glass-border);
+    }
+  </style>
+</head>
+<body>
+
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">&#x1f6e1;&#xfe0f;</div>
+      <div>
+        <div class="logo-text">Protex</div>
+        <div class="logo-sub">Back-Office</div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">AD</div>
+      <div>
+        <div class="user-name">Agent Admin</div>
+        <span class="user-role">Administrateur</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <a class="nav-item" href="#">
+        <i class="bi bi-grid-1x2"></i> Tableau de bord
+      </a>
+
+      <div class="nav-section">Gestion</div>
+      <a class="nav-item active" href="admin-postes.html">
+        <i class="bi bi-megaphone"></i> Postes
+      </a>
+      <a class="nav-item" href="admin-agences.html">
+        <i class="bi bi-geo-alt"></i> Agences
+      </a>
+
+      <div class="nav-section">Compte</div>
+      <a class="nav-item" href="#">
+        <i class="bi bi-person-gear"></i> Mon profil
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="#" class="logout-btn">
+        <i class="bi bi-box-arrow-left"></i> Se déconnecter
+      </a>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Gestion des publications</div>
+        <div class="topbar-sub" id="topbarDate"></div>
+      </div>
+      <div class="topbar-actions">
+        <a href="#" class="topbar-btn" title="Notifications">
+          <i class="bi bi-bell"></i>
+          <span class="notif-dot"></span>
+        </a>
+        <a href="#" class="topbar-btn" title="Aide">
+          <i class="bi bi-question-circle"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="page-header-bar">
+        <div>
+          <div class="page-title">Postes</div>
+          <div class="page-breadcrumb">
+            <i class="bi bi-house"></i>
+            <a href="#">Accueil</a>
+            <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+            <span>Postes</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon"><i class="bi bi-megaphone"></i></div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total postes</div>
+          <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> Publications</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon"><i class="bi bi-heart"></i></div>
+          <div class="stat-value" id="statLikes">0</div>
+          <div class="stat-label">Total j'aime</div>
+          <div class="stat-trend trend-up"><i class="bi bi-heart"></i> Interactions</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-icon"><i class="bi bi-chat-left-text"></i></div>
+          <div class="stat-value" id="statComments">0</div>
+          <div class="stat-label">Commentaires</div>
+          <div class="stat-trend trend-warn"><i class="bi bi-chat-dots"></i> Total</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon"><i class="bi bi-building"></i></div>
+          <div class="stat-value" id="statAgencies">0</div>
+          <div class="stat-label">Agences</div>
+          <div class="stat-trend trend-up"><i class="bi bi-geo-alt"></i> Actives</div>
+        </div>
+      </div>
+
+      <!-- TABLE CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="bi bi-table"></i> Liste des postes
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="openCreateModal()">
+            <i class="bi bi-plus-lg"></i> Ajouter
+          </button>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar-inner">
+          <div class="toolbar" style="margin-bottom:0;">
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="searchInput" placeholder="Rechercher par contenu, auteur, agence...">
+            </div>
+            <select class="filter-select" id="filterAgency">
+              <option value="">Toutes les agences</option>
+            </select>
+            <select class="filter-select" id="filterSort">
+              <option value="date_desc">Date &darr; (r&eacute;cent)</option>
+              <option value="date_asc">Date &uarr; (ancien)</option>
+              <option value="author_asc">Auteur A-Z</option>
+              <option value="author_desc">Auteur Z-A</option>
+              <option value="likes_desc">J'aime &darr;</option>
+              <option value="likes_asc">J'aime &uarr;</option>
+              <option value="comments_desc">Commentaires &darr;</option>
+              <option value="comments_asc">Commentaires &uarr;</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="resetFilters()">
+              <i class="bi bi-x-circle"></i> R&eacute;initialiser
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Contenu</th>
+                <th>Auteur</th>
+                <th>Agence</th>
+                <th>Date</th>
+                <th>J'aime</th>
+                <th>Commentaires</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="postsBody"></tbody>
+          </table>
+          <div id="emptyState" style="display:none;text-align:center;padding:48px 20px;color:var(--text-secondary);">
+            <i class="bi bi-inbox" style="font-size:36px;display:block;margin-bottom:10px;opacity:0.3;"></i>
+            <p style="font-size:14px;">Aucun poste trouvé</p>
+          </div>
+        </div>
+
+        <div class="pagination">
+          <div class="pagination-info" id="paginationInfo"></div>
+          <div class="pagination-btns" id="paginationBtns"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ===== MODAL CRUD ===== -->
+<div class="modal-overlay" id="modalCrud">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="bi bi-megaphone"></i> <span id="modalCrudTitle">Ajouter un poste</span></div>
+      <button class="modal-close" onclick="closeModal('modalCrud')"><i class="bi bi-x"></i></button>
+    </div>
+    <div style="padding:0 32px 32px;">
+      <div class="form-group">
+        <label>Contenu</label>
+        <textarea id="fContenu" class="form-control" placeholder="Écrire le contenu du poste..." style="min-height:110px;resize:vertical;"></textarea>
+        <div class="form-error" id="errContenu"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Auteur</label>
+          <input type="text" id="fAuteur" class="form-control" placeholder="Nom de l'auteur">
+          <div class="form-error" id="errAuteur"></div>
+        </div>
+        <div class="form-group">
+          <label>Agence</label>
+          <select id="fAgence" class="form-control"><option value="">Choisir</option></select>
+          <div class="form-error" id="errAgence"></div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Date de publication</label>
+        <input type="date" id="fDate" class="form-control">
+        <div class="form-error" id="errDate"></div>
+      </div>
+      <div class="modal-footer" style="margin-top:8px;">
+        <button class="btn btn-outline" onclick="closeModal('modalCrud')">Annuler</button>
+        <button class="btn btn-primary" id="btnSavePost"><i class="bi bi-save"></i> Enregistrer</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL DÉTAIL ===== -->
+<div class="modal-overlay" id="modalDetail">
+  <div class="modal" style="max-width:620px;">
+    <div class="modal-header">
+      <div class="modal-title"><i class="bi bi-megaphone"></i> Détails du poste</div>
+      <button class="modal-close" onclick="closeModal('modalDetail')"><i class="bi bi-x"></i></button>
+    </div>
+    <div id="modalDetailBody" style="padding:0 32px 8px;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalDetail')">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL SUPPRIMER ===== -->
+<div class="modal-overlay delete-modal" id="modalDelete">
+  <div class="modal">
+    <div class="delete-icon"><i class="bi bi-trash3"></i></div>
+    <div class="delete-title">Supprimer ce poste ?</div>
+    <div class="delete-msg" id="deleteMsg">Cette action est irréversible.</div>
+    <div class="modal-footer" style="justify-content:center;margin-top:28px;">
+      <button class="btn btn-outline" onclick="closeModal('modalDelete')">Annuler</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">
+        <i class="bi bi-trash3"></i> Supprimer définitivement
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="sinistre/js/validation.js"></script>
+<script>
+const API_GET = '../../model/api/get_posts.php';
+const API_SAVE = '../../model/api/save_post.php';
+const API_DELETE = '../../model/api/delete_post.php';
+const API_AGENCES = '../../model/api/get_agences.php';
+const API_TOGGLE_COMMENT = '../../model/api/toggle_comment_hide.php';
+
+let posts = [], agencies = [], editingId = null, deletingId = null;
+let currentPage = 1, perPage = 10, currentDetailPostId = null;
+
+document.getElementById('topbarDate').textContent =
+  new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+async function apiPost(url, data) {
+  const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+  const j = await r.json();
+  if (!r.ok || !j.success) throw j;
+  return j;
+}
+function escapeHtml(t){ return String(t??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function formatDate(d){ if(!d)return'—'; return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'}); }
+function showToast(msg,type){
+  if(typeof type==='undefined')type='success';
+  const icons={success:'check-circle',warning:'exclamation-triangle',danger:'x-circle'};
+  const t=document.createElement('div');
+  t.className='toast-notif toast-'+type;
+  t.innerHTML='<i class="bi bi-'+icons[type]+'"></i><span>'+escapeHtml(msg)+'</span>';
+  document.body.appendChild(t);
+  setTimeout(()=>t.classList.add('show'),50);
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),300);},3000);
+}
+function openModal(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';}
+function closeModal(id){document.getElementById(id).classList.remove('open');document.body.style.overflow='';}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>{m.classList.remove('open');document.body.style.overflow='';});});
+document.querySelectorAll('.modal-overlay').forEach(o=>{o.addEventListener('click',e=>{if(e.target===o){o.classList.remove('open');document.body.style.overflow='';}});});
+
+async function loadAgencies(){
+  try {
+    const r=await fetch(API_AGENCES); const j=await r.json();
+    if(j.success){
+      agencies=j.agences||[];
+      const fs=document.getElementById('filterAgency');
+      const fm=document.getElementById('fAgence');
+      fs.innerHTML='<option value="">Toutes les agences</option>';
+      fm.innerHTML='<option value="">Choisir</option>';
+      agencies.forEach(a=>{
+        fs.innerHTML+='<option value="'+a.id_agence+'">'+escapeHtml(a.nom_agence)+'</option>';
+        fm.innerHTML+='<option value="'+a.id_agence+'">'+escapeHtml(a.nom_agence)+'</option>';
+      });
+    }
+  } catch(e){ console.error('Erreur agences',e); }
+}
+
+async function loadPosts(){
+  try {
+    const r=await fetch(API_GET+'?_='+Date.now()); const j=await r.json();
+    if(j.success){ posts=j.posts||[]; currentPage=1; render(); }
+    else showToast('Erreur chargement posts.','danger');
+  } catch(e){ showToast('Impossible de charger les posts.','danger'); }
+}
+
+function getFiltered(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  const ag=document.getElementById('filterAgency').value;
+  const sort=document.getElementById('filterSort').value;
+  let f=posts.filter(p=>(!q||(p.contenu+' '+p.auteur+' '+(p.nom_agence||'')).toLowerCase().includes(q))&&(!ag||Number(p.id_agence)===Number(ag)));
+  switch(sort){
+    case 'date_asc': f.sort((a,b)=>new Date(a.date_publication)-new Date(b.date_publication)); break;
+    case 'date_desc': f.sort((a,b)=>new Date(b.date_publication)-new Date(a.date_publication)); break;
+    case 'author_asc': f.sort((a,b)=>(a.auteur||'').localeCompare(b.auteur||'')); break;
+    case 'author_desc': f.sort((a,b)=>(b.auteur||'').localeCompare(a.auteur||'')); break;
+    case 'likes_desc': f.sort((a,b)=>(b.nb_likes||0)-(a.nb_likes||0)); break;
+    case 'likes_asc': f.sort((a,b)=>(a.nb_likes||0)-(b.nb_likes||0)); break;
+    case 'comments_desc': f.sort((a,b)=>(b.nb_commentaires||0)-(a.nb_commentaires||0)); break;
+    case 'comments_asc': f.sort((a,b)=>(a.nb_commentaires||0)-(b.nb_commentaires||0)); break;
+    default: f.sort((a,b)=>new Date(b.date_publication)-new Date(a.date_publication));
+  }
+  return f;
+}
+function resetFilters(){
+  document.getElementById('searchInput').value='';
+  document.getElementById('filterAgency').value='';
+  document.getElementById('filterSort').value='date_desc';
+  currentPage=1; render();
+}
+
+function render(){
+  const filtered=getFiltered(), total=filtered.length;
+  const pages=Math.ceil(total/perPage)||1;
+  if(currentPage>pages)currentPage=pages;
+  const slice=filtered.slice((currentPage-1)*perPage,currentPage*perPage);
+  const tbody=document.getElementById('postsBody');
+  const empty=document.getElementById('emptyState');
+  if(!slice.length){tbody.innerHTML='';empty.style.display='block';}
+  else {
+    empty.style.display='none';
+    tbody.innerHTML=slice.map(p=>{
+      return '<tr>'+
+        '<td><span style="font-family:monospace;font-size:12px;color:var(--accent);">#'+p.id_poste+'</span></td>'+
+        '<td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-primary);">'+escapeHtml(p.contenu||'')+'</td>'+
+        '<td style="color:#fff;font-weight:500;">'+escapeHtml(p.auteur||'')+'</td>'+
+        '<td style="color:var(--text-secondary);">'+escapeHtml(p.nom_agence||'—')+'</td>'+
+        '<td style="color:var(--text-secondary);">'+formatDate(p.date_publication)+'</td>'+
+        '<td><span class="badge-like">'+(p.nb_likes||0)+'</span></td>'+
+        '<td><span class="badge-comm" onclick="viewPost('+p.id_poste+')">'+(p.nb_commentaires||0)+'</span></td>'+
+        '<td><div class="actions">'+
+          '<button class="btn btn-outline btn-sm" onclick="viewPost('+p.id_poste+')" title="Voir"><i class="bi bi-eye"></i></button>'+
+          '<button class="btn btn-outline btn-sm" onclick="editPost('+p.id_poste+')" title="Modifier"><i class="bi bi-pencil"></i></button>'+
+          '<button class="btn btn-danger btn-sm" onclick="openDeleteModal('+p.id_poste+')" title="Supprimer"><i class="bi bi-trash3"></i></button>'+
+        '</div></td>'+
+      '</tr>';
+    }).join('');
+  }
+  const start=total===0?0:(currentPage-1)*perPage+1;
+  const end=Math.min(currentPage*perPage,total);
+  document.getElementById('paginationInfo').textContent='Affichage '+start+'–'+end+' sur '+total+' poste'+(total>1?'s':'');
+  document.getElementById('paginationBtns').innerHTML=
+    '<button class="page-btn" onclick="goPage('+(currentPage-1)+')"'+(currentPage<=1?'disabled':'')+'><i class="bi bi-chevron-left"></i></button>'+
+    Array.from({length:pages},(_,i)=>'<button class="page-btn'+(i+1===currentPage?' active':'')+'" onclick="goPage('+(i+1)+')">'+(i+1)+'</button>').join('')+
+    '<button class="page-btn" onclick="goPage('+(currentPage+1)+')"'+(currentPage>=pages?'disabled':'')+'><i class="bi bi-chevron-right"></i></button>';
+  updateStats();
+}
+function goPage(p){currentPage=p;render();}
+
+function updateStats(){
+  document.getElementById('statTotal').textContent=posts.length;
+  document.getElementById('statLikes').textContent=posts.reduce((s,p)=>s+(p.nb_likes||0),0);
+  document.getElementById('statComments').textContent=posts.reduce((s,p)=>s+(p.nb_commentaires||0),0);
+  document.getElementById('statAgencies').textContent=agencies.length;
+}
+
+// CRUD
+function openCreateModal(){
+  editingId=null;
+  document.getElementById('modalCrudTitle').textContent='Ajouter un poste';
+  document.getElementById('fContenu').value='';
+  document.getElementById('fAuteur').value='';
+  document.getElementById('fAgence').value='';
+  document.getElementById('fDate').value=new Date().toISOString().split('T')[0];
+  document.querySelectorAll('#modalCrud .form-error').forEach(e=>e.textContent='');
+  openModal('modalCrud');
+}
+function editPost(id){
+  const p=posts.find(x=>Number(x.id_poste)===Number(id)); if(!p)return;
+  editingId=id;
+  document.getElementById('modalCrudTitle').textContent='Modifier le poste';
+  document.getElementById('fContenu').value=p.contenu||'';
+  document.getElementById('fAuteur').value=p.auteur||'';
+  document.getElementById('fAgence').value=p.id_agence||'';
+  document.getElementById('fDate').value=p.date_publication?String(p.date_publication).substring(0,10):'';
+  document.querySelectorAll('#modalCrud .form-error').forEach(e=>e.textContent='');
+  openModal('modalCrud');
+}
+async function savePost(){
+  const contenu=document.getElementById('fContenu').value.trim();
+  const auteur=document.getElementById('fAuteur').value.trim();
+  const agence=document.getElementById('fAgence').value;
+  const date=document.getElementById('fDate').value;
+  let ok=true;
+  if(!contenu){document.getElementById('errContenu').textContent='Veuillez remplir le contenu.';ok=false;}else document.getElementById('errContenu').textContent='';
+  if(!auteur){document.getElementById('errAuteur').textContent='Veuillez remplir l\'auteur.';ok=false;}
+  else if(/\d/.test(auteur)){document.getElementById('errAuteur').textContent='L\'auteur ne doit pas contenir de chiffres.';ok=false;}
+  else document.getElementById('errAuteur').textContent='';
+  if(!agence){document.getElementById('errAgence').textContent='Veuillez choisir une agence.';ok=false;}else document.getElementById('errAgence').textContent='';
+  if(!date){document.getElementById('errDate').textContent='Veuillez choisir une date.';ok=false;}else document.getElementById('errDate').textContent='';
+  if(!ok)return;
+  const btn=document.getElementById('btnSavePost');
+  btn.innerHTML='<i class="bi bi-arrow-repeat spin"></i> Enregistrement...';btn.disabled=true;
+  try {
+    await apiPost(API_SAVE,{id_poste:editingId,contenu,auteur,id_agence:parseInt(agence,10),date_publication:date});
+    closeModal('modalCrud'); await loadPosts(); showToast('Poste enregistré.','success');
+  } catch(err){
+    if(err.errors){
+      if(err.errors.contenu)document.getElementById('errContenu').textContent=err.errors.contenu;
+      if(err.errors.auteur)document.getElementById('errAuteur').textContent=err.errors.auteur;
+      if(err.errors.id_agence)document.getElementById('errAgence').textContent=err.errors.id_agence;
+      if(err.errors.date_publication)document.getElementById('errDate').textContent=err.errors.date_publication;
+    }
+    showToast(err.message||'Erreur enregistrement.','danger');
+  }
+  btn.innerHTML='<i class="bi bi-save"></i> Enregistrer';btn.disabled=false;
+}
+
+// DETAIL
+function viewPost(id){
+  currentDetailPostId=id;
+  const p=posts.find(x=>Number(x.id_poste)===Number(id)); if(!p)return;
+  let html='<div class="sinistre-modal-header">'+
+    '<div class="sinistre-modal-icon"><i class="bi bi-megaphone"></i></div>'+
+    '<div style="flex:1;"><div class="sinistre-modal-type">'+escapeHtml(p.auteur||'')+'</div><div class="sinistre-modal-id">Poste #'+p.id_poste+' · '+escapeHtml(p.nom_agence||'')+'</div></div>'+
+    '<span class="badge badge-info">'+(p.nb_likes||0)+' j\'aime</span></div>'+
+  '<div class="detail-grid">'+
+    '<div class="detail-field full"><div class="detail-field-label"><i class="bi bi-chat-left-text"></i> Contenu</div><div class="detail-field-value" style="color:var(--text-secondary);">'+escapeHtml(p.contenu||'')+'</div></div>'+
+    '<div class="detail-field"><div class="detail-field-label"><i class="bi bi-person"></i> Auteur</div><div class="detail-field-value" style="color:#fff;">'+escapeHtml(p.auteur||'')+'</div></div>'+
+    '<div class="detail-field"><div class="detail-field-label"><i class="bi bi-building"></i> Agence</div><div class="detail-field-value" style="color:var(--accent);">'+escapeHtml(p.nom_agence||'—')+'</div></div>'+
+    '<div class="detail-field"><div class="detail-field-label"><i class="bi bi-calendar3"></i> Date</div><div class="detail-field-value">'+formatDate(p.date_publication)+'</div></div>'+
+    '<div class="detail-field"><div class="detail-field-label"><i class="bi bi-heart"></i> J\'aime</div><div class="detail-field-value" style="color:var(--danger);">'+(p.nb_likes||0)+'</div></div>'+
+  '</div>';
+  if(p.comments&&p.comments.length){
+    html+='<div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--glass-border);">'+
+      '<div style="font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;"><i class="bi bi-chat-dots"></i> Commentaires ('+(p.nb_commentaires||0)+')</div>'+
+      renderCommentTree(p.comments,0)+'</div>';
+  } else {
+    html+='<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--glass-border);font-size:13px;color:var(--text-secondary);">Aucun commentaire</div>';
+  }
+  document.getElementById('modalDetailBody').innerHTML=html;
+  openModal('modalDetail');
+}
+function renderCommentTree(cs,d){
+  return cs.map(c=>{
+    const m=d>0?'margin-left:'+(d*16)+'px;':'';
+    const h=Number(c.hidden)===1;
+    const r=c.reponses&&c.reponses.length?renderCommentTree(c.reponses,d+1):'';
+    return '<div class="c-item'+(h?' hidden':'')+'"style="'+m+'">'+
+      '<div class="c-head"><div><span class="c-author">'+escapeHtml(c.auteur)+'</span>'+(h?' <span class="c-badge">[MASQUÉ]</span>':'')+'</div>'+
+      '<div style="display:flex;align-items:center;gap:6px;">'+
+        '<button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:10px;" onclick="toggleHideComment('+c.id_commentaire+')">'+
+          '<i class="bi bi-'+(h?'eye':'eye-slash')+'"></i> '+(h?'Afficher':'Masquer')+
+        '</button>'+
+        '<span class="c-date">'+escapeHtml(c.date_commentaire||'')+'</span></div></div>'+
+      '<div class="c-text">'+escapeHtml(c.contenu)+'</div>'+r+'</div>';
+  }).join('');
+}
+async function toggleHideComment(id){
+  try{
+    await apiPost(API_TOGGLE_COMMENT,{id_commentaire:id});
+    const r=await fetch(API_GET+'?_='+Date.now());const j=await r.json();
+    if(j.success){posts=j.posts||[];if(currentDetailPostId)viewPost(currentDetailPostId);}
+    showToast('OK','success');
+  }catch(err){showToast(err.message||'Erreur.','danger');}
+}
+
+// DELETE
+function openDeleteModal(id){
+  deletingId=id;
+  document.getElementById('deleteMsg').textContent='Vous êtes sur le point de supprimer le poste #'+id+'. Cette action est irréversible.';
+  openModal('modalDelete');
+}
+async function confirmDelete(){
+  try {
+    await apiPost(API_DELETE,{id_poste:deletingId});
+    closeModal('modalDelete');
+    posts=posts.filter(x=>Number(x.id_poste)!==Number(deletingId));
+    render(); showToast('Poste supprimé.','danger');
+  } catch(err){showToast(err.message||'Erreur suppression.','danger');}
+}
+
+// EVENTS
+document.getElementById('searchInput').addEventListener('input',()=>{currentPage=1;render();});
+document.getElementById('filterAgency').addEventListener('change',()=>{currentPage=1;render();});
+document.getElementById('filterSort').addEventListener('change',()=>{currentPage=1;render();});
+document.getElementById('btnSavePost').addEventListener('click',savePost);
+
+document.addEventListener('DOMContentLoaded',async function(){await loadAgencies();await loadPosts();});
+</script>
+
+</body>
+</html>

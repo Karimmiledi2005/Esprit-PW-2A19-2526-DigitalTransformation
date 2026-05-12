@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Tableau de bord — Protex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/client.css">
+    <style>
+        .toast-notif {
+            position: fixed; bottom: 24px; right: 24px;
+            background: var(--navy-mid); border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px 20px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 14px; color: var(--text-primary);
+            z-index: 9999; opacity: 0; transform: translateY(10px);
+            transition: all 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .toast-notif.show { opacity: 1; transform: translateY(0); }
+        .toast-success i { color: var(--success); font-size: 18px; }
+        .toast-warning i { color: var(--gold); font-size: 18px; }
+        .toast-danger  i { color: var(--danger); font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <a href="client.html" class="navbar-brand">
+           <img src="logo.png" alt="logo" width="40" height="40">
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">Assurance Digitale</div>
+            </div>
+        </a>
+
+        <div class="navbar-nav">
+            <a class="nav-link" href="client.html">
+                <i class="bi bi-grid-1x2"></i>
+                <span class="nav-label">Tableau de bord</span>
+            </a>
+            <a class="nav-link" href="mes-contrats.html">
+                <i class="bi bi-file-earmark-text"></i>
+                <span class="nav-label">Contrats</span>
+                <span class="nav-badge accent">3</span>
+            </a>
+            <a class="nav-link" href="mes-sinistres.html">
+                <i class="bi bi-shield-exclamation"></i>
+                <span class="nav-label">Sinistres</span>
+                <span class="nav-badge">1</span>
+            </a>
+            <a class="nav-link" href="paiements.html">
+                <i class="bi bi-credit-card"></i>
+                <span class="nav-label">Paiements</span>
+            </a>
+            <div class="nav-separator"></div>
+            <a class="nav-link" href="reclamations.html">
+                <i class="bi bi-chat-dots"></i>
+                <span class="nav-label">Réclamations</span>
+            </a>
+            <a class="nav-link" href="agences.html">
+                <i class="bi bi-geo-alt"></i>
+                <span class="nav-label">Agences</span>
+            </a>
+            <a class="nav-link" href="nos-offres.html">
+                <i class="bi bi-stars"></i>
+                <span class="nav-label">Nos offres</span>
+            </a>
+        </div>
+
+        <div class="navbar-right">
+            <a href="#" class="nav-btn" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="notif-dot"></span>
+            </a>
+            <a href="#" class="nav-btn" title="Aide">
+                <i class="bi bi-question-circle"></i>
+            </a>
+            <div class="avatar-wrap">
+                <div class="avatar-btn" id="avatarBtn" title="Mon compte">KM</div>
+                <div class="avatar-dropdown" id="avatarDropdown">
+                    <div class="dropdown-header">
+                        <div class="dropdown-avatar">KM</div>
+                        <div class="dropdown-info">
+                            <div class="dropdown-name">Karim Miledi</div>
+                            <div class="dropdown-email">karim.miledi@email.com</div>
+                            <span class="dropdown-role">Client Premium</span>
+                        </div>
+                    </div>
+                    <a href="monprofile.html" class="dropdown-item">
+                        <i class="bi bi-person-circle"></i> Mon profil
+                    </a>
+                    <a href="parametres.html" class="dropdown-item">
+                        <i class="bi bi-gear"></i> Paramètres
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="login.html" class="dropdown-item logout">
+                        <i class="bi bi-box-arrow-right"></i> Se déconnecter
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ===== MAIN ===== -->
+    <main class="main">
+        <div class="page-header">
+            <div>
+                <div class="page-title-main">Bonjour, Karim 👋</div>
+                <div class="page-breadcrumb">
+                    <i class="bi bi-house"></i>
+                    <a href="client.html" style="color:inherit;text-decoration:none;">Accueil</a>
+                    <i class="bi bi-chevron-right" style="font-size:10px"></i>
+                    <span>Tableaux De Bord</span>
+                    &nbsp;·&nbsp;
+                    <span id="currentDate"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- STATS -->
+            <div class="stats-grid">
+                <div class="stat-card blue">
+                    <div class="stat-icon"><i class="bi bi-file-earmark-check"></i></div>
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">Contrats actifs</div>
+                    <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> Tous valides</div>
+                </div>
+                <div class="stat-card gold">
+                    <div class="stat-icon"><i class="bi bi-shield-exclamation"></i></div>
+                    <div class="stat-value">1</div>
+                    <div class="stat-label">Sinistre en cours</div>
+                    <div class="stat-trend trend-warn"><i class="bi bi-clock"></i> En traitement</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-icon"><i class="bi bi-credit-card"></i></div>
+                    <div class="stat-value">847 <span>TND</span></div>
+                    <div class="stat-label">Primes payées</div>
+                    <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> Cette année</div>
+                </div>
+                <div class="stat-card red">
+                    <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="stat-value">1</div>
+                    <div class="stat-label">Réclamation ouverte</div>
+                    <div class="stat-trend trend-down"><i class="bi bi-clock"></i> Réponse en attente</div>
+                </div>
+            </div>
+
+            <!-- CONTRATS + SINISTRE -->
+            <div class="section-header">
+                <div>
+                    <div class="section-title">Mes contrats</div>
+                    <div class="section-sub">3 contrats actifs</div>
+                </div>
+                <a href="mes-contrats.html" class="btn btn-outline btn-sm">
+                    <i class="bi bi-arrow-right"></i> Voir tout
+                </a>
+            </div>
+
+            <div class="grid-3" style="margin-bottom: 28px;">
+                <div class="contrat-card sante">
+                    <div class="contrat-type">
+                        <div class="contrat-icon"><i class="bi bi-heart-pulse"></i></div>
+                        <div>
+                            <div class="contrat-name">Santé Premium</div>
+                            <div class="contrat-ref">REF-2024-001</div>
+                        </div>
+                    </div>
+                    <div class="contrat-info">
+                        <div class="info-item">
+                            <label>Prime</label>
+                            <span>120 TND/mois</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Échéance</label>
+                            <span>31 Déc 2026</span>
+                        </div>
+                    </div>
+                    <div class="contrat-actions">
+                        <a href="#" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> Détails</a>
+                        <a href="#" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> PDF</a>
+                    </div>
+                </div>
+
+                <div class="contrat-card auto">
+                    <div class="contrat-type">
+                        <div class="contrat-icon"><i class="bi bi-car-front"></i></div>
+                        <div>
+                            <div class="contrat-name">Auto Tous Risques</div>
+                            <div class="contrat-ref">REF-2024-002</div>
+                        </div>
+                    </div>
+                    <div class="contrat-info">
+                        <div class="info-item">
+                            <label>Prime</label>
+                            <span>85 TND/mois</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Échéance</label>
+                            <span>15 Oct 2026</span>
+                        </div>
+                    </div>
+                    <div class="contrat-actions">
+                        <a href="#" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> Détails</a>
+                        <a href="#" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> PDF</a>
+                    </div>
+                </div>
+
+                <div class="contrat-card maison">
+                    <div class="contrat-type">
+                        <div class="contrat-icon"><i class="bi bi-house-heart"></i></div>
+                        <div>
+                            <div class="contrat-name">Habitation</div>
+                            <div class="contrat-ref">REF-2024-003</div>
+                        </div>
+                    </div>
+                    <div class="contrat-info">
+                        <div class="info-item">
+                            <label>Prime</label>
+                            <span>45 TND/mois</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Échéance</label>
+                            <span>01 Mar 2027</span>
+                        </div>
+                    </div>
+                    <div class="contrat-actions">
+                        <a href="#" class="btn btn-outline btn-sm"><i class="bi bi-eye"></i> Détails</a>
+                        <a href="#" class="btn btn-outline btn-sm"><i class="bi bi-download"></i> PDF</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SINISTRE + PAIEMENTS -->
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Sinistre en cours</div>
+                        <a href="mes-sinistres.html" class="btn btn-outline btn-sm">Voir tout</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="sinistre-box">
+                            <div class="sinistre-header">
+                                <div class="sinistre-title">Accident auto — Tunis</div>
+                                <span class="badge badge-warning">En traitement</span>
+                            </div>
+                            <div class="sinistre-meta">Déclaré le 2 Avril 2026 · REF-SIN-2026-001</div>
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-dot green"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-title">Déclaration reçue</div>
+                                        <div class="timeline-date">2 Avril 2026</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot blue"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-title">Expertise planifiée</div>
+                                        <div class="timeline-date">5 Avril 2026</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot gold"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-title">Rapport en cours</div>
+                                        <div class="timeline-date">En attente</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-item">
+                                    <div class="timeline-dot gray"></div>
+                                    <div class="timeline-content">
+                                        <div class="timeline-title">Remboursement</div>
+                                        <div class="timeline-date">—</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Derniers paiements</div>
+                        <a href="paiements.html" class="btn btn-outline btn-sm">Voir tout</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="payment-item">
+                            <div class="payment-left">
+                                <div class="payment-icon"><i class="bi bi-heart-pulse"></i></div>
+                                <div>
+                                    <div class="payment-name">Santé Premium</div>
+                                    <div class="payment-date">1 Avril 2026</div>
+                                </div>
+                            </div>
+                            <div class="payment-right">
+                                <div class="payment-amount">120 TND</div>
+                                <span class="badge badge-success" style="font-size:10px">Payé</span>
+                            </div>
+                        </div>
+                        <div class="payment-item">
+                            <div class="payment-left">
+                                <div class="payment-icon"><i class="bi bi-car-front"></i></div>
+                                <div>
+                                    <div class="payment-name">Auto Tous Risques</div>
+                                    <div class="payment-date">1 Avril 2026</div>
+                                </div>
+                            </div>
+                            <div class="payment-right">
+                                <div class="payment-amount">85 TND</div>
+                                <span class="badge badge-success" style="font-size:10px">Payé</span>
+                            </div>
+                        </div>
+                        <div class="payment-item">
+                            <div class="payment-left">
+                                <div class="payment-icon gold"><i class="bi bi-house-heart"></i></div>
+                                <div>
+                                    <div class="payment-name">Habitation</div>
+                                    <div class="payment-date">1 Mai 2026</div>
+                                </div>
+                            </div>
+                            <div class="payment-right">
+                                <div class="payment-amount">45 TND</div>
+                                <span class="badge badge-warning" style="font-size:10px">À venir</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<script src="assets/js/main.js"></script>
+<script>
+    // Date dynamique dans le breadcrumb
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    document.getElementById('currentDate').textContent =
+        'Tableau de bord · ' + dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
+</script>
+</body>
+</html>
