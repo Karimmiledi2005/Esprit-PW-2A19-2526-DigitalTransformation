@@ -1,0 +1,8 @@
+.env
+/vendor/
+logs/*.log
+__pycache__/
+*.pyc
+config_services.php
+protex_final/config.env.php
+protex_final/controller/stripe_config.php

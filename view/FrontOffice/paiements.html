@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Paiements — Protex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="user/css/variables.css">
+    <link rel="stylesheet" href="user/css/base.css">
+    <link rel="stylesheet" href="user/css/layout.css">
+    <link rel="stylesheet" href="user/css/client.css">
+</head>
+<body>
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+    <!-- ===== NAVBAR ===== -->
+    <nav class="navbar">
+        <a href="client.php" class="navbar-brand">
+           <img src="logo.png" alt="logo" width="40" height="40">
+            <div>
+                <div class="logo-text">Protex</div>
+                <div class="logo-sub">Assurance Digitale</div>
+            </div>
+        </a>
+
+        <div class="navbar-nav">
+            <a class="nav-link" href="client.php">
+                <i class="bi bi-grid-1x2"></i>
+                <span class="nav-label">Tableau de bord</span>
+            </a>
+            <a class="nav-link" href="contrat.php">
+                <i class="bi bi-file-earmark-text"></i>
+                <span class="nav-label">Contrats</span>
+                <span class="nav-badge accent">3</span>
+            </a>
+            <a class="nav-link" href="mes-sinistres.html">
+               <i class="bi bi-shield-exclamation"></i>
+                <span class="nav-label">Sinistres</span>
+                <span class="nav-badge">1</span>
+            </a>
+            <a class="nav-link active" href="paiements.html">
+                <i class="bi bi-credit-card"></i>
+                <span class="nav-label">Paiements</span>
+            </a>
+            <a class="nav-link" href="reseau.html">
+                <i class="bi bi-people"></i>
+                <span class="nav-label">Réseau</span>
+            </a>
+            <div class="nav-separator"></div>
+            <a class="nav-link" href="reclamationList.php">
+                <i class="bi bi-chat-dots"></i>
+                <span class="nav-label">Réclamations</span>
+            </a>
+            <a class="nav-link" href="agences.html">
+                <i class="bi bi-geo-alt"></i>
+                <span class="nav-label">Agences</span>
+            </a>
+            <a class="nav-link" href="nos-offres.html">
+                <i class="bi bi-stars"></i>
+                <span class="nav-label">Nos offres</span>
+            </a>
+        </div>
+
+        <div class="navbar-right">
+            <a href="#" class="nav-btn" title="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="notif-dot"></span>
+            </a>
+            <a href="#" class="nav-btn" title="Aide">
+                <i class="bi bi-question-circle"></i>
+            </a>
+            <div class="avatar-wrap">
+                <div class="ptx-avatar-3d" id="avatarBtn" title="Mon compte">
+                    <div class="ptx-avatar-ring"></div>
+                    <div class="ptx-avatar-inner" id="avatarInitials">..</div>
+                </div>
+                <div class="avatar-dropdown" id="avatarDropdown">
+                    <div class="dropdown-header">
+                        <div class="dropdown-avatar" id="dropdownAvatar">..</div>
+                        <div class="dropdown-info">
+                            <div class="dropdown-name" id="dropdownName">Chargement...</div>
+                            <div class="dropdown-email" id="dropdownEmail">...</div>
+                            <span class="dropdown-role" id="dropdownRole">Client</span>
+                        </div>
+                    </div>
+                    <a href="monprofile.html" class="dropdown-item">
+                        <i class="bi bi-person-circle"></i> Mon profil
+                    </a>
+                    <a href="parametres.html" class="dropdown-item">
+                        <i class="bi bi-gear"></i> Paramètres
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a href="login.html" class="dropdown-item logout">
+                        <i class="bi bi-box-arrow-right"></i> Se déconnecter
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+    <main class="main">
+        <div class="page-header">
+            <div>
+                <div class="page-title-main">Mes Paiements</div>
+                <div class="page-breadcrumb"><i class="bi bi-house"></i> Accueil <i class="bi bi-chevron-right"></i> Paiements</div>
+            </div>
+        </div>
+        <div class="content">
+            <div class="section-header"><div><div class="section-title">Historique des paiements</div><div class="section-sub">Vos transactions récentes</div></div></div>
+            <p style="color:var(--text-secondary);text-align:center;padding:60px;">Page en cours de développement...</p>
+        </div>
+    </main>
+</div>
+<script src="assets_sinistre_traitement/js/main.js"></script>
+</body>
+</html>

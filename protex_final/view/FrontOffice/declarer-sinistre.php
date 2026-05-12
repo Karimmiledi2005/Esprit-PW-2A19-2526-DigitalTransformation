@@ -1,0 +1,550 @@
+﻿<?php
+if (session_status() === PHP_SESSION_NONE) session_start();
+if (!defined('BASE_URL')) {
+    $cfgPath = dirname(__DIR__, 2) . '/config.php';
+    if (file_exists($cfgPath)) require_once $cfgPath;
+}
+?><!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <title>Déclarer un sinistre — Protex</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="assets_sinistre_traitement/css/variables.css">
+    <link rel="stylesheet" href="assets_sinistre_traitement/css/base.css">
+    <link rel="stylesheet" href="assets_sinistre_traitement/css/layout.css">
+    <link rel="stylesheet" href="assets_sinistre_traitement/css/client.css">
+    <style>
+        /* ===== TOAST ===== */
+        .toast-notif {
+            position: fixed; bottom: 24px; right: 24px;
+            background: #fff; border: 1px solid rgba(26,58,122,0.15);
+            border-radius: 12px; padding: 14px 20px;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 14px; color: #15233C;
+            z-index: 9999; opacity: 0; transform: translateY(10px);
+            transition: all 0.3s ease; box-shadow: 0 8px 24px rgba(26,58,122,0.12);
+        }
+        .toast-notif.show { opacity: 1; transform: translateY(0); }
+        .toast-notif i { font-size: 18px; }
+        .toast-success i { color: #1A3A7A; }
+        .toast-warning i { color: #FF6B1A; }
+        .toast-danger  i { color: var(--danger); }
+
+        /* ===== PAGE LAYOUT ===== */
+        .page-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .page-header {
+            margin-bottom: 28px;
+        }
+        .page-title {
+            font-family: var(--font-display);
+            font-size: 24px; font-weight: 700;
+            color: #15233C; line-height: 1.2;
+        }
+        .page-breadcrumb {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 12px; color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        .page-breadcrumb a { color: var(--accent); text-decoration: none; }
+        .page-breadcrumb a:hover { text-decoration: underline; }
+
+        /* ===== TWO-COL GRID ===== */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 900px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+
+        /* ===== CARD ===== */
+        .card {
+            background: #fff;
+            border: 1px solid rgba(26,58,122,0.10);
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(26,58,122,0.06);
+            overflow: hidden;
+        }
+        .card-header {
+            display: flex; align-items: center; gap: 12px;
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(26,58,122,0.08);
+        }
+        .card-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        }
+        .card-icon.orange { background: rgba(255,107,26,0.12); color: #FF6B1A; }
+        .card-icon.navy   { background: rgba(26,58,122,0.10);  color: #1A3A7A; }
+        .card-title { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: #15233C; }
+        .card-sub   { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+        .card-body  { padding: 24px; }
+
+        /* ===== FORM ===== */
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; font-size: 13px; font-weight: 500;
+            color: #15233C; margin-bottom: 7px;
+        }
+        .form-group label span.req { color: var(--danger); margin-left: 2px; }
+        .form-group label span.opt { color: var(--text-secondary); font-weight: 400; font-size: 11px; margin-left: 4px; }
+        .form-control {
+            width: 100%; padding: 11px 14px;
+            border: 1px solid rgba(26,58,122,0.18);
+            border-radius: 10px; background: #f8f9ff;
+            color: #15233C; font-size: 14px;
+            font-family: var(--font-body);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #FF6B1A;
+            box-shadow: 0 0 0 3px rgba(255,107,26,0.10);
+            background: #fff;
+        }
+        .form-control.error {
+            border-color: var(--danger);
+            box-shadow: 0 0 0 3px rgba(230,57,70,0.10);
+        }
+        textarea.form-control {
+            resize: vertical; min-height: 110px; line-height: 1.5;
+        }
+        select.form-control { cursor: pointer; }
+
+        .form-error {
+            font-size: 12px; color: var(--danger);
+            margin-top: 5px; display: none;
+        }
+        .form-error.show { display: block; }
+
+        /* ===== TYPE SELECTOR GRID ===== */
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        .type-btn {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 8px; padding: 16px 12px;
+            border: 2px solid rgba(26,58,122,0.12);
+            border-radius: 12px; background: #f8f9ff;
+            cursor: pointer; transition: all 0.2s;
+            font-family: var(--font-body);
+        }
+        .type-btn:hover {
+            border-color: rgba(255,107,26,0.4);
+            background: rgba(255,107,26,0.04);
+        }
+        .type-btn.selected {
+            border-color: #FF6B1A;
+            background: rgba(255,107,26,0.07);
+            box-shadow: 0 0 0 3px rgba(255,107,26,0.10);
+        }
+        .type-btn i {
+            font-size: 22px;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+        .type-btn.selected i { color: #FF6B1A; }
+        .type-btn span {
+            font-size: 12px; font-weight: 500;
+            color: var(--text-secondary); text-align: center;
+            transition: color 0.2s;
+        }
+        .type-btn.selected span { color: #15233C; }
+        #typeHidden { display: none; }
+
+        /* ===== PHOTO UPLOAD ===== */
+        .upload-zone {
+            border: 2px dashed rgba(26,58,122,0.20);
+            border-radius: 12px; padding: 24px;
+            text-align: center; cursor: pointer;
+            transition: all 0.2s; background: #f8f9ff;
+            position: relative;
+        }
+        .upload-zone:hover, .upload-zone.drag {
+            border-color: #FF6B1A;
+            background: rgba(255,107,26,0.04);
+        }
+        .upload-zone input[type=file] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer;
+        }
+        .upload-icon { font-size: 28px; color: rgba(26,58,122,0.30); margin-bottom: 8px; }
+        .upload-label { font-size: 13px; color: var(--text-secondary); }
+        .upload-label strong { color: #FF6B1A; }
+        .upload-hint  { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+        .upload-preview {
+            display: none; margin-top: 14px;
+            border-radius: 10px; overflow: hidden;
+            border: 1px solid rgba(26,58,122,0.12);
+        }
+        .upload-preview img {
+            width: 100%; max-height: 180px;
+            object-fit: cover; display: block;
+        }
+        .upload-preview-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; background: rgba(26,58,122,0.04);
+            font-size: 12px; color: var(--text-secondary);
+        }
+        .upload-remove {
+            background: none; border: none; cursor: pointer;
+            color: var(--danger); font-size: 14px; padding: 0;
+        }
+
+        /* ===== SUBMIT BUTTON ===== */
+        .btn-submit {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, #FF6B1A, #e05a0f);
+            color: #fff; border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 600;
+            font-family: var(--font-display);
+            cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 16px rgba(255,107,26,0.30);
+        }
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(255,107,26,0.40);
+        }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .spin { animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ===== RIGHT PANEL: INFO + HISTORY ===== */
+        .info-card {
+            background: rgba(26,58,122,0.04);
+            border: 1px solid rgba(26,58,122,0.10);
+            border-radius: 12px; padding: 16px;
+            margin-bottom: 16px;
+        }
+        .info-card-title {
+            font-size: 12px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            color: var(--text-secondary); margin-bottom: 12px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .info-card-title i { font-size: 14px; color: #1A3A7A; }
+
+        .step-list { display: flex; flex-direction: column; gap: 12px; }
+        .step-item { display: flex; gap: 12px; align-items: flex-start; }
+        .step-num {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: rgba(255,107,26,0.12); color: #FF6B1A;
+            font-size: 11px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .step-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+        .step-text strong { color: #15233C; }
+
+        /* ===== HISTORY LIST ===== */
+        .history-item {
+            padding: 14px 0;
+            border-bottom: 1px solid rgba(26,58,122,0.07);
+        }
+        .history-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .history-top {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 4px;
+        }
+        .history-type {
+            font-size: 13px; font-weight: 500; color: #15233C;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .history-type i { font-size: 14px; color: #FF6B1A; }
+        .history-date { font-size: 11px; color: var(--text-secondary); }
+        .history-contrat { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; }
+
+        .badge {
+            display: inline-flex; align-items: center;
+            padding: 3px 9px; border-radius: 20px;
+            font-size: 11px; font-weight: 600;
+        }
+        .badge-attente  { background: rgba(255,107,26,0.12); color: #e05a0f; }
+        .badge-rembourse{ background: rgba(26,58,122,0.12);  color: #1A3A7A; }
+        .badge-refuse   { background: rgba(230,57,70,0.12);  color: var(--danger); }
+
+        .history-empty {
+            text-align: center; padding: 20px 10px;
+            color: var(--text-secondary); font-size: 13px;
+        }
+        .history-empty i { font-size: 28px; display: block; margin-bottom: 8px; opacity: 0.3; }
+
+        /* ===== SUCCESS STATE ===== */
+        .success-state {
+            display: none; text-align: center; padding: 32px 24px;
+        }
+        .success-icon {
+            width: 68px; height: 68px; border-radius: 50%;
+            background: rgba(26,58,122,0.10); color: #1A3A7A;
+            font-size: 30px; display: flex; align-items: center;
+            justify-content: center; margin: 0 auto 16px;
+        }
+        .success-title {
+            font-family: var(--font-display); font-size: 18px;
+            font-weight: 700; color: #15233C; margin-bottom: 8px;
+        }
+        .success-msg { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+        .success-id {
+            display: inline-block; margin-top: 14px;
+            background: rgba(26,58,122,0.08); border-radius: 8px;
+            padding: 6px 16px; font-size: 13px; font-weight: 600; color: #1A3A7A;
+        }
+        .btn-new {
+            margin-top: 20px; padding: 10px 24px;
+            background: #FF6B1A; color: #fff; border: none;
+            border-radius: 10px; font-size: 13px; font-weight: 600;
+            cursor: pointer; font-family: var(--font-body);
+            transition: 0.2s;
+        }
+        .btn-new:hover { background: #e05a0f; }
+
+        /* ===== CONTRAT SELECT with preview ===== */
+        .contrat-preview {
+            display: none;
+            background: rgba(26,58,122,0.05);
+            border: 1px solid rgba(26,58,122,0.15);
+            border-radius: 10px; padding: 12px 14px;
+            margin-top: 8px; font-size: 12px;
+        }
+        .contrat-preview-row {
+            display: flex; gap: 16px; flex-wrap: wrap;
+        }
+        .contrat-preview-item { display: flex; flex-direction: column; gap: 2px; }
+        .contrat-preview-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-secondary); }
+        .contrat-preview-val   { font-size: 13px; font-weight: 500; color: #15233C; }
+        .contrat-preview-val.danger { color: var(--danger); }
+        .contrat-preview-val.warning { color: #FF6B1A; }
+    </style>
+    <script src="assets_sinistre_traitement/js/validation.js"></script>
+
+    <!-- FrontOffice unifie - surcharge thème camarades dark-navy -->
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/light-theme.css">
+    <link rel="stylesheet" href="assets/css/client.css"></head>
+<body>
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+
+    <!-- ===== NAVBAR ===== -->
+    <?php require_once __DIR__.'/assets/includes/navbar.php'; ?>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="page-content">
+
+        <!-- Page header -->
+        <div class="page-header">
+            <div class="page-title">
+                <i class="bi bi-shield-plus" style="color:#FF6B1A;margin-right:8px;"></i>
+                Déclarer un sinistre
+            </div>
+            <div class="page-breadcrumb">
+                <i class="bi bi-house"></i>
+                <a href="client.php">Accueil</a>
+                <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+                <a href="mes-sinistres.html">Sinistres</a>
+                <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+                <span>Déclarer</span>
+            </div>
+        </div>
+
+        <div class="two-col">
+
+            <!-- ===== LEFT: FORM ===== -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon orange"><i class="bi bi-clipboard-plus"></i></div>
+                        <div>
+                            <div class="card-title">Nouvelle déclaration</div>
+                            <div class="card-sub">Remplissez tous les champs obligatoires</div>
+                        </div>
+                    </div>
+
+                    <!-- FORM -->
+                    <div class="card-body" id="formBody">
+                        <form id="sinistreForm" onsubmit="return false;">
+
+                            <!-- Contrat -->
+                            <div class="form-group">
+                                <label>Contrat concerné <span class="req">*</span></label>
+                                <select class="form-control" id="fContrat" onchange="onContratChange()">
+                                    <option value="">— Choisissez votre contrat —</option>
+                                </select>
+                                <div class="form-error" id="errContrat">Veuillez sélectionner un contrat.</div>
+                                <div class="contrat-preview" id="contratPreview"></div>
+                            </div>
+
+                            <!-- Type de sinistre -->
+                            <div class="form-group">
+                                <label>Type de sinistre <span class="req">*</span></label>
+                                <input type="hidden" id="typeHidden">
+                                <div class="type-grid">
+                                    <button type="button" class="type-btn" data-val="Accident auto" onclick="selectType(this)">
+                                        <i class="bi bi-car-front"></i>
+                                        <span>Accident auto</span>
+                                    </button>
+                                    <button type="button" class="type-btn" data-val="Incendie" onclick="selectType(this)">
+                                        <i class="bi bi-fire"></i>
+                                        <span>Incendie</span>
+                                    </button>
+                                    <button type="button" class="type-btn" data-val="Vol" onclick="selectType(this)">
+                                        <i class="bi bi-shield-x"></i>
+                                        <span>Vol</span>
+                                    </button>
+                                    <button type="button" class="type-btn" data-val="Degat des eaux" onclick="selectType(this)">
+                                        <i class="bi bi-droplet-fill"></i>
+                                        <span>Dégât des eaux</span>
+                                    </button>
+                                </div>
+                                <div class="form-error" id="errType">Veuillez choisir un type de sinistre.</div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="form-group">
+                                <label>Description <span class="req">*</span></label>
+                                <textarea class="form-control" id="fDescription"
+                                    placeholder="Décrivez les circonstances du sinistre : lieu, date et heure des faits, dommages constatés…"
+                                    maxlength="1000"></textarea>
+                                <div style="text-align:right;font-size:11px;color:var(--text-secondary);margin-top:4px;">
+                                    <span id="charCount">0</span>/1000 caractères
+                                </div>
+                                <div class="form-error" id="errDescription">La description est obligatoire (minimum 20 caractères).</div>
+                            </div>
+
+                            <!-- Photo (optional) -->
+                            <div class="form-group">
+                                <label>Photo / justificatif <span class="opt">(facultatif)</span></label>
+                                <div class="upload-zone" id="uploadZone">
+                                    <input type="file" id="fPhoto" accept="image/jpeg,image/png,image/gif,image/webp"
+                                           onchange="onFileChange(this)">
+                                    <div class="upload-icon"><i class="bi bi-cloud-arrow-up"></i></div>
+                                    <div class="upload-label">Glissez une image ici ou <strong>cliquez pour choisir</strong></div>
+                                    <div class="upload-hint">JPG, PNG, GIF, WEBP — max 5 Mo</div>
+                                </div>
+                                <div class="upload-preview" id="uploadPreview">
+                                    <img id="previewImg" src="" alt="Aperçu">
+                                    <div class="upload-preview-bar">
+                                        <span id="previewName"></span>
+                                        <button type="button" class="upload-remove" onclick="removePhoto()" title="Supprimer">
+                                            <i class="bi bi-x-circle"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Submit -->
+                            <button class="btn-submit" id="btnSubmit" onclick="submitSinistre()">
+                                <i class="bi bi-send"></i> Soumettre la déclaration
+                            </button>
+
+                        </form>
+                    </div>
+
+                    <!-- SUCCESS STATE -->
+                    <div class="success-state" id="successState">
+                        <div class="success-icon"><i class="bi bi-check2-circle"></i></div>
+                        <div class="success-title">Déclaration envoyée !</div>
+                        <div class="success-msg">
+                            Votre sinistre a été enregistré avec succès.<br>
+                            Notre équipe va l'examiner dans les meilleurs délais.
+                        </div>
+                        <div class="success-id" id="successId"></div>
+                        <br>
+                        <button class="btn-new" onclick="resetForm()">
+                            <i class="bi bi-plus-circle"></i> Nouvelle déclaration
+                        </button>
+                        &nbsp;
+                        <button class="btn-new" style="background:#1A3A7A;" onclick="location.href='mes-sinistres.html'">
+                            <i class="bi bi-list-ul"></i> Voir mes sinistres
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== RIGHT PANEL ===== -->
+            <div>
+                <!-- How it works -->
+                <div class="card" style="margin-bottom:20px;">
+                    <div class="card-header">
+                        <div class="card-icon navy"><i class="bi bi-info-circle"></i></div>
+                        <div>
+                            <div class="card-title">Comment ça marche ?</div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="step-list">
+                            <div class="step-item">
+                                <div class="step-num">1</div>
+                                <div class="step-text"><strong>Remplissez</strong> le formulaire en sélectionnant votre contrat et le type de sinistre.</div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-num">2</div>
+                                <div class="step-text"><strong>Décrivez</strong> les circonstances avec le plus de détails possible.</div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-num">3</div>
+                                <div class="step-text"><strong>Joignez</strong> une photo si disponible pour accélérer le traitement.</div>
+                            </div>
+                            <div class="step-item">
+                                <div class="step-num">4</div>
+                                <div class="step-text"><strong>Soumettez</strong> — notre équipe vous contactera sous 48h ouvrables.</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:16px;padding:12px;background:rgba(255,107,26,0.06);border:1px solid rgba(255,107,26,0.15);border-radius:10px;">
+                            <div style="font-size:12px;color:#15233C;display:flex;gap:8px;align-items:flex-start;">
+                                <i class="bi bi-exclamation-triangle" style="color:#FF6B1A;flex-shrink:0;margin-top:1px;"></i>
+                                <span>En cas d'urgence (accident, incendie), appelez le <strong>71 000 000</strong> avant de soumettre ce formulaire.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent history -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon navy"><i class="bi bi-clock-history"></i></div>
+                        <div>
+                            <div class="card-title">Vos derniers sinistres</div>
+                            <div class="card-sub" id="historyCount">Chargement…</div>
+                        </div>
+                    </div>
+                    <div class="card-body" style="padding:16px 20px;" id="historyList">
+                        <div class="history-empty">
+                            <i class="bi bi-hourglass-split"></i>
+                            Chargement de l'historique…
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="assets_sinistre_traitement/js/declarer-sinistre.js"></script>
+
+<script src="assets_sinistre_traitement/js/main.js"></script>
+</body>
+</html>
+
+
+

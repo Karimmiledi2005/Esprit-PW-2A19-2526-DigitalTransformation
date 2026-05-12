@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sinistres — Protex Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="assets_sinistre_traitement/css/variables.css">
+    <link rel="stylesheet" href="assets_sinistre_traitement/css/base.css">
+    <link rel="stylesheet" href="assets_sinistre_traitement/css/layout.css">
+    <link rel="stylesheet" href="assets_sinistre_traitement/css/admin-users.css">
+    <script src="assets_sinistre_traitement/js/validation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- ANTIFRAUD STYLES -->
+  <style>
+  .fraud-badge { display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.4px;white-space:nowrap; }
+  .fraud-badge i { font-size:10px; }
+  .fraud-badge.faible   { background:rgba(46,196,182,.15);color:#2ec4b6;border:1px solid rgba(46,196,182,.3); }
+  .fraud-badge.normal   { background:rgba(244,162,97,.15);color:#f4a261;border:1px solid rgba(244,162,97,.3); }
+  .fraud-badge.fraude   { background:rgba(180,0,50,.25);color:#ff4d6d;border:1px solid rgba(180,0,50,.4);animation:fraud-pulse 1.4s infinite; }
+  .fraud-badge.none     { background:rgba(255,255,255,.04);color:var(--text-secondary);border:1px dashed var(--glass-border); }
+  @keyframes fraud-pulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,77,109,.4)} 50%{box-shadow:0 0 0 6px rgba(255,77,109,0)} }
+  .fraud-panel { margin-top:20px;background:rgba(255,255,255,.03);border:1px solid var(--glass-border);border-radius:var(--radius-md);overflow:hidden; }
+  .fraud-panel-header { display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--glass-border);background:rgba(255,255,255,.02); }
+  .fraud-panel-title  { display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--text-primary); }
+  .fraud-panel-title i { color:var(--accent); }
+  .fraud-score-row { display:flex;align-items:center;gap:16px;padding:16px 18px;border-bottom:1px solid var(--glass-border); }
+  .fraud-score-circle { width:72px;height:72px;border-radius:50%;border:3px solid var(--glass-border);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;background:var(--glass-bg);transition:border-color .3s; }
+  .fraud-score-circle.faible   { border-color:#2ec4b6; }
+  .fraud-score-circle.normal   { border-color:#f4a261; }
+  .fraud-score-circle.fraude   { border-color:#ff4d6d;box-shadow:0 0 14px rgba(255,77,109,.3); }
+  .fraud-score-num   { font-size:22px;font-weight:800;line-height:1;color:#fff; }
+  .fraud-score-denom { font-size:10px;color:var(--text-secondary); }
+  .fraud-score-meta  { flex:1; }
+  .fraud-score-meta .niveau-label { font-size:15px;font-weight:700;margin-bottom:4px; }
+  .niveau-label.faible   { color:#2ec4b6; }
+  .niveau-label.normal   { color:#f4a261; }
+  .niveau-label.fraude   { color:#ff4d6d; }
+  .suggestion-pill { display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;margin-bottom:8px; }
+  .suggestion-pill.accepter    { background:rgba(46,196,182,.15);color:#2ec4b6;border:1px solid rgba(46,196,182,.3); }
+  .suggestion-pill.investiguer { background:rgba(244,162,97,.15);color:#f4a261;border:1px solid rgba(244,162,97,.3); }
+  .suggestion-pill.refuser     { background:rgba(230,57,70,.15);color:#e63946;border:1px solid rgba(230,57,70,.3); }
+  .fraud-bars { padding:14px 18px;border-bottom:1px solid var(--glass-border); }
+  .fraud-bar-row { margin-bottom:10px; }
+  .fraud-bar-label { display:flex;justify-content:space-between;font-size:11px;color:var(--text-secondary);margin-bottom:4px; }
+  .fraud-bar-track { height:5px;background:var(--glass-bg);border-radius:99px;overflow:hidden; }
+  .fraud-bar-fill  { height:100%;border-radius:99px;transition:width .6s ease; }
+  .bar-texte        { background:linear-gradient(90deg,#00b4d8,#0096c7); }
+  .bar-comportement { background:linear-gradient(90deg,#f4a261,#e76f51); }
+  .bar-contrat      { background:linear-gradient(90deg,#2ec4b6,#219ebc); }
+  .fraud-flags { display:flex;flex-wrap:wrap;gap:8px;padding:14px 18px;border-bottom:1px solid var(--glass-border); }
+  .fraud-flag { display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600; }
+  .fraud-flag.active   { background:rgba(230,57,70,.15);color:#e63946;border:1px solid rgba(230,57,70,.3); }
+  .fraud-flag.inactive { background:rgba(255,255,255,.04);color:var(--text-secondary);border:1px solid var(--glass-border);text-decoration:line-through;opacity:.5; }
+  .fraud-recommandation { padding:14px 18px;font-size:13px;line-height:1.7;color:var(--text-secondary);font-style:italic;border-left:3px solid var(--accent);margin:14px 18px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:rgba(0,180,216,.05); }
+  .fraud-reanalyse-btn { display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:5px 12px;border-radius:var(--radius-sm);border:1px solid var(--glass-border);background:var(--glass-bg);color:var(--text-secondary);cursor:pointer;transition:var(--transition); }
+  .fraud-reanalyse-btn:hover { border-color:var(--accent);color:var(--accent); }
+  .fraud-reanalyse-btn.loading { opacity:.6;pointer-events:none; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .spin { display:inline-block;animation:spin .8s linear infinite; }
+  </style>
+</head>
+  <style>
+    /* ── Status select inline ── */
+    .status-select {
+      padding: 4px 24px 4px 10px;
+      border-radius: 20px;
+      font-size: 11px; font-weight: 600;
+      border: 1px solid transparent;
+      cursor: pointer; outline: none;
+      font-family: var(--font-body);
+      transition: var(--transition);
+      appearance: none; -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 7px center;
+    }
+    .status-select.en_attente { background-color:rgba(244,162,97,0.15); color:var(--gold);    border-color:rgba(244,162,97,0.3); }
+    .status-select.valide     { background-color:rgba(0,180,216,0.15);  color:var(--accent);  border-color:rgba(0,180,216,0.3); }
+    .status-select.rembourse  { background-color:rgba(46,196,182,0.15); color:var(--success); border-color:rgba(46,196,182,0.3); }
+    .status-select.refuse     { background-color:rgba(230,57,70,0.15);  color:var(--danger);  border-color:rgba(230,57,70,0.3); }
+    .status-select option { background:#0d2845; color:var(--text-primary); }
+
+    /* ── Type icon cell ── */
+    .type-cell { display:flex; align-items:center; gap:8px; color:var(--text-secondary); font-size:13px; }
+    .type-icon {
+      width:28px; height:28px; border-radius:var(--radius-sm);
+      background:var(--glass-bg); border:1px solid var(--glass-border);
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; color:var(--accent); flex-shrink:0;
+    }
+
+    /* ── Detail modal ── */
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
+    .detail-field {
+      background:var(--glass-bg); border:1px solid var(--glass-border);
+      border-radius:var(--radius-md); padding:14px;
+    }
+    .detail-field.full { grid-column:span 2; }
+    .detail-field-label {
+      font-size:10px; font-weight:600; text-transform:uppercase;
+      letter-spacing:1px; color:var(--text-secondary);
+      display:flex; align-items:center; gap:5px; margin-bottom:6px;
+    }
+    .detail-field-value { font-size:13px; color:var(--text-primary); font-weight:500; line-height:1.6; }
+
+    /* ── Sinistre header in detail modal ── */
+    .sinistre-modal-header {
+      display:flex; align-items:center; gap:14px;
+      margin-bottom:20px; padding-bottom:18px;
+      border-bottom:1px solid var(--glass-border);
+    }
+    .sinistre-modal-icon {
+      width:48px; height:48px; border-radius:var(--radius-md);
+      background:var(--accent-glow); border:1px solid rgba(0,180,216,0.25);
+      display:flex; align-items:center; justify-content:center;
+      font-size:22px; color:var(--accent); flex-shrink:0;
+    }
+    .sinistre-modal-type { font-family:var(--font-display); font-size:16px; font-weight:700; color:#fff; }
+    .sinistre-modal-id   { font-size:12px; color:var(--text-secondary); margin-top:3px; }
+
+    /* toolbar padding override */
+    .toolbar-inner {
+      padding:16px 24px;
+      border-bottom:1px solid var(--glass-border);
+    }
+  </style>
+</head>
+<body>
+
+<div class="background"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <img src="../FrontOffice/logo.png" alt="logo" width="40" height="40">
+      <div>
+        <div class="logo-text">Protex</div>
+        <div class="logo-sub">Back-Office</div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar">KM</div>
+      <div>
+        <div class="user-name">Karim Miledi</div>
+        <span class="user-role">Administrateur</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <a class="nav-item" href="dashboard.html">
+        <i class="bi bi-grid-1x2"></i> Tableau de bord
+      </a>
+
+      <div class="nav-section">Gestion</div>
+      <a class="nav-item" href="admin-users.html">
+        <i class="bi bi-people"></i> Utilisateurs
+        <span class="nav-badge">24</span>
+      </a>
+
+      <a class="nav-item active" href="sinsiter.html">
+        <i class="bi bi-shield-exclamation"></i> Sinistres
+        <span class="nav-badge accent">New</span>
+      </a>
+
+      <a class="nav-item" href="traitement.html">
+        <i class="bi bi-file-earmark-text"></i> Traitements
+      </a>
+
+      <a class="nav-item" href="contrats_back.php">
+        <i class="bi bi-file-earmark-text"></i> Contrats
+      </a>
+
+      <a class="nav-item" href="categories_back.php">
+        <i class="bi bi-grid-3x3-gap"></i> Catégories
+      </a>
+
+      <a class="nav-item" href="garanties_back.php">
+        <i class="bi bi-shield-check"></i> Garanties
+      </a>
+
+      <a class="nav-item" href="paiements.php">
+        <i class="bi bi-credit-card"></i> Paiements
+      </a>
+
+      <a class="nav-item" href="offres.php">
+        <i class="bi bi-tags"></i> Offres
+      </a>
+
+      <a class="nav-item" href="reponse.html">
+        <i class="bi bi-chat-dots"></i> Réclamations
+      </a>
+
+      <a class="nav-item" href="admin-agences.html">
+        <i class="bi bi-geo-alt"></i> Agences
+      </a>
+
+      <div class="nav-section">Compte</div>
+      <a class="nav-item" href="adminprofile.html">
+        <i class="bi bi-person-gear"></i> Mon profil
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="../FrontOffice/logout.php" class="logout-btn">
+        <i class="bi bi-box-arrow-left"></i> Se déconnecter
+      </a>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <main class="main">
+
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">Gestion des sinistres</div>
+        <div class="topbar-sub" id="topbarDate"></div>
+      </div>
+      <div class="topbar-actions">
+        <a href="#" class="topbar-btn" title="Notifications">
+          <i class="bi bi-bell"></i>
+          <span class="notif-dot"></span>
+        </a>
+        <a href="#" class="topbar-btn" title="Aide">
+          <i class="bi bi-question-circle"></i>
+        </a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <div class="page-header-bar">
+        <div>
+          <div class="page-title">Sinistres</div>
+          <div class="page-breadcrumb">
+            <i class="bi bi-house"></i>
+            <a href="#">Accueil</a>
+            <i class="bi bi-chevron-right" style="font-size:10px;"></i>
+            <span>Sinistres</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon"><i class="bi bi-shield-exclamation"></i></div>
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total sinistres</div>
+          <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> +8.2% ce mois</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+          <div class="stat-value" id="statAttente">0</div>
+          <div class="stat-label">En attente</div>
+          <div class="stat-trend trend-warn"><i class="bi bi-clock"></i> À traiter</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
+          <div class="stat-value" id="statValides">0</div>
+          <div class="stat-label">Validés</div>
+          <div class="stat-trend trend-up"><i class="bi bi-arrow-up"></i> +2 ce mois</div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon"><i class="bi bi-x-circle"></i></div>
+          <div class="stat-value" id="statRefuses">0</div>
+          <div class="stat-label">Refusés</div>
+          <div class="stat-trend trend-down"><i class="bi bi-exclamation-triangle"></i> À vérifier</div>
+        </div>
+      </div>
+
+      <!-- CHART CARD -->
+      <div class="card" style="margin-bottom: 24px;">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="bi bi-graph-up"></i> Évolution des Sinistres
+          </div>
+        </div>
+        <div class="card-body" style="height: 300px; padding: 20px;">
+          <canvas id="sinistresChart"></canvas>
+        </div>
+      </div>
+
+      <!-- TABLE CARD -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">
+            <i class="bi bi-table"></i> Liste des sinistres
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="exportCSV()">
+            <i class="bi bi-download"></i> Exporter
+          </button>
+        </div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar-inner">
+          <div class="toolbar" style="margin-bottom:0;">
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" id="searchInput" placeholder="Rechercher par ID, contrat, type...">
+            </div>
+            <select class="filter-select" id="filterStatut">
+              <option value="">Tous les statuts</option>
+              <option value="en_attente">En attente</option>
+              <option value="valide">Validé</option>
+              <option value="rembourse">Remboursé</option>
+              <option value="refuse">Refusé</option>
+            </select>
+            <select class="filter-select" id="filterType">
+              <option value="">Tous les types</option>
+              <option value="Accident auto">Accident auto</option>
+              <option value="Incendie">Incendie</option>
+              <option value="Vol">Vol</option>
+              <option value="Dégât des eaux">Dégât des eaux</option>
+            </select>
+            <input type="date" class="filter-select" id="filterDate" style="padding-right:10px;">
+            <button class="btn btn-outline btn-sm" onclick="resetFilters()">
+              <i class="bi bi-x-circle"></i> Réinitialiser
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th class="sortable" data-sort="id" onclick="toggleSort('id')">ID</th>
+                <th class="sortable" data-sort="contrat" onclick="toggleSort('contrat')">Contrat</th>
+                <th class="sortable" data-sort="type" onclick="toggleSort('type')">Type</th>
+                <th class="sortable" data-sort="client" onclick="toggleSort('client')">Client</th>
+                <th class="sortable" data-sort="date" onclick="toggleSort('date')">Date</th>
+                <th class="sortable" data-sort="statut" onclick="toggleSort('statut')">Statut</th>
+                <th><i class="bi bi-shield-shaded"></i> Risque IA</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="sinistreBody"></tbody>
+          </table>
+          <div id="emptyState" style="display:none;text-align:center;padding:48px 20px;color:var(--text-secondary);">
+            <i class="bi bi-shield-slash" style="font-size:36px;display:block;margin-bottom:10px;opacity:0.3;"></i>
+            <p style="font-size:14px;">Aucun sinistre trouvé</p>
+          </div>
+        </div>
+
+        <div class="pagination">
+          <div class="pagination-info" id="paginationInfo"></div>
+          <div class="pagination-btns" id="paginationBtns"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ===== MODAL DÉTAIL ===== -->
+<div class="modal-overlay" id="modalDetail">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="bi bi-shield-exclamation"></i> Détails du sinistre</div>
+      <button class="modal-close" onclick="closeModal('modalDetail')"><i class="bi bi-x"></i></button>
+    </div>
+    <div id="modalDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modalDetail')">Fermer</button>
+    </div>
+  </div>
+</div>
+<!-- ===== MODAL SUPPRIMER ===== -->
+<div class="modal-overlay delete-modal" id="modalDelete">
+  <div class="modal">
+    <div class="delete-icon"><i class="bi bi-trash3"></i></div>
+    <div class="delete-title">Supprimer ce sinistre ?</div>
+    <div class="delete-msg" id="deleteMsg">Cette action est irréversible.</div>
+    <div class="modal-footer" style="justify-content:center;margin-top:28px;">
+      <button class="btn btn-outline" onclick="closeModal('modalDelete')">Annuler</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">
+        <i class="bi bi-trash3"></i> Supprimer définitivement
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="assets_sinistre_traitement/js/sinistre.js"></script>
+
+<script>
+fetch("get_admin.php")
+.then(res => res.json())
+.then(profileData => {
+    if (!profileData || profileData.error) return;
+    const initiales = ((profileData.nom||'').charAt(0) + (profileData.prenom||'').charAt(0)).toUpperCase();
+    document.querySelectorAll('.user-avatar').forEach(el => { el.textContent = initiales; });
+    const nameEl = document.querySelector('.user-name');
+    if (nameEl) nameEl.textContent = (profileData.prenom||'') + ' ' + (profileData.nom||'');
+    const roleEl = document.querySelector('.user-role');
+    if (roleEl && profileData.role) {
+        let roleTxt = profileData.role.toLowerCase() === 'admin' ? 'Administrateur' : profileData.role.charAt(0).toUpperCase() + profileData.role.slice(1);
+        if (profileData.nom_agence) roleTxt += ' (' + profileData.nom_agence + ')';
+        roleEl.textContent = roleTxt;
+    }
+});
+</script>
+
+<script src="assets_sinistre_traitement/js/main.js"></script>
+</body>
+</html>
+
+

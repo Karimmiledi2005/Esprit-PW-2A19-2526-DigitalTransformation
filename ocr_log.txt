@@ -1,0 +1,29 @@
+[2026-05-06 18:18:44.372517] Extraction: CIN=12345678, Nom=BEN ALI
+
+Pr
+[2026-05-06 18:19:11.008918] Extraction: CIN=12345678, Nom=BEN ALI
+
+Pr
+[2026-05-06 18:24:33.158939] Extraction: CIN=12345678, Nom=BEN ALI
+Pr
+[2026-05-06 18:27:45.095034] Extraction: CIN=12345678, Nom=BEN ALI
+Pr
+[2026-05-06 18:27:54.439136] Extraction: CIN=12345678, Nom=BEN ALI
+Pr
+[2026-05-06 18:31:04.442260] Extraction: CIN=12345678, Nom=BEN ALI
+
+Pr
+[2026-05-06 18:34:05.250600] Extraction: CIN=12345678, Nom=Pr
+[2026-05-06 18:34:49.634989] Extraction: CIN=12345678, Nom=BEN ALI
+
+Pr
+[2026-05-06 18:39:38.662348] Extraction: CIN=12345678, Nom=Pr
+[2026-05-06 18:39:47.876009] Extraction: CIN=12345678, Nom=BEN ALI
+
+Pr
+[2026-05-07 09:38:53.594527] Confiance: 100.00% | CIN=12345678 | Date=12/05/2002 | Nom=BEN ALI | Prenom=MARWA | Email= | Tel= | Adresse=
+[2026-05-07 09:39:02.519061] Confiance: 100.00% | CIN=12345678 | Date=12/05/2002 | Nom=BEN ALI Prénom MARWA | Prenom=MARWA | Email= | Tel= | Adresse=
+[2026-05-07 10:18:33.903820] Confiance: 100.00% | CIN=12345678 | Date=12/05/2002 | Nom=BEN ALI | Prenom=MARWA | Email= | Tel= | Adresse=
+[2026-05-07 10:18:44.124782] Confiance: 100.00% | CIN=12345678 | Date=12/05/2002 | Nom=BEN ALI | Prenom=MARWA | Email= | Tel= | Adresse=
+[2026-05-07 10:44:40.636622] Confiance: 100.00% | CIN=12345678 | Date=12/05/2002 | Nom=BEN ALI | Prenom=MARWA | Email= | Tel= | Adresse=
+[2026-05-07 10:44:47.576872] Confiance: 100.00% | CIN=12345678 | Date=12/05/2002 | Nom=CARTE D'ÉTUDIANT | Prenom=2023 - 2024 | Email=marwa.benali@fst.utm.tn | Tel= | Adresse=complète

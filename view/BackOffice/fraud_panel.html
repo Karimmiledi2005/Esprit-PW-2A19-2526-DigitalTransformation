@@ -1,0 +1,387 @@
+<!-- ============================================================
+  ANTIFRAUD UI SNIPPET — Protex Back-Office
+  
+  INSTRUCTIONS D'INTÉGRATION :
+  
+  1. Dans traitement.html :
+     - Ajouter le <style> ci-dessous dans le <head>
+     - Remplacer le contenu du modal "modalView" (viewContent)
+       par le template fraud-panel ci-dessous
+     - Ajouter le <script> en bas du fichier
+  
+  2. Dans sinsiter.html :
+     - Ajouter la colonne "Risque IA" dans le tableau
+     - Appeler renderFraudBadge(score, niveau) dans la ligne
+  
+  Le JS appelle fraud_get.php?id_sinistre=X (GET)
+  et fraud_analyse.php (POST id_sinistre=X) pour relancer.
+============================================================ -->
+
+
+<!-- ══════════════ STYLES À AJOUTER DANS <head> ══════════════ -->
+<style id="antifraud-styles">
+/* ── Fraud Badge (inline dans tableau sinistres) ── */
+.fraud-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.4px; white-space: nowrap;
+}
+.fraud-badge i { font-size: 10px; }
+.fraud-badge.faible   { background: rgba(46,196,182,0.15);  color: #2ec4b6; border: 1px solid rgba(46,196,182,0.3); }
+.fraud-badge.normal   { background: rgba(244,162,97,0.15);  color: #f4a261; border: 1px solid rgba(244,162,97,0.3); }
+.fraud-badge.fraude   { background: rgba(180,0,50,0.25);    color: #ff4d6d; border: 1px solid rgba(180,0,50,0.4); animation: fraud-pulse 1.4s infinite; }
+.fraud-badge.loading  { background: rgba(255,255,255,0.05); color: var(--text-secondary); border: 1px solid var(--glass-border); }
+.fraud-badge.none     { background: rgba(255,255,255,0.04); color: var(--text-secondary); border: 1px dashed var(--glass-border); }
+
+@keyframes fraud-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,77,109,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(255,77,109,0); }
+}
+
+/* ── Fraud Panel (dans modal détail sinistre) ── */
+.fraud-panel {
+  margin-top: 20px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.fraud-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--glass-border);
+  background: rgba(255,255,255,0.02);
+}
+.fraud-panel-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; color: var(--text-primary);
+}
+.fraud-panel-title i { color: var(--accent); }
+
+/* ── Score gauge ── */
+.fraud-score-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 16px 18px; border-bottom: 1px solid var(--glass-border);
+}
+.fraud-score-circle {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 3px solid var(--glass-border);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  flex-shrink: 0; position: relative;
+  background: var(--glass-bg);
+  transition: border-color 0.3s;
+}
+.fraud-score-circle.faible   { border-color: #2ec4b6; }
+.fraud-score-circle.normal   { border-color: #f4a261; }
+.fraud-score-circle.fraude   { border-color: #ff4d6d; box-shadow: 0 0 14px rgba(255,77,109,0.3); }
+.fraud-score-num  { font-size: 22px; font-weight: 800; line-height: 1; color: #fff; }
+.fraud-score-denom { font-size: 10px; color: var(--text-secondary); }
+.fraud-score-meta { flex: 1; }
+.fraud-score-meta .niveau-label {
+  font-size: 15px; font-weight: 700; margin-bottom: 4px;
+}
+.fraud-score-meta .niveau-label.faible   { color: #2ec4b6; }
+.fraud-score-meta .niveau-label.normal   { color: #f4a261; }
+.fraud-score-meta .niveau-label.fraude   { color: #ff4d6d; }
+.fraud-score-meta .suggestion-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: 20px; margin-bottom: 8px;
+}
+.suggestion-pill.accepter   { background: rgba(46,196,182,0.15); color: #2ec4b6; border: 1px solid rgba(46,196,182,0.3); }
+.suggestion-pill.investiguer { background: rgba(244,162,97,0.15); color: #f4a261; border: 1px solid rgba(244,162,97,0.3); }
+.suggestion-pill.refuser    { background: rgba(230,57,70,0.15);  color: #e63946; border: 1px solid rgba(230,57,70,0.3); }
+
+/* ── Sub-scores bars ── */
+.fraud-bars { padding: 14px 18px; border-bottom: 1px solid var(--glass-border); }
+.fraud-bar-row { margin-bottom: 10px; }
+.fraud-bar-label {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;
+}
+.fraud-bar-track {
+  height: 5px; background: var(--glass-bg);
+  border-radius: 99px; overflow: hidden;
+}
+.fraud-bar-fill {
+  height: 100%; border-radius: 99px;
+  transition: width 0.6s ease;
+}
+.bar-texte        { background: linear-gradient(90deg, #00b4d8, #0096c7); }
+.bar-comportement { background: linear-gradient(90deg, #f4a261, #e76f51); }
+.bar-contrat      { background: linear-gradient(90deg, #2ec4b6, #219ebc); }
+
+/* ── Flags ── */
+.fraud-flags { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; border-bottom: 1px solid var(--glass-border); }
+.fraud-flag {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 600;
+}
+.fraud-flag.active   { background: rgba(230,57,70,0.15); color: #e63946; border: 1px solid rgba(230,57,70,0.3); }
+.fraud-flag.inactive { background: rgba(255,255,255,0.04); color: var(--text-secondary); border: 1px solid var(--glass-border); text-decoration: line-through; opacity: 0.5; }
+
+/* ── Recommandation ── */
+.fraud-recommandation {
+  padding: 14px 18px;
+  font-size: 13px; line-height: 1.7;
+  color: var(--text-secondary);
+  font-style: italic;
+  border-left: 3px solid var(--accent);
+  margin: 14px 18px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: rgba(0,180,216,0.05);
+}
+
+/* ── Relancer analyse ── */
+.fraud-reanalyse-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600;
+  padding: 5px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg); color: var(--text-secondary);
+  cursor: pointer; transition: var(--transition);
+}
+.fraud-reanalyse-btn:hover { border-color: var(--accent); color: var(--accent); }
+.fraud-reanalyse-btn.loading { opacity: 0.6; pointer-events: none; }
+</style>
+
+
+<!-- ══════════════ TEMPLATE HTML DU PANEL ANTIFRAUD ══════════════
+     À inclure à l'intérieur du viewContent (modal détail sinistre)
+     juste après la section photo/informations existante
+════════════════════════════════════════════════════════════════ -->
+<div class="fraud-panel" id="fraudPanel" style="display:none;">
+  <div class="fraud-panel-header">
+    <div class="fraud-panel-title">
+      <i class="bi bi-shield-shaded"></i>
+      Analyse Antifraud IA
+      <span id="fraudAnalyseDate" style="font-weight:400;font-size:11px;color:var(--text-secondary);margin-left:4px;"></span>
+    </div>
+    <button class="fraud-reanalyse-btn" id="fraudReanalyseBtn" onclick="reanalyserFraud()">
+      <i class="bi bi-arrow-repeat"></i> Relancer l'analyse
+    </button>
+  </div>
+
+  <!-- Score global -->
+  <div class="fraud-score-row">
+    <div class="fraud-score-circle" id="fraudCircle">
+      <span class="fraud-score-num" id="fraudScoreNum">—</span>
+      <span class="fraud-score-denom">/100</span>
+    </div>
+    <div class="fraud-score-meta">
+      <div class="niveau-label" id="fraudNiveauLabel">—</div>
+      <div id="fraudSuggestionPill"></div>
+      <div style="font-size:12px;color:var(--text-secondary);">Score de risque global calculé par l'IA</div>
+    </div>
+  </div>
+
+  <!-- Barres de sous-scores -->
+  <div class="fraud-bars">
+    <div class="fraud-bar-row">
+      <div class="fraud-bar-label"><span><i class="bi bi-chat-text"></i> Analyse textuelle</span><span id="barTexteVal">—</span></div>
+      <div class="fraud-bar-track"><div class="fraud-bar-fill bar-texte" id="barTexte" style="width:0%"></div></div>
+    </div>
+    <div class="fraud-bar-row">
+      <div class="fraud-bar-label"><span><i class="bi bi-person-lines-fill"></i> Comportement client</span><span id="barComportVal">—</span></div>
+      <div class="fraud-bar-track"><div class="fraud-bar-fill bar-comportement" id="barComport" style="width:0%"></div></div>
+    </div>
+    <div class="fraud-bar-row" style="margin-bottom:0;">
+      <div class="fraud-bar-label"><span><i class="bi bi-file-earmark-text"></i> Profil contrat</span><span id="barContratVal">—</span></div>
+      <div class="fraud-bar-track"><div class="fraud-bar-fill bar-contrat" id="barContrat" style="width:0%"></div></div>
+    </div>
+  </div>
+
+  <!-- Flags -->
+  <div class="fraud-flags" id="fraudFlags"></div>
+
+  <!-- Recommandation IA -->
+  <div class="fraud-recommandation" id="fraudRecommandation" style="display:none;"></div>
+</div>
+
+<!-- Loading state antifraud -->
+<div id="fraudLoading" style="display:none;padding:20px 18px;text-align:center;">
+  <i class="bi bi-shield-shaded" style="font-size:24px;color:var(--accent);opacity:0.6;display:block;margin-bottom:8px;animation:spin 1.2s linear infinite;"></i>
+  <span style="font-size:13px;color:var(--text-secondary);">Analyse IA en cours…</span>
+</div>
+<div id="fraudEmpty" style="display:none;padding:16px 18px;">
+  <div style="font-size:13px;color:var(--text-secondary);text-align:center;">
+    <i class="bi bi-shield-x" style="display:block;font-size:22px;margin-bottom:6px;opacity:0.4;"></i>
+    Pas encore d'analyse disponible.
+    <button class="fraud-reanalyse-btn" onclick="reanalyserFraud()" style="margin:10px auto 0;display:flex;">
+      <i class="bi bi-play-circle"></i> Lancer l'analyse IA
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════ JAVASCRIPT À AJOUTER EN BAS DU BODY ══════════════ -->
+<script id="antifraud-script">
+// ── Antifraud panel logic ──────────────────────────────────────────────────
+
+const FRAUD_GET_API     = 'fraud_get.php';
+const FRAUD_ANALYSE_API = 'fraud_analyse.php';
+
+let currentFraudSinistreId = null;
+
+// Appelé depuis openViewModal() après chargement du sinistre
+async function loadFraudPanel(sinistreId) {
+  currentFraudSinistreId = sinistreId;
+  setFraudState('loading');
+
+  try {
+    const res  = await fetch(FRAUD_GET_API + '?id_sinistre=' + sinistreId + '&_=' + Date.now());
+    const json = await res.json();
+
+    if (json.success && json.data) {
+      renderFraudPanel(json.data);
+    } else {
+      setFraudState('empty');
+    }
+  } catch (e) {
+    setFraudState('empty');
+  }
+}
+
+// Relancer / première analyse
+async function reanalyserFraud() {
+  if (!currentFraudSinistreId) return;
+  setFraudState('loading');
+
+  const btn = document.getElementById('fraudReanalyseBtn');
+  if (btn) { btn.classList.add('loading'); btn.innerHTML = '<i class="bi bi-arrow-repeat spin"></i> Analyse…'; }
+
+  try {
+    const res  = await fetch(FRAUD_ANALYSE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'id_sinistre=' + currentFraudSinistreId
+    });
+    const json = await res.json();
+
+    if (json.success && json.data) {
+      renderFraudPanel(json.data);
+      showToast('Analyse antifraud mise à jour.', 'success');
+    } else {
+      setFraudState('empty');
+      showToast('Échec de l\'analyse IA.', 'danger');
+    }
+  } catch (e) {
+    setFraudState('empty');
+    showToast('Erreur réseau lors de l\'analyse.', 'danger');
+  } finally {
+    if (btn) { btn.classList.remove('loading'); btn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Relancer l\'analyse'; }
+  }
+}
+
+function renderFraudPanel(d) {
+  // Visibilité
+  document.getElementById('fraudPanel').style.display   = 'block';
+  document.getElementById('fraudLoading').style.display = 'none';
+  document.getElementById('fraudEmpty').style.display   = 'none';
+
+  // Score circle
+  const score  = d.score_global  || 0;
+  const niveau = d.niveau_risque || 'faible';
+  const circle = document.getElementById('fraudCircle');
+  circle.className = 'fraud-score-circle ' + niveau;
+  document.getElementById('fraudScoreNum').textContent = score;
+
+  // Niveau label
+  const niveauLabels = { faible:'Risque Faible', normal:'Risque Normal', fraude:'FRAUDE IDENTIFIÉE' };
+  const niveauEl = document.getElementById('fraudNiveauLabel');
+  niveauEl.textContent  = niveauLabels[niveau] || niveau;
+  niveauEl.className    = 'niveau-label ' + niveau;
+
+  // Suggestion pill
+  const pillIcons = { accepter:'✅', investiguer:'🔍', refuser:'❌' };
+  const pillLabels = { accepter:'Suggérer : Accepter', investiguer:'Suggérer : Investiguer', refuser:'Suggérer : Refuser' };
+  const sugg = d.suggestion_ia || 'investiguer';
+  document.getElementById('fraudSuggestionPill').innerHTML =
+    '<span class="suggestion-pill ' + sugg + '">' + (pillIcons[sugg]||'') + ' ' + (pillLabels[sugg]||sugg) + '</span>';
+
+  // Sous-scores
+  const scores = d.scores_detail || {};
+  const fillBar = (barId, valId, val) => {
+    val = val || 0;
+    document.getElementById(barId).style.width = val + '%';
+    document.getElementById(valId).textContent = val + '/100';
+  };
+  fillBar('barTexte',   'barTexteVal',   scores.texte);
+  fillBar('barComport', 'barComportVal', scores.comportement);
+  fillBar('barContrat', 'barContratVal', scores.contrat);
+
+  // Flags
+  const flagDefs = [
+    { key: 'description_vague',   label: 'Description vague',     icon: 'bi-chat-x' },
+    { key: 'sinistres_multiples', label: 'Sinistres multiples',   icon: 'bi-exclamation-diamond' },
+    { key: 'contrat_recent',      label: 'Contrat récent',        icon: 'bi-calendar-x' },
+    { key: 'montant_eleve',       label: 'Franchise élevée',      icon: 'bi-cash-stack' },
+    { key: 'image_suspecte',      label: 'Image suspecte',        icon: 'bi-image-alt' },
+  ];
+  const flags = d.flags || {};
+  document.getElementById('fraudFlags').innerHTML = flagDefs.map(f => {
+    const active = !!flags[f.key];
+    return '<span class="fraud-flag ' + (active ? 'active' : 'inactive') + '">' +
+      '<i class="bi ' + f.icon + '"></i>' + f.label + '</span>';
+  }).join('');
+
+  // Recommandation
+  const recEl = document.getElementById('fraudRecommandation');
+  if (d.recommandation) {
+    recEl.style.display = 'block';
+    recEl.textContent   = d.recommandation;
+  } else {
+    recEl.style.display = 'none';
+  }
+
+  // Date analyse
+  if (d.date_analyse) {
+    const dt = new Date(d.date_analyse);
+    document.getElementById('fraudAnalyseDate').textContent =
+      '· Analysé le ' + dt.toLocaleDateString('fr-FR') + ' à ' + dt.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+  }
+}
+
+function setFraudState(state) {
+  document.getElementById('fraudPanel').style.display   = state === 'panel'   ? 'block' : 'none';
+  document.getElementById('fraudLoading').style.display = state === 'loading' ? 'block' : 'none';
+  document.getElementById('fraudEmpty').style.display   = state === 'empty'   ? 'block' : 'none';
+}
+
+// ── Badge inline pour tableau sinistres ────────────────────────────────────
+// Utilisation : renderFraudBadge(row.fraud_score, row.fraud_niveau)
+function renderFraudBadge(score, niveau) {
+  if (score === null || score === undefined || !niveau) {
+    return '<span class="fraud-badge none"><i class="bi bi-shield"></i> N/A</span>';
+  }
+  const icons = { faible:'bi-shield-check', normal:'bi-shield-exclamation', fraude:'bi-shield-fill' };
+  const labels = { faible:'Faible', normal:'Normal', fraude:'FRAUDE' };
+  return '<span class="fraud-badge ' + niveau + '"><i class="bi ' + (icons[niveau]||'bi-shield') + '"></i>' +
+    (labels[niveau]||niveau) + ' · ' + score + '</span>';
+}
+</script>
+
+<!--
+══════════════════════════════════════════════════════════════════
+  PATCH À APPLIQUER dans traitement.js → openViewModal()
+
+  Ajouter APRÈS la ligne qui affiche le contenu sinistre :
+  
+    // Charger le panel antifraud
+    loadFraudPanel(sinistreId);
+
+  ET dans la partie HTML du modal (viewContent), ajouter à la fin
+  du innerHTML existant le template du panel ci-dessus
+  (les divs #fraudPanel, #fraudLoading, #fraudEmpty).
+  
+  OU, plus simple : mettre les divs antifraud directement dans
+  traitement.html après le <div id="viewContent"> :
+  
+    <div id="viewContent"></div>
+    <!-- ANTIFRAUD PANEL (hors viewContent pour éviter écrasement) -->
+    <div id="fraudPanel" ...>...</div>
+    <div id="fraudLoading" ...>...</div>
+    <div id="fraudEmpty" ...>...</div>
+══════════════════════════════════════════════════════════════════
+-->
