@@ -162,38 +162,7 @@ http://localhost/Protex/
 | Agent | agent@protex.tn | agent123 |
 | Client | client@protex.tn | client123 |
 
-## USER
-| Todo | In Progress | Done |
-|------|------------|------|
-| ⬜ Le fonctionalités de bases  | 🔄Amélioration de l'interface | ✅ CRUD complet  |
-| ⬜ Le fonctionalités innovantes | 🔄 Forget password | ✅ Base de données |
-|  | | ✅ la jointure associée |
-|  | | ✅ integration de les interfaces |
-## Gestion Offre & Paiement
-| Todo | In Progress | Done |
-|------|------------|------|
-| ⬜ Le fonctionalités avancées  | 🔄Amélioration de l'interface | ✅ CRUD complet "Offre"  |
-| ⬜ Le fonctionalités innovantes | 🔄 CRUD "Paiement" | ✅ Base de données |
-|  | | ✅ la jointure associée |
-|  | | ✅ integration de les interfaces |
-## Gestion Sinistre & Traitement
-| 📝 Todo | 🔄 In Progress | ✅ Done |
-|--------|--------------|--------|
-| Fonctionnalités avancées (statistiques, recherche filtrée) | Amélioration de l’interface | CRUD |
-|  |  | Base de données |
-|  |  | Jointure Sinistre–Traitement |
-|  |  | Intégration des interfaces |
 
-## Gestion Contrat & Garantie
-
-| 📝 Todo | 🔄 In Progress | ✅ Done |
-|--------|--------------|--------|
-| Fonctionnalités avancées (statistiques, filtrage des contrats) | Ajout & gestion des garanties |
-|  | CRUD "Garantie" | Affichage dynamique FrontOffice |
-|  |  | Base de données |
-|  |  | Intégration Front/Back |
-|  |  | Intégration des interfaces |
-|  |  | CRUD complet "Contrat" |
 
 
 
